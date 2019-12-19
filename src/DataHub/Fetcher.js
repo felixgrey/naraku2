@@ -49,8 +49,7 @@ function stopFetchData(stopKey) {
 		name,
 		callback
 	} = stopKeyMap[stopKey];
-	
-	clearStatus(name, stopKey, 'stopFetchData');
+	devLog(`stopFetchData`, name, stopKey);
 	callback();
 }
 
