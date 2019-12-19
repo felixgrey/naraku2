@@ -41,7 +41,7 @@ function initFetcher(callback) {
 
 function stopFetchData(stopKey) {
 	if (!stopKeyMap[stopKey]) {
-		errorLog(`stopKey ${stopKey} not existed.`);
+		devLog(`stopKey ${stopKey} not existed.`);
 		return;
 	}
 	
