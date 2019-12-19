@@ -1,0 +1,185 @@
+naraku2
+
+--------------------------------------------
+naraku-utils
+
+	_getRandom()
+	_uidSeed
+	_uniIndex
+	
+	public
+		getUniSeed()
+		createUid(pre)
+		getUniIndex()
+		
+		udFun()
+		nvlFun()
+		eptFun()
+		sameFun()
+		
+		isNull()
+		isEmpty()
+		isBlank()
+		
+		getDeepValue()
+		snapshot()
+		
+		setLogPreText() =【naraku】:
+		narakuError()
+		
+		proxyConsoleLog()
+--------------------------------------------
+naraku2-dataHub
+
+Fetcher
+	
+	_fetchMap = {}
+	_stopKeyMap = {
+		key: stop
+	}
+
+	public
+		fetchData(name, param, dataInfo, stopKey)
+		stopFetch(stopKey)
+		addFetcher(name, url, method, extend)
+		getFetcher(name)
+		initFetcher(function 		
+		param=>
+			{
+				url
+				method,
+				data,
+				setResult(resultData),
+				setPagination(count)
+				setError(errInfo),
+				onStop(function),
+				dataInfo
+				extend
+					dataType  = json
+					updateHeader(oldHeaders) = same
+					beforeSend(request) = nvl
+					beforeSetResult(resultData) = same
+			}
+		)
+
+DataHub(dhConfig)
+	_key
+	_data
+	_status
+	_lockStack
+	_emitter
+	_controller
+	_destroyed
+	_dhConfig	
+	_errorMsg
+	_init()
+		_controller = new Controller(this)
+		
+	fetchData(...args)
+		_controller.fetchData(...args)
+	
+	statusList undefined set loading locked error
+	
+	changeHandler ({name,type,value})
+		
+	public
+		createController()	
+		stopFetchData(name);
+		get(name)
+		getFirst(name, defaultValue)
+		getValue(name, defaultValue)
+		set(name, value)
+			_errorMsg = null
+			$$data:
+		setStatus(name, value)
+			$$status:
+		getStatus(name)
+		hasData(name)
+		lock(name)
+		unLock(name)
+		isLoading()
+		isReady()
+		isLocked()
+		
+		destroy()
+			$$destroy:dataHub _key
+		
+	config
+		fetcher
+		dependence
+		filter
+		
+		off
+		
+		clear
+		reset
+		snapshot
+		
+		pagination
+			fetcher
+			sizeField
+			pageField
+			pageStart
+		
+		default
+		
+		name: [default]
+	
+Controller(dh)
+	_key
+	_dh
+	_emitter = dh._emitter
+	_willUpdate
+	_refreshInterval
+	_runner
+	_destroyed
+	_fetchTimeoutList
+	_fetchingMap
+
+	public
+		on()
+		once()
+		when()
+		whenAll()
+		emit()
+		
+		register(name, callback)
+		run(name,...args)
+
+		setParent()
+		parentWillUpdate()
+		
+		watch()
+			dh._onChange
+
+		destroy()
+			clearTimeout
+			clearTimeout _fetchingMap
+			stopFetch()
+			$$destroy:controller _key
+		
+		stopFetch(stopKey);
+		fetchData(name, param, dataInfo, stopKey)
+			if fetching narakuError
+			clearTimeout
+		
+
+	
+
+--------------------------------------------
+naraku2-transformer
+--------------------------------------------
+naraku2-declare
+--------------------------------------------
+naraku2-codeTemplate
+--------------------------------------------
+naraku2-viewModel
+
+BaseVM
+PageVM
+TableVM
+
+--------------------------------------------
+naraku2-forVue2x
+--------------------------------------------
+naraku2-forReact
