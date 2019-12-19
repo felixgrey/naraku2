@@ -1,6 +1,6 @@
 
 function getRandom() {
-	return Math.random()*10e16;
+	return Math.random()*10e18;
 }
 
 const uidSeed = getRandom();
@@ -44,12 +44,14 @@ function isEmptyCollection(value) {
 	}
 	
 	if (value instanceof Set || value instanceof Map) {
-		return Array.from(set.values()).length === 0;
+		return Array.from(value.values()).length === 0;
 	}
 	
 	if (typeof value === 'object') {
 		return Object.keys(value).length === 0;
 	}
+	
+	return false;
 }
 
 /*
@@ -61,11 +63,13 @@ const console = ((global || {}).console) || {
 	error: udFun
 };
 const isDev = process && process.env && process.env.NODE_ENV === 'development';
-
+const showLog = process && process.env && process.env.SHOW_DEVLOG === 'true';
 let createLog = () => udFun;
 if (isDev) {
 	createLog = function(name, type, flag) {
+		// console.log('createLog', name, type, flag, isBlank(name) || !flag || typeof console[type] !== 'function');
 		if (isBlank(name) || !flag || typeof console[type] !== 'function') {
+			// console.log('createLog udFun');
 			return udFun;
 		}
 		
@@ -78,7 +82,7 @@ if (isDev) {
 /*
 	根据路径获取对象值
 */
-function getDeepValue(data, path = '', defValue = null) {
+function getDeepValue(data, path = '', defValue) {
 	if (isNvl(data)) {
 		return defValue;
 	}
@@ -110,33 +114,17 @@ function getDeepValue(data, path = '', defValue = null) {
 	return getDeepValue(value, path, defValue);
 }
 
-/*
-	深克隆
-*/
-function deepClone (data, _cloned = new Set()) {
-	if (typeof data !== 'object' || isNvl(data) || _cloned.has(data)) {
-		return data;
+function snapshot(value) {
+	if(isNvl(value) || typeof value === 'function') {
+		return value;
 	}
-	
-	if (Array.isArray(data)) {
-		const clonedData = [];
-		_cloned.add(clonedData);
-		for (let item of data) {
-			clonedData.push(deepClone(item, _cloned));
-		}
-		return clonedData;
-	}
-	
-	const clonedData = {};
-	_cloned.add(clonedData);
-	for (let key in data) {
-		clonedData[key] = deepClone(data[key]);
-	}
-	
-	return clonedData;
+	return JSON.parse(JSON.stringify(value));
 }
 
 export {
+	isDev,
+	showLog,
+	
 	uidSeed,
 	createUid,
 	getUniIndex,
@@ -152,7 +140,7 @@ export {
 	isEmptyCollection,
 	
 	getDeepValue,
-	deepClone,
+	snapshot,
 	
 	createLog
 }

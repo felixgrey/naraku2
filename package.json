@@ -1,19 +1,9 @@
 {
-  "name": "naraku2-dataHub",
-  "version": "0.0.1",
-  "description": "DataHub for OA",
-  "repository": "https://github.com/felixgrey/naraku.git",
-  "main": "lib/index.js",
   "scripts": {
-    "build": "babel src --out-dir lib"
+		"prebuild": "set NODE_ENV=production",
+    "build": "babel src --out-dir lib",
+		"test":"node ./test/index.js"
   },
-  "keywords": [
-    "OA",
-    "Store",
-		"DataStore"
-  ],
-  "author": "felixgrey",
-  "license": "MIT",
   "devDependencies": {
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",

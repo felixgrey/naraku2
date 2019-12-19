@@ -1,15 +1,18 @@
-import {createLog, deepClone, udFun, sameFun, isNvl} from './../Utils';
+import {createUid, createLog, snapshot, udFun, sameFun, isNvl, showLog} from './../Utils';
+import PaginationManager from './PaginationManager';
 
 let fetchMap = {};
 let stopKeyMap = {};
 let fetchingMap = {};
-let fetcher = udFun;
 
 let errorLog = createLog('Fetcher', 'error', true);
-let devLog = createLog('Fetcher', 'log', true);
+let devLog = createLog('Fetcher', 'log', showLog);
 
-function clearStatus(name, stopKey) {
+let fetcher = null;
+
+function clearStatus(name, stopKey, _callName) {
 	fetchingMap[name] = false;
+	devLog('clearStatus:'+ _callName, name, stopKey, JSON.stringify(stopKeyMap));
 	if(!isNvl(stopKey)){
 		stopKeyMap[stopKey] = null;
 	}
@@ -29,7 +32,7 @@ function addFetcher(name, url, method = 'get', extend = {}) {
 }
 
 function getFetcher(name) {
-	return deepClone(_fetchMap[name]);
+	return snapshot(fetchMap[name]);
 }
 
 function initFetcher(callback) {
@@ -47,20 +50,29 @@ function stopFetchData(stopKey) {
 		callback
 	} = stopKeyMap[stopKey];
 	
-	clearStatus(name, stopKey);
+	clearStatus(name, stopKey, 'stopFetchData');
 	callback();
 }
 
+const NOt_INIT_FETCHER = createUid('NOt_INIT_FETCHER_');
+const NOt_ADD_FETCH = createUid('NOt_ADD_FETCH_');
+const FETCHING = createUid('FETCHING_');
+
 function fetchData(name, data = null, dataInfo = {}, paginationManager = null, stopKey = null) {
+	if (!fetcher) {
+		return Promise.reject(NOt_INIT_FETCHER);
+	}
+	
 	const fetch = fetchMap[name];
+
 	if (!fetch) {
 		errorLog(`${name} not existed.`);
-		return;
+		return Promise.reject(NOt_ADD_FETCH);
 	}
 	
 	if (fetchingMap[name]) {
 		errorLog(`${name} is fetching.`);
-		return;
+		return Promise.reject(FETCHING);
 	}
 	
 	fetchingMap[name] = true;
@@ -76,7 +88,7 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 		updateHeader: sameFun,
 		beforeSend: udFun,
 		beforeSetResult: sameFun,
-	}, deepClone(extend));
+	}, snapshot(extend));
 	
 	let setResult;
 	let setError;
@@ -84,7 +96,6 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 	
 	const fetchPromise = new Promise(function (resolve, reject) {
 		setResult = (data) => {
-			clearStatus(name, stopKey);
 			resolve(data);
 		}
 		
@@ -92,6 +103,14 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 			if (stopKeyMap[stopKey]) {
 				errorLog(`stopKey ${stopKey} has existed stop will be invalid.`);
 			} else {
+				
+				stopKeyMap[stopKey] = {
+					name,
+					callback: () => {
+						resolve([]);
+					}
+				};
+				
 				onStop = (callback = udFun) => {
 					stopKeyMap[stopKey] = {
 						name,
@@ -105,14 +124,13 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 		}
 
 		setError = (err) => {
-			clearStatus(name, stopKey);
 			reject(err);
 		}
 	});
 
 	let paginationInfo = null;
 	let setDataCount = udFun;
-	if (paginationManager) {
+	if (paginationManager instanceof PaginationManager) {
 		paginationInfo = paginationManager.getPaginationInfo();
 		setDataCount = paginationManager.setDataCount.bind(paginationManager);
 	}
@@ -120,8 +138,8 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 	fetcher({
 		url,
 		method,
-		data: deepClone(data),
-		dataInfo: deepClone(dataInfo),
+		data: snapshot(data),
+		dataInfo: snapshot(dataInfo),
 		paginationInfo,
 		setResult,
 		setDataCount,
@@ -131,10 +149,15 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 		extend: _extend,
 	});
 	
-	return fetchPromise;
+	return fetchPromise.finally(_ => {
+		clearStatus(name, stopKey, 'finally');
+	});
 }
 
 export {
+	NOt_INIT_FETCHER,
+	NOt_ADD_FETCH,
+	FETCHING,
 	addFetcher,
 	getFetcher,
 	initFetcher,
