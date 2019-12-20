@@ -37,8 +37,15 @@ errLog('测试err');
 let errLog2 = createLog('testLog不显示', 'error', false);
 errLog2('测试 不显示');
 
-let errLog3 = createLog('testLog showLog', 'error', showLog);
-errLog3('showLog 不显示', showLog=== 'false');
+console.log('showLog的值', showLog)
+let errLog3 = createLog('testShowLog', 'error', showLog);
+errLog3('显示？不显示？', showLog);
+
+let testLog2 = createLog('first', 'log', true).createLog('second').createLog().createLog('third');
+testLog2('多层log');
+
+assert.strictEqual(udFun.createLog(), udFun);
+
 
 console.log('uidSeed', uidSeed);
 console.log('createUid', createUid());

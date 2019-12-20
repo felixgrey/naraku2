@@ -1,6 +1,6 @@
 
 function getRandom() {
-	return Math.random()*10e18;
+	return Math.random() * 10e18;
 }
 
 const uidSeed = getRandom();
@@ -68,16 +68,25 @@ let createLog = () => udFun;
 if (isDev) {
 	createLog = function(name, type, flag) {
 		// console.log('createLog', name, type, flag, isBlank(name) || !flag || typeof console[type] !== 'function');
-		if (isBlank(name) || !flag || typeof console[type] !== 'function') {
+		let logger = udFun;
+		if (!isBlank(name) && flag ) {
+			if (typeof console[type] !== 'function') {
+				console.log(`console.${type} not existed`);
+			}
 			// console.log('createLog udFun');
-			return udFun;
+			logger = function (...args) {
+				console[type](`【${name}-${type}】:`, ...args);
+			}
+		}
+
+		logger.createLog = function (name2 = '?', type2 = type, flag2 = flag) {
+			return createLog(`${name}.${name2}`, type2, flag2);
 		}
 		
-		return function (...args) {
-			console[type](`【${name}-${type}】:`, ...args);
-		}
+		return logger;
 	};
 }
+udFun.createLog = udFun;
 
 /*
 	根据路径获取对象值
@@ -88,7 +97,7 @@ function getDeepValue(data, path = '', defValue) {
 	}
 	
 	if (typeof path === 'string') {
-		path = path.split('.');
+		path = path.replace(/\[\]/g, '.').split('.');
 	}
 	
 	let field = path.shift().trim();
@@ -115,7 +124,7 @@ function getDeepValue(data, path = '', defValue) {
 }
 
 function snapshot(value) {
-	if(isNvl(value) || typeof value === 'function') {
+	if(isNvl(value) || typeof value !== 'object') {
 		return value;
 	}
 	return JSON.parse(JSON.stringify(value));
