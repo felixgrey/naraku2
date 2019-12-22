@@ -13,7 +13,7 @@ import {
 	dataOpMethods
 } from './DataHub';
 
-const eventOpMethods = ['when', 'whenAll', 'on', 'once', 'emit', 'destroy'];
+const eventOpMethods = ['when', 'whenAll', 'on', 'once', 'emit', 'clear','destroy'];
 
 export default class Controller {
 
@@ -38,7 +38,7 @@ export default class Controller {
 			this.publicFunction[funName] = (...args) => {
 				if (this._destroyed) {
 					this.errLog(`can't run '${funName}' event='${name}' after controller=${this._key} destroy.`);
-					return funName === 'get' ? [] : null;
+					return [];
 				}
 				
 				return this._dh[funName](...args);
@@ -63,7 +63,18 @@ export default class Controller {
 			this.errLog(`can't run 'emit' event='${name}' after controller=${this._key} destroy.`);
 			return;
 		}
-		this._emitter(name, ...args);
+		return this._emitter(name, ...args);
+	}
+	
+	clear(name) {
+		if (this._destroyed) {
+			this.errLog(`can't run 'clear' event='${name}' after controller=${this._key} destroy.`);
+			return Primise.reject();
+		}
+		
+		if (this._dh.has(name)) {
+			this._dh.set(name, []);
+		}
 	}
 
 	fetch(dhName, typeValue, param) {
@@ -71,6 +82,7 @@ export default class Controller {
 			this.errLog(`can't run 'fetch' event='${name}' after controller=${this._key} destroy.`);
 			return Primise.reject();
 		}
+		// TODO
 	}
 
 	when(names, callback) {
@@ -168,8 +180,7 @@ export default class Controller {
 		this._paginationData = null;
 
 		this.devLog = null;
-		this.errLog = null;
-		this._key = null;
+		this.errLog = null;	
 	}
 
 }

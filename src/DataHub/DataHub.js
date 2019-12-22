@@ -46,8 +46,10 @@ export default class DataHub {
 		this._data = {};
 		this._status = {};
 		this._lockStack = {};
+		this._eternalData = [];
 
 		this.extendData = {};
+		this.extendConfig = {};
 	}
 
 	_initLockStack(name) {
@@ -110,6 +112,11 @@ export default class DataHub {
 
 		if (this._isLocked(name)) {
 			this.errLog(`can't remove ${name} when it is locked.`);
+			return;
+		}
+		
+		if (this._eternalData.indexOf(name) !== -1) {
+			this.errLog(`can't remove ${name} if it is eternal.`);
 			return;
 		}
 
@@ -232,6 +239,7 @@ export default class DataHub {
 		this._destroyed = true;
 		this._controller = null;
 		this._emitter = null;
+		
 		this._config = null;
 		this._data = null;
 		this._status = null;
@@ -239,5 +247,7 @@ export default class DataHub {
 		this._key = null;
 
 		this.extendData = null;
+		this.extendConfig = null;
+		this._eternalData = null;
 	}
 }

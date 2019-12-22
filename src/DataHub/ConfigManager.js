@@ -20,12 +20,13 @@ export default class ConfigManager {
 		this._key = getUniIndex();
 
 		this._dh = dh;
+		this.extendConfig = dh.extendConfig;
+		this._eternalData =  dh._eternalData;
 		this._controller = dh._controller;
-		this._emitter = this._controller._emitter;
-		this._switchStatus = this._controller._switchStatus;
-		this._paginationData = this._controller._paginationData;
+		this._emitter = dh._controller._emitter;	
+		this._switchStatus = dh._controller._switchStatus;
+		this._paginationData = dh._controller._paginationData;
 
-		this._dhNames = [];
 		this._stopKeys = {};
 
 		this._hasInit = false;
@@ -40,12 +41,12 @@ export default class ConfigManager {
 	_configNames = ['fetcher', 'clear', 'reset', 'snapshot', 'default'];
 
 	_configPolicy = {
-		fetcher: function(dhName, typeValue, dhCfg, cfg) {
+		fetcher: (dhName, typeValue, dhCfg) => {
 			let {
 				dependence = [],
-					filter = [],
-					off = false,
-					pagination = null
+				filter = [],
+				off = false,
+				pagination = null
 			} = dhCfg;
 
 			dependence = [].concat(dependence);
@@ -81,6 +82,18 @@ export default class ConfigManager {
 			this._switchStatus[dhName].checkReady = checkReady;
 
 			this._controller.when(whenThem, checkReady);
+		},
+		clear: (dhName, typeValue, dhCfg) => {
+			// TODO
+		},
+		reset: (dhName, typeValue, dhCfg) =>{
+			// TODO
+		},
+		snapshot: (dhName, typeValue, dhCfg) => {
+			// TODO
+		},
+		default: (dhName, typeValue, dhCfg) => {
+			// TODO
 		}
 	}
 
@@ -136,12 +149,14 @@ export default class ConfigManager {
 		const cfg = this._dh._config;
 		this._name = cfg.$name || null;
 		for (let dhName in cfg) {
+			let dhCfg = cfg[dhName];
+			
 			if (/\_|\$/g.test(dhName.charAt(0))) {
+				this.extendConfig[dhName]  = dhCfg;
 				continue;
 			}
 
-			this._dhNames.push(dhName);
-			let dhCfg = cfg[dhName];
+			this._eternalData.push(dhName);
 
 			if (!dhCfg.hasOwnProperty('fetcher')) {
 				if (dhCfg.hasOwnProperty('action')) {
@@ -158,6 +173,10 @@ export default class ConfigManager {
 			}
 
 			for (let configName of this._configNames) {
+				if (/\_|\$/g.test(configName.charAt(0))) {
+					// MB-TODO
+					continue;
+				}
 				if (dhCfg.hasOwnProperty(configName) && this._configPolicy[configName]) {
 					this._configPolicy[configName].bind(this)(dhName, dhCfg[configName], dhCfg, cfg);
 				}
@@ -181,10 +200,11 @@ export default class ConfigManager {
 		this._switchStatus = null;
 		this._paginationData = null;
 		
-		this._dhNames = null;
 		this._stopKeys = null;
+		this._eternalData = null;
 
 		this.devLog = null;
 		this.errLog = null;
+		this.extendConfig = null;
 	}
 }
