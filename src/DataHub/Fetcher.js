@@ -1,4 +1,12 @@
-import {createUid, createLog, snapshot, udFun, sameFun, isNvl, showLog} from './../Utils';
+import {
+	createUid,
+	createLog,
+	snapshot,
+	udFun,
+	sameFun,
+	isNvl,
+	showLog
+} from './../Utils';
 import PaginationManager from './PaginationManager';
 
 let fetchMap = {};
@@ -14,8 +22,8 @@ function clearStatus(name, stopKey, _callName) {
 	if (!isNvl(name)) {
 		fetchingMap[name] = false;
 	}
-	devLog('clearStatus: '+ _callName, name, stopKey, JSON.stringify(stopKeyMap));
-	if(!isNvl(stopKey)){
+	devLog('clearStatus: ' + _callName, name, stopKey, JSON.stringify(stopKeyMap));
+	if (!isNvl(stopKey)) {
 		stopKeyMap[stopKey] = null;
 	}
 }
@@ -25,7 +33,7 @@ function addFetcher(name, url, method = 'get', extend = {}) {
 		errorLog(`${name} existed.`);
 		return;
 	}
-	
+
 	fetchMap[name] = {
 		url,
 		method,
@@ -36,7 +44,7 @@ function addFetcher(name, url, method = 'get', extend = {}) {
 function removeFetcher(name) {
 	if (fetchingMap[name]) {
 		errorLog(`${name} is fetching, can't be remove .`);
-		return;	
+		return;
 	}
 	delete fetchMap[name];
 }
@@ -54,7 +62,7 @@ function stopFetchData(stopKey) {
 		devLog(`stopKey ${stopKey} not existed.`);
 		return;
 	}
-	
+
 	const {
 		name,
 		callback
@@ -72,9 +80,9 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 	if (!fetcher) {
 		return Promise.reject(NOt_INIT_FETCHER);
 	}
-	
+
 	let fetch;
-	if(typeof name === 'object') {
+	if (typeof name === 'object') {
 		fetch = name;
 	} else {
 		fetch = fetchMap[name];
@@ -85,53 +93,53 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 		errorLog(`${name} not existed.`);
 		return Promise.reject(NOt_ADD_FETCH);
 	}
-	
+
 	if (fetchingMap[name]) {
 		errorLog(`${name} is fetching.`);
 		return Promise.reject(FETCHING);
 	}
-	
+
 	fetchingMap[name] = true;
-	
+
 	const {
 		url,
 		method = 'get',
 		extend = {},
 	} = fetch;
-	
+
 	if (!url) {
 		errorLog(`no url.`);
 		return Promise.reject(NO_URL);
 	}
-	
+
 	const _extend = Object.assign({
 		dataType: 'json',
 		updateHeader: sameFun,
 		beforeSend: udFun,
 		beforeSetResult: sameFun,
 	}, snapshot(extend));
-	
+
 	let setResult;
 	let setError;
 	let onStop = udFun;
-	
-	const fetchPromise = new Promise(function (resolve, reject) {
+
+	const fetchPromise = new Promise(function(resolve, reject) {
 		setResult = (data) => {
 			resolve(data);
 		}
-		
+
 		if (!isNvl(stopKey)) {
 			if (stopKeyMap[stopKey]) {
 				errorLog(`stopKey ${stopKey} has existed stop will be invalid.`);
 			} else {
-				
+
 				stopKeyMap[stopKey] = {
 					name,
 					callback: () => {
 						resolve([]);
 					}
 				};
-				
+
 				onStop = (callback = udFun) => {
 					stopKeyMap[stopKey] = {
 						name,
@@ -155,7 +163,7 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 		paginationInfo = paginationManager.getPaginationInfo();
 		setDataCount = paginationManager.setDataCount.bind(paginationManager);
 	}
-	
+
 	fetcher({
 		url,
 		method,
@@ -169,7 +177,7 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 		stopKey,
 		extend: _extend,
 	});
-	
+
 	return fetchPromise.finally(_ => {
 		clearStatus(name, stopKey, 'finally');
 	});
@@ -179,8 +187,10 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
  当前URL
  */
 const localBaseUrl = (() => {
-  let {protocol = '', hostname = '', port = ''} = global.location || {};
-  return `${protocol}//${hostname}${port ? (':' + port) : ''}`;
+	let {
+		protocol = '', hostname = '', port = ''
+	} = global.location || {};
+	return `${protocol}//${hostname}${port ? (':' + port) : ''}`;
 })();
 
 export {
