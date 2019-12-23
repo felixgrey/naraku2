@@ -77,6 +77,10 @@ const console = ((global || {}).console) || {
 const isDev = process && process.env && process.env.NODE_ENV === 'development';
 const showLog = process && process.env && process.env.SHOW_DEVLOG === 'true';
 let createLog = () => udFun;
+let logInfoArray = [];
+function getLogInfo() {
+	return [].concat(logInfoArray);
+}
 if (isDev) {
 	createLog = function(name, type, flag) {
 		// console.log('createLog', name, type, flag, isBlank(name) || !flag || typeof console[type] !== 'function');
@@ -87,7 +91,9 @@ if (isDev) {
 			}
 			// console.log('createLog udFun');
 			logger = function(...args) {
-				console[type](`【${name}-${type}】:`, ...args);
+				logInfoArray = [`【${name}-${type}】:`, ...args];
+				logInfoArray.logType = [type];
+				console[type](...logInfoArray);
 			}
 		}
 
@@ -99,6 +105,17 @@ if (isDev) {
 	};
 }
 udFun.createLog = udFun;
+
+const errorLog = createLog('Error', 'error', true);
+const dstroyedErrorLog = createLog('after-dstroyed', 'error', true);
+const createDstroyedErrorLog = (clazz, key) => {
+	return (funName, args = []) => {
+		if (!args.length) {
+			args = '[]';
+		}
+		dstroyedErrorLog(`can't run 【${clazz}=${key}】=>【${funName}@${args}】 after it is destroyed.`); 
+	}
+}
 
 /*
 	根据路径获取对象值
@@ -163,5 +180,8 @@ export {
 	getDeepValue,
 	snapshot,
 
-	createLog
+	createLog,
+	errorLog,
+	createDstroyedErrorLog,
+	getLogInfo
 }

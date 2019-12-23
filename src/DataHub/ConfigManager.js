@@ -36,6 +36,10 @@ export default class ConfigManager {
 		this.errLog = this._dh.errLog.createLog('ConfigManager');
 
 		this.init();
+		
+		this._controller.publicFunction.on('$$stopFetchData', (dhName) => {
+			this._switchStatus[dhName].willFetch = false;
+		});
 	}
 
 	_configNames = ['fetcher', 'clear', 'reset', 'snapshot', 'default'];
@@ -46,6 +50,7 @@ export default class ConfigManager {
 				dependence = [],
 				filter = [],
 				off = false,
+				forceFetch = false,
 				pagination = null
 			} = dhCfg;
 
@@ -174,7 +179,7 @@ export default class ConfigManager {
 
 			for (let configName of this._configNames) {
 				if (/\_|\$/g.test(configName.charAt(0))) {
-					// MB-TODO
+					// NEXT TODO
 					continue;
 				}
 				if (dhCfg.hasOwnProperty(configName) && this._configPolicy[configName]) {
@@ -189,7 +194,7 @@ export default class ConfigManager {
 			return;
 		}
 
-		this._emitter.emit('$$destroy:configManager', this._key);
+		this._controller.publicFunction.emit('$$destroy:configManager', this._key);
 		this.devLog(`configManager=${this._key} destroyed.`);
 
 		this._destroyed = true;

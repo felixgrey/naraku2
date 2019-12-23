@@ -19,8 +19,9 @@ export default class PaginationManager {
 		this._fetchInfo = '';
 		this._pgCfg = pgCfg;
 
+		this._emitter = dh._emitter;
+		// this._eternalData =  dh._eternalData;
 		this._controller = dh._controller;
-		this._emitter = _controller._emitter;
 
 		const {
 			fetcher,
@@ -29,8 +30,13 @@ export default class PaginationManager {
 			currentPage = 1,
 			pageSize = 10
 		} = pgCfg;
+		
+		if (!isNvl(fetcher)) {
+			this._fetcher = fetcher;
+			// this._eternalData.push
+		}
 
-		this._fetcher = fetcher;
+		
 
 		this._count = count;
 		this._startPage = startPage;

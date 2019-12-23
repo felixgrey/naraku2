@@ -1,11 +1,9 @@
 import {
 	getUniIndex,
-	createLog,
-	snapshot,
 	udFun,
-	sameFun,
 	isNvl,
-	showLog
+	getDeepValue,
+	createDstroyedErrorLog
 } from './../Utils';
 
 import Fetcher from './Fetcher';
@@ -13,7 +11,12 @@ import {
 	dataOpMethods
 } from './DataHub';
 
-const eventOpMethods = ['when', 'whenAll', 'on', 'once', 'emit', 'clear','destroy'];
+const controllerOpMethods = [
+	'when', 'whenAll', 'on', 'once', 'emit',
+	'first', 'getValue', 'clear',
+	'getSwitchStatus', 'setSwitchStatus',
+	'destroy',
+];
 
 export default class Controller {
 
@@ -26,10 +29,11 @@ export default class Controller {
 
 		this._switchStatus = {};
 		this._paginationData = {};
-		this._errorMSg = {};
 		this.publicFunction = {};
 
 		this._offSet = new Set();
+
+		this.dstroyedErrorLog = createDstroyedErrorLog('Controller', this._key);
 
 		this.devLog = this._dh.devLog.createLog('Controller');
 		this.errLog = this._dh.errLog.createLog('Controller');
@@ -37,49 +41,98 @@ export default class Controller {
 		for (let funName of dataOpMethods) {
 			this.publicFunction[funName] = (...args) => {
 				if (this._destroyed) {
-					this.errLog(`can't run '${funName}' event='${name}' after controller=${this._key} destroy.`);
+					this.dstroyedErrorLog(funName, args);
 					return [];
 				}
-				
+
+				// this.devLog('publicFunction.' + funName + '@controller=' + this._key, args);
+
 				return this._dh[funName](...args);
 			}
 		}
-		
-		for (let funName of eventOpMethods) {
+
+		for (let funName of controllerOpMethods) {
 			this.publicFunction[funName] = (...args) => {
 				if (this._destroyed) {
-					this.errLog(`can't run '${funName}' event='${name}' after controller=${this._key} destroy.`);
+					this.dstroyedErrorLog(funName, args);
 					return udFun;
 				}
-				
+
+				// this.devLog('publicFunction.' + funName + '@controller=' + this._key, args);
+
 				return this[funName](...args);
 			}
 		}
-		
+
+		this.publicFunction.stopFetchData = () => {
+			if (this._destroyed) {
+				this.dstroyedErrorLog('stopFetchData');
+				return null;
+			}
+			// TODO
+		}
+
+		this.publicFunction.fetchData = () => {
+			if (this._destroyed) {
+				this.dstroyedErrorLog('fetchData');
+				return null;
+			}
+			// TODO
+		}
+
+		this.publicFunction.stopFetchDataByName = () => {
+			if (this._destroyed) {
+				this.dstroyedErrorLog('stopFetchDataByName');
+				return null;
+			}
+			// TODO
+		}
+
+		this.publicFunction.createController = () => {
+			if (this._destroyed) {
+				this.dstroyedErrorLog('createController');
+				return null;
+			}
+			return new Controller(this._dh).publicFunction;
+		}
+
+	}
+
+	getSwitchStatus() {
+		// TODO
+	}
+
+	setSwitchStatus() {
+		// TODO
+	}
+
+	first(dhName, defaultValue = {}) {
+		return this.getValue(dhName + '.0', defaultValue);
+	}
+
+	getValue(fullPath, defaultValue) {
+		const [dhName, ...pathArr] = fullPath.split('.');
+		return getDeepValue(this._dh.get(dhName), pathArr.join('.'), defaultValue);
+	}
+
+	stopFetchData(dhName) {
+		this._emitter.emit('$$stopFetchData', dhName);
+		// TODO
 	}
 
 	emit(name, ...args) {
-		if (this._destroyed) {
-			this.errLog(`can't run 'emit' event='${name}' after controller=${this._key} destroy.`);
-			return;
-		}
-		return this._emitter(name, ...args);
+		return this._emitter.emit(name, ...args);
 	}
-	
+
 	clear(name) {
-		if (this._destroyed) {
-			this.errLog(`can't run 'clear' event='${name}' after controller=${this._key} destroy.`);
-			return Primise.reject();
-		}
-		
-		if (this._dh.has(name)) {
+		if (this._dh.hasData(name)) {
 			this._dh.set(name, []);
 		}
 	}
 
 	fetch(dhName, typeValue, param) {
 		if (this._destroyed) {
-			this.errLog(`can't run 'fetch' event='${name}' after controller=${this._key} destroy.`);
+			this.errLog(`can't run 'fetch' '${dhName}' after controller=${this._key} destroy.`);
 			return Primise.reject();
 		}
 		// TODO
@@ -107,10 +160,10 @@ export default class Controller {
 					continue;
 				}
 
-				if (this._dh._data[name] === undefined) {
+				if (!this._dh.hasData(_name)) {
 					return;
 				} else {
-					dataList.push(this._dh._data[name] || []);
+					dataList.push(this._dh.get(_name));
 				}
 			}
 
@@ -118,9 +171,10 @@ export default class Controller {
 		};
 
 		names.forEach(_name => {
-			let _off = this._emitter.on(_name, checkReady);
+			let _off = this._emitter.on('$$data:' + _name, checkReady);
 			offList.push(_off);
 		});
+		checkReady();
 
 		const off = () => {
 			if (!this._offSet.has(off)) {
@@ -135,7 +189,60 @@ export default class Controller {
 	}
 
 	whenAll(names, callback) {
-		// TODO
+		if (isNvl(names)) {
+			return udFun;
+		}
+
+		names = [].concat(names);
+
+		let offList;
+
+		const createCheckReady = (readyCallback = udFun) => {
+			let readyCount = 0;
+
+			return () => {
+				readyCount++
+				if (readyCount === names.length) {
+					readyCallback(...names.map(_name => this._dh.get(_name)));
+				}
+			}
+		};
+
+		let watchReady = () => {
+			if (this._destroyed || this._dh._destroyed) {
+				return;
+			}
+
+			offList = [];
+			let checkReady = createCheckReady((...args) => {
+				callback(...args);
+				watchReady();
+			});
+
+			for (let _name of names) {
+				let _off = this._emitter.once('$$data:' + _name, checkReady);
+				offList.push(_off);
+			}
+		}
+
+		watchReady();
+
+		if (names.filter(_name => this._dh.hasData(_name)).length === names.length) {
+			callback(...names.map(_name => this._dh.get(_name)));
+		}
+
+		return () => {
+			if (this._destroyed || this._dh._destroyed) {
+				return;
+			}
+
+			if (!offList) {
+				return;
+			}
+
+			offList.forEach(off => off());
+			offList = null;
+		}
 	}
 
 	_onAndOnce(name, callback, once) {
@@ -175,12 +282,11 @@ export default class Controller {
 		this._offSet = null;
 		this._dh = null;
 		this._emitter = null;
-		this._errorMSg = null;
 		this._switchStatus = null;
 		this._paginationData = null;
 
 		this.devLog = null;
-		this.errLog = null;	
+		this.errLog = null;
 	}
 
 }

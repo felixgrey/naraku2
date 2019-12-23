@@ -2,6 +2,8 @@
   "scripts": {
 		"prebuild": "set NODE_ENV=production",
     "build": "babel src --out-dir lib",
+		"pretestb": "npm run build",
+		"testb":"node ./test/index.js",
 		"test":"node ./test/index.js"
   },
   "devDependencies": {
