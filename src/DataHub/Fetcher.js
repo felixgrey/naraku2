@@ -19,10 +19,10 @@ let devLog = createLog('Fetcher', 'log', showLog);
 let fetcher = null;
 
 function clearStatus(name, stopKey, _callName) {
-	if (!isNvl(name)) {
-		fetchingMap[name] = false;
+	if (!isNvl(name) && fetchingMap[name] > 0) {
+		fetchingMap[name]--;
 	}
-	devLog('clearStatus: ' + _callName, name, stopKey, JSON.stringify(stopKeyMap));
+	// devLog('clearStatus: ' + _callName, name, stopKey, JSON.stringify(stopKeyMap));
 	if (!isNvl(stopKey)) {
 		stopKeyMap[stopKey] = null;
 	}
@@ -54,12 +54,19 @@ function getFetcher(name) {
 }
 
 function initFetcher(callback) {
+	if (fetcher) {
+		return;
+	}
 	fetcher = callback || udFun;
+}
+
+function hasInitFetcher() {
+	return !!fetcher;
 }
 
 function stopFetchData(stopKey) {
 	if (!stopKeyMap[stopKey]) {
-		devLog(`stopKey ${stopKey} not existed.`);
+		// devLog(`stopKey ${stopKey} not existed.`);
 		return;
 	}
 
@@ -67,7 +74,9 @@ function stopFetchData(stopKey) {
 		name,
 		callback
 	} = stopKeyMap[stopKey];
-	devLog(`stopFetchData`, name, stopKey);
+	
+	// devLog(`stopFetchData`, name, stopKey);
+	
 	callback();
 }
 
@@ -78,33 +87,30 @@ const NO_URL = createUid('NO_URL_');
 
 function fetchData(name, data = null, dataInfo = {}, paginationManager = null, stopKey = null) {
 	if (!fetcher) {
+		errorLog(`must run 'initFetcher' first.`);
 		return Promise.reject(NOt_INIT_FETCHER);
 	}
 
 	let fetch;
+	let url;
 	if (typeof name === 'object') {
 		fetch = name;
+		url = fetch.url;
+		name = url;
 	} else {
 		fetch = fetchMap[name];
 	}
 
-
 	if (!fetch) {
-		errorLog(`${name} not existed.`);
+		errorLog(`fetch '${name}' not existed.`);
 		return Promise.reject(NOt_ADD_FETCH);
 	}
-
-	if (fetchingMap[name]) {
-		errorLog(`${name} is fetching.`);
-		return Promise.reject(FETCHING);
-	}
-
-	fetchingMap[name] = true;
+	
+	url = fetch.url;
 
 	const {
-		url,
 		method = 'get',
-		extend = {},
+			extend = {},
 	} = fetch;
 
 	if (!url) {
@@ -122,6 +128,9 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 	let setResult;
 	let setError;
 	let onStop = udFun;
+
+	fetchingMap[name] = fetchingMap[name] || 0;
+	fetchingMap[name]++;
 
 	const fetchPromise = new Promise(function(resolve, reject) {
 		setResult = (data) => {
@@ -158,10 +167,15 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 	});
 
 	let paginationInfo = null;
-	let setDataCount = udFun;
 	if (paginationManager instanceof PaginationManager) {
-		paginationInfo = paginationManager.getPaginationInfo();
-		setDataCount = paginationManager.setDataCount.bind(paginationManager);
+		paginationInfo = paginationManager.getPaginationInfo(url);
+		let oldSetResult = setResult;
+		if (paginationInfo.isPagination) {
+			setResult = function(count) {
+				paginationManager.setDataCount(count);
+				oldSetResult(null);
+			}
+		}
 	}
 
 	fetcher({
@@ -171,7 +185,6 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 		dataInfo: snapshot(dataInfo),
 		paginationInfo,
 		setResult,
-		setDataCount,
 		setError,
 		onStop,
 		stopKey,
@@ -193,6 +206,23 @@ const localBaseUrl = (() => {
 	return `${protocol}//${hostname}${port ? (':' + port) : ''}`;
 })();
 
+/*
+  参数到query 
+*/
+function paramToQuery(url = '', param = {}) {
+	url = url.split('#');
+	let query = [];
+	for (let q in param) {
+		let v = param[q];
+		if (!isNvl(v)) {
+			query.push(`${q}=${encodeURIComponent(v)}`);
+		}
+	}
+	query = (url[0].indexOf('?') === -1 ? '?' : '&') + query.join('&') + (url.length > 1 ? '#' : '');
+	url.splice(1, 0, query);
+	return url.join('');
+}
+
 export {
 	NOt_INIT_FETCHER,
 	NOt_ADD_FETCH,
@@ -205,4 +235,6 @@ export {
 	initFetcher,
 	stopFetchData,
 	fetchData,
+	paramToQuery,
+	hasInitFetcher
 }

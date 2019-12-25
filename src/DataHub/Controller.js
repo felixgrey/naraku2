@@ -3,10 +3,18 @@ import {
 	udFun,
 	isNvl,
 	getDeepValue,
+	createUid,
 	createDstroyedErrorLog
 } from './../Utils';
 
-import Fetcher from './Fetcher';
+import {
+	NOt_INIT_FETCHER,
+	NOt_ADD_FETCH,
+	FETCHING,
+	stopFetchData,
+	fetchData,
+} from './Fetcher';
+
 import {
 	dataOpMethods
 } from './DataHub';
@@ -14,9 +22,24 @@ import {
 const controllerOpMethods = [
 	'when', 'whenAll', 'on', 'once', 'emit',
 	'first', 'getValue', 'clear',
-	'getSwitchStatus', 'setSwitchStatus',
+	'isLoading', 'isLocked',
+	'getSwitchStatus', 'turnOn', 'turnOff',
 	'destroy',
 ];
+
+const controllerOpMethods2 = [
+	'stopByName', 'pageTo', 'changePageSize',
+	'getPageInfo', 'fetch', 'watch', 'createController',
+];
+
+let refreshRate = 40;
+
+function setRefreshRate(value) {
+	refreshRate = +value;
+}
+
+// console.log(dataOpMethods);
+
 
 export default class Controller {
 
@@ -26,6 +49,9 @@ export default class Controller {
 		this._dh = dh;
 		this._emitter = dh._emitter;
 		this._destroyed = false;
+		this._fetchTimeouts = {};
+		this._stopKeys = {};
+		this._watchList = [];
 
 		this._switchStatus = {};
 		this._paginationData = {};
@@ -37,6 +63,8 @@ export default class Controller {
 
 		this.devLog = this._dh.devLog.createLog('Controller');
 		this.errLog = this._dh.errLog.createLog('Controller');
+		
+		// console.log(dataOpMethods);
 
 		for (let funName of dataOpMethods) {
 			this.publicFunction[funName] = (...args) => {
@@ -64,46 +92,326 @@ export default class Controller {
 			}
 		}
 
-		this.publicFunction.stopFetchData = () => {
-			if (this._destroyed) {
-				this.dstroyedErrorLog('stopFetchData');
-				return null;
-			}
-			// TODO
+		for (let funName of controllerOpMethods2) {
+			this.publicFunction[funName] = this[funName];
 		}
 
-		this.publicFunction.fetchData = () => {
-			if (this._destroyed) {
-				this.dstroyedErrorLog('fetchData');
-				return null;
-			}
-			// TODO
-		}
-
-		this.publicFunction.stopFetchDataByName = () => {
-			if (this._destroyed) {
-				this.dstroyedErrorLog('stopFetchDataByName');
-				return null;
-			}
-			// TODO
-		}
-
-		this.publicFunction.createController = () => {
-			if (this._destroyed) {
-				this.dstroyedErrorLog('createController');
-				return null;
-			}
-			return new Controller(this._dh).publicFunction;
-		}
-
+		this.initWatch();
 	}
 
-	getSwitchStatus() {
-		// TODO
+	initWatch() {
+		let watchChange = () => {
+			clearTimeout(this.watchTimeoutIndex);
+			this.watchTimeoutIndex = setTimeout(() => {
+				this._watchList.forEach(fun => fun());
+			}, refreshRate);
+		}
+
+		this.on('$$data', watchChange);
+		this.on('$$status', watchChange);
 	}
 
-	setSwitchStatus() {
-		// TODO
+	// publicMethod
+	stopByName = (dhName) => {
+		if (this._destroyed) {
+			this.dstroyedErrorLog('stopByName');
+			return null;
+		}
+		
+		// this.devLog('stopByName', dhName, this._stopKeys[dhName]);
+
+		if (this._stopKeys[dhName]) {
+			stopFetchData(this._stopKeys[dhName]);
+			this._stopKeys[dhName] = null;
+			if (this._paginationData[dhName]) {
+				this._paginationData[dhName].stopFetch();
+			}
+
+			this._dh.setStatus(dhName, 'clearLoading');
+		}
+	}
+
+	// publicMethod
+	pageTo = (dhName, number) => {
+		this.changePageInfo(dhName, number, null);
+	}
+
+	// publicMethod
+	changePageSize = (dhName, pageSize) => {
+		this.changePageInfo(dhName, null, pageSize);
+	}
+
+	// publicMethod
+	getPageInfo = (dhName) => {
+		if (!this._paginationData[dhName]) {
+			return null;
+		}
+		return this._paginationData[dhName].getPaginationInfo(null);
+	}
+
+	// publicMethod
+	changePageInfo(dhName, number = null, pageSize = null) {
+		if (this._destroyed) {
+			this.dstroyedErrorLog('pageTo');
+			return;
+		}
+
+		if (!this._paginationData[dhName]) {
+			this.errLog(`can't change pageInfo of '${dhName}' .`);
+			return;
+		}
+
+		this._paginationData[dhName].changePageInfo(number, pageSize);
+	}
+
+	// publicMethod
+	getSwitchStatus(dhName) {
+		if (this._destroyed) {
+			this.dstroyedErrorLog('changeSwitchStatus');
+			return null;
+		}
+
+		if (isNvl(dhName)) {
+			return null;
+		}
+
+		let switchStatusInfo = this._switchStatus[dhName];
+
+		if (!switchStatusInfo) {
+			return null;
+		}
+
+		return !switchStatusInfo.off;
+	}
+
+	// publicMethod
+	turnOn = (dhName) => {
+		if (this._destroyed) {
+			this.dstroyedErrorLog('turnOn');
+			return;
+		}
+		this._dh._configManager.turnOn(dhName);
+	}
+
+	// publicMethod
+	turnOff = (dhName) => {
+		if (this._destroyed) {
+			this.dstroyedErrorLog('turnOn');
+			return;
+		}
+		this._dh._configManager.turnOff(dhName);
+	}
+
+	// publicMethod
+	fetch = (fetcher, data, stop) => {
+		if (this._destroyed) {
+			this.dstroyedErrorLog('fetch');
+			return null;
+		}
+
+		let stopKey = createUid('stopFetchKey_');
+
+		if (!isNvl(stop)) {
+			let hasStop = false;
+			let doStop = () => {
+				if (hasStop) {
+					return
+				}
+				hasStop = true;
+				stopFetchData(stopKey);
+			};
+
+			if (typeof stop === 'function') {
+				stop(doStop);
+			} else {
+				this.once(`$$data:${stop}`, doStop);
+				this.once(`$$status:${stop}`, doStop);
+			}
+		}
+
+		this.once('$$destroy:controller', (key) => {
+			if (key === this._key) {
+				stopFetchData(stopKey);
+			}
+		});
+
+		return fetchData(fetcher, data, null, null, stopKey).then((result) => {
+			if (this._destroyed) {
+				return;
+			}
+
+			if (result !== undefined) {
+				result = [].concat(result);
+			}
+
+			this._emitter.emit('$$data', {
+				name: '$$fetch',
+				value: result
+			});
+
+			return result;
+		}).catch((err) => {
+			if (this._destroyed) {
+				return;
+			}
+
+			this._emitter.emit('$$data', {
+				name: '$$fetchError',
+				value: undefined
+			});
+		});
+	}
+
+	// publicMethod
+	watch = (callback = udFun) => {
+		if (this._destroyed) {
+			this.dstroyedErrorLog('watch');
+			return udFun;
+		}
+
+		callback();
+		this._watchList.push(callback);
+
+		return () => {
+			for (let i = 0; i < this._watchList.length; i++) {
+				if (this._watchList[i] === callback) {
+					this._watchList[i].splice(i, 1);
+					return;
+				}
+			}
+		};
+	}
+
+	// publicMethod
+	createController = () => {
+		if (this._destroyed) {
+			this.dstroyedErrorLog('createController');
+			return null;
+		}
+		
+		return new Controller(this._dh).publicFunction;
+	}
+
+	_anyStatus(names, status) {
+		if (isNvl(names)) {
+			return false;
+		}
+
+		names = [].concat(names);
+		for (let _name of names) {
+			if (this._dh.getStatus(_name) === status) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	// publicMethod
+	isLoading = (names) => {
+		if (this._destroyed) {
+			this.dstroyedErrorLog('isLoading');
+			return false;
+		}
+		
+		return this._anyStatus(names, 'loading');
+	}
+
+	// publicMethod
+	isLocked = (names) => {
+		if (this._destroyed) {
+			this.dstroyedErrorLog('isLocked');
+			return false;
+		}
+		
+		return this._anyStatus(names, 'locked');
+	}
+
+	fetchData(fetcher, dhName, data, clear = false, forceFetch = false, beforeFetch = udFun) {
+		let returnResolve;
+		let returnPromise = new Promise((_resolve) => {
+			returnResolve = _resolve;
+		});
+		
+		if (this._destroyed) {
+			this.dstroyedErrorLog('fetchData');
+			returnResolve();
+			return returnPromise;
+		}
+
+		clearTimeout(this._fetchTimeouts[dhName]);
+
+		this._fetchTimeouts[dhName] = setTimeout(() => {
+			if (this._destroyed) {
+				returnResolve();
+				return;
+			}
+			
+			if (clear) {
+				this._dh.set(dhName, []);
+				returnResolve();
+				return;
+			}
+			
+			if (forceFetch) {
+				// this.devLog('forceFetch中断请求', dhName, data);
+				this.stopByName(dhName);
+			}
+			
+			if (this._dh.getStatus(dhName) === 'loading') {
+				this.errLog(`can't fetchData ${dhName} when it is loading`);
+				returnResolve();
+				return;
+			}
+			
+			const stopKey = this._stopKeys[dhName] = createUid('stopKey_');
+
+			let pagePromise = Promise.resolve();
+			let pagination = this._paginationData[dhName] || null;
+			let offStop = udFun;
+			if (pagination) {
+				pagePromise = pagination.fetch(data);
+				offStop = this.once('$$stopFetchData', (name) => {
+					if (dhName === name) {
+						pagination.stopFetch();
+					}
+				});
+			}
+
+			this._dh.setStatus(dhName, 'loading');
+			beforeFetch();
+			const dataPromise = fetchData(fetcher, data, {}, pagination, stopKey);
+			
+			Promise
+				.all([dataPromise, pagePromise])
+				.then(([resultData]) => {
+					if (this._destroyed) {
+						returnResolve();
+						return;
+					}
+
+					this._dh.setStatus(dhName, 'clearLoading');
+					this._dh.set(dhName, resultData);
+				}).catch(err => {
+					if (this._destroyed) {
+						returnResolve();
+						return;
+					}
+					
+					this._dh.setError(dhName, err, []);
+				}).finally(() => {
+					if (this._destroyed) {
+						returnResolve();
+						return;
+					}
+					
+					offStop();
+					this._stopKeys[dhName] = null;
+					returnResolve();
+				});
+		}, refreshRate);
+		
+		return returnPromise;
 	}
 
 	first(dhName, defaultValue = {}) {
@@ -115,11 +423,6 @@ export default class Controller {
 		return getDeepValue(this._dh.get(dhName), pathArr.join('.'), defaultValue);
 	}
 
-	stopFetchData(dhName) {
-		this._emitter.emit('$$stopFetchData', dhName);
-		// TODO
-	}
-
 	emit(name, ...args) {
 		return this._emitter.emit(name, ...args);
 	}
@@ -128,14 +431,6 @@ export default class Controller {
 		if (this._dh.hasData(name)) {
 			this._dh.set(name, []);
 		}
-	}
-
-	fetch(dhName, typeValue, param) {
-		if (this._destroyed) {
-			this.errLog(`can't run 'fetch' '${dhName}' after controller=${this._key} destroy.`);
-			return Primise.reject();
-		}
-		// TODO
 	}
 
 	when(names, callback) {
@@ -231,7 +526,7 @@ export default class Controller {
 			callback(...names.map(_name => this._dh.get(_name)));
 		}
 
-		return () => {
+		const offFun = () => {
 			if (this._destroyed || this._dh._destroyed) {
 				return;
 			}
@@ -242,7 +537,12 @@ export default class Controller {
 
 			offList.forEach(off => off());
 			offList = null;
+			this._offSet.delete(offFun);
 		}
+
+		this._offSet.add(offFun);
+
+		return offFun;
 	}
 
 	_onAndOnce(name, callback, once) {
@@ -273,20 +573,55 @@ export default class Controller {
 			return;
 		}
 
-		this._emitter.emit('$$destroy:controller', this._key);
-		this.devLog(`controller=${this._key} destroyed.`);
+		// 取消将要进行的刷新
+		clearTimeout(this.watchTimeoutIndex);
 
+		// 取消将要进行的数据请求
+		Object.values(this._fetchTimeouts).forEach(key => {
+			clearTimeout(key);
+		});
+
+		// 中断进行中的数据请求
+		Object.values(this._stopKeys).forEach(key => {
+			if (key) {
+				stopFetchData(key);
+			}
+		});
+
+		// 发射销毁事件
+		this._emitter.emit('$$destroy:controller', this._key);
+		// this.devLog(`controller=${this._key} destroyed.`);
+
+		// 在销毁事件之后解除监听
 		Array.from(this._offSet.values()).forEach(fun => fun());
 
+		// 释放资源
 		this._destroyed = true;
 		this._offSet = null;
 		this._dh = null;
 		this._emitter = null;
 		this._switchStatus = null;
 		this._paginationData = null;
-
+		this._fetchTimeouts = null;
+		this._stopKeys = null;
+		this._watchList = null;
 		this.devLog = null;
 		this.errLog = null;
 	}
+}
 
+Controller.setRefreshRate = setRefreshRate;
+
+// console.log(dataOpMethods)
+// const allPublicMethods = dataOpMethods.concat(controllerOpMethods).concat(controllerOpMethods2);
+
+function getAllMethods() {
+	return dataOpMethods.concat(controllerOpMethods).concat(controllerOpMethods2);
+}
+
+Controller.getAllMethods = getAllMethods;
+
+export {
+	setRefreshRate,
+	getAllMethods
 }

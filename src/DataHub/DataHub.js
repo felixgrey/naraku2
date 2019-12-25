@@ -25,27 +25,28 @@ export default class DataHub {
 
 	constructor(config, devLog = udFun, errLog = udFun) {
 		this._key = getUniIndex();
-
-		this._config = config;
+		this._destroyed = false;
+		this._config = config || {};
 
 		this.devLog = devLog;
 		this.errLog = errLog;
+
+		// 需要放在ConfigManager之前
+		this._eternalData = [];
+		this._data = {};
+		this._status = {};
+		this._oldStatus = {};
+		this._lockStack = {};
+		this._errorMSg = {};
+
+		this.extendData = {};
+		this.extendConfig = {};
 
 		// Emitter -> Controller -> 其它
 		this._emitter = new Emitter();
 		this._controller = new Controller(this);
 		this._configManager = new ConfigManager(this);
 
-		this._destroyed = false;
-
-		this._data = {};
-		this._status = {};
-		this._lockStack = {};
-		this._eternalData = [];
-		this._errorMSg = {};
-
-		this.extendData = {};
-		this.extendConfig = {};
 		this.dstroyedErrorLog = createDstroyedErrorLog('DataHub', this._key);
 
 		this._emitter.on('$$status', ({
@@ -58,9 +59,9 @@ export default class DataHub {
 		});
 	}
 
-	getPublicFunction() {
+	getController() {
 		if (this._destroyed) {
-			this.dstroyedErrorLog('getPublicFunction');
+			this.dstroyedErrorLog('getController');
 			return {};
 		}
 		return this._controller.publicFunction;
@@ -84,6 +85,11 @@ export default class DataHub {
 
 	set(name, value) {
 		if (isNvl(name)) {
+			return;
+		}
+
+		if (/\_|\$/g.test(name.charAt(0))) {
+			this.errLog(`${name} can't be start with $ or _`);
 			return;
 		}
 
@@ -137,6 +143,7 @@ export default class DataHub {
 
 		delete this._data[name];
 		delete this._status[name];
+		delete this._oldStatus[name];
 		delete this._lockStack[name];
 
 		this._emitter.emit('$$status', {
@@ -150,10 +157,6 @@ export default class DataHub {
 
 	lock(name) {
 		if (isNvl(name)) {
-			return;
-		}
-
-		if (!this.hasData(name)) {
 			return;
 		}
 
@@ -235,28 +238,34 @@ export default class DataHub {
 		}
 	}
 
-	setStatus(name, value) {
+	setStatus(name, value, errMsg) {
 		if (isNvl(name)) {
 			return;
 		}
 
 		if (value === 'locked') {
-			this.errLog(`please use "dataHub.lock" to lock "${name}".`);
+			this.lock(name);
 			return;
 		}
 
 		if (value === 'error') {
-			this.errLog(`please use "dataHub.setError" to set error to "${name}".`);
-			return;
-		}
-
-		if (!this.hasData(name)) {
+			this.setError(name, value, errMsg);
 			return;
 		}
 
 		if (this._isLocked(name)) {
 			this.errLog(`can't set status ${name}=${value} when it is locked.`);
 			return;
+		}
+
+		if (value === 'loading') {
+			this._oldStatus[name] = this.getStatus(name);
+			// this.devLog('this._oldStatus', this._oldStatus[name], typeof this._oldStatus[name])
+		}
+
+		if (value === 'clearLoading') {
+			value = this._oldStatus[name] || 'undefined';
+			delete this._oldStatus[name];
 		}
 
 		if (statusList.indexOf(value) === -1) {
@@ -301,6 +310,7 @@ export default class DataHub {
 		this._config = null;
 		this._data = null;
 		this._status = null;
+		this._oldStatus = null;
 		this._lockStack = null;
 		this._key = null;
 

@@ -2,13 +2,27 @@ var assert = require("assert");
 
 const Utils = require('../../lib/Utils/index.js');
 
+const Fetcher = require('../../lib/DataHub/Fetcher.js');
+
 const DataHub = require('../../lib/DataHub/DataHub.js').default;
+
+const {
+	equalAssert,
+	createAsyncEqualAssert
+} = require('./../TestTools.js');
+
+const {
+	addFetcher,
+	initFetcher
+} = Fetcher;
 
 const {
 	createLog,
 	udFun,
 	getLogInfo
 } = Utils;
+
+equalAssert('equalAssert', 1, 1);
 
 console.log('--------- test DataHub start ---------');
 
@@ -19,18 +33,21 @@ let dataHub = new DataHub({}, emitterDevLogger, emitterErrLogger);
 dataHub.destroy();
 
 const publicMethodsList = [
-	'set', 'get', 'remove', 'hasData', 'setStatus', 'getStatus', 'lock', 'unLock', 'setError', 'getError',
+	'set', 'get', 'remove', 'hasData', , 'setError', 'getError',
+	'setStatus', 'getStatus', 'lock', 'unLock',
 	'first', 'getValue', 'clear',
 	'when', 'whenAll', 'on', 'once', 'emit',
+	'isLoading', 'isLocked',
 	'createController','destroy',
-	'getSwitchStatus', 'setSwitchStatus',
-	'fetchData', 'stopFetchData', 'stopFetchDataByName'
+	'getSwitchStatus', 'turnOn', 'turnOff',
+	'pageTo', 'changePageSize', 'getPageInfo',
+	'stopByName', 'fetch', 'watch'
 ];
 
-dataHub.getPublicFunction();
+dataHub.getController();
 
 let dataHub2 = new DataHub({}, emitterDevLogger, emitterErrLogger);
-let publicMethods = dataHub2.getPublicFunction();
+let publicMethods = dataHub2.getController();
 
 publicMethodsList.forEach(funName => {
 	assert.strictEqual(typeof publicMethods[funName], 'function');
@@ -76,7 +93,7 @@ dataHub2.destroy();
 getValue('testData1.0.s.0.e.f');
 
 let dataHub3 = new DataHub({}, emitterDevLogger, emitterErrLogger);
-publicMethods = dataHub3.getPublicFunction();
+publicMethods = dataHub3.getController();
 
 let {
 	on,
@@ -298,5 +315,182 @@ publicMethods.set('testData000', 789);
 assert.strictEqual(publicMethods.getStatus('testData000'), 'set');
 assert.strictEqual(publicMethods.getError('testData000'), null);
 
+
+let dataHub4 = new DataHub({
+	testDefault1: {
+		default: 123
+	},
+	testDefault2: {
+		default: [456, 789]
+	},
+	testDefault3: [11, 22, 33],
+	testDefault4: false,
+	testDefault5: null,
+	testDefault6: undefined,
+}, emitterDevLogger, emitterErrLogger);
+
+
+equalAssert(dataHub4.get('testDefault1'), [123]);
+equalAssert(dataHub4.get('testDefault2'), [456, 789]);
+equalAssert(dataHub4.get('testDefault3'), [11, 22, 33]);
+equalAssert(dataHub4.get('testDefault4')[0], false);
+equalAssert(dataHub4.get('testDefault5')[0], null);
+equalAssert(dataHub4.get('testDefault6').length, 0);
+
+
+initFetcher(function (arg) {
+	const {
+		url,
+		method,
+		data,
+		dataInfo,
+		paginationInfo,
+		setResult,
+		setError,
+		onStop,
+		stopKey,
+		extend,
+	} = arg;
+	
+	console.log('加载数据', url, data);
+	
+	if (url === 'url://test.dataHub.1') {
+		setTimeout(() => {
+			setResult([12345]);
+		}, 1000);
+	}
+	
+	if (url === 'url://test.dataHub.2') {
+		setTimeout(() => {
+			setResult(data);
+		}, 1000);
+	}
+	
+	if (paginationInfo) {
+		const {
+			isPagination,
+		} = paginationInfo;
+		
+		console.log('paginationInfo', url, paginationInfo);
+		
+		if (isPagination) {
+			setResult(123);
+		}
+	}
+	
+})
+
+addFetcher('test.dataHub.1', 'url://test.dataHub.1', 'get', {});
+addFetcher('test.dataHub.2', 'url://test.dataHub.2', 'get', {});
+
+addFetcher('test.page.1', 'url://test.page.1', 'get', {});
+
+let dataHub5 = new DataHub({
+	testFetcher1: {
+		fetcher: 'test.dataHub.1'
+	},
+	testFetcher2: {
+		fetcher: 'test.dataHub.2',
+		dependence: 'testDependence1'
+	},
+	testFetcher3: {
+		fetcher: 'test.dataHub.2',
+		dependence: ['testDependence1', 'testDependence2']
+	},
+	testFetcher4: {
+		fetcher: 'test.dataHub.2',
+		dependence: ['testDependence2'],
+		filter: 'filter1'
+	},
+	testFetcher5: {
+		fetcher: 'test.dataHub.2',
+		dependence: ['testDependence1', 'testDependence2'],
+		filter: ['filter1','filter2']
+	},
+	testFetcher6: {
+		fetcher: 'test.dataHub.2',
+		dependence: ['testDependence1', 'testDependence2'],
+		filter: ['filter1','filter2'],
+		pagination: {
+			fetcher: 'test.page.1',
+		}
+	},
+}, emitterDevLogger, emitterErrLogger);
+
+let dh5c1 = dataHub5.getController();
+
+setTimeout(() => {
+	equalAssert(dh5c1.getStatus('testFetcher1'), 'undefined');
+}, 20);
+
+setTimeout(() => {
+	equalAssert(dh5c1.getStatus('testFetcher1'), 'loading');
+}, 41);
+
+dh5c1.when('testFetcher1',(value) => {
+	equalAssert(dh5c1.get('testFetcher1'), [12345])
+});
+
+let depData = {
+	time: Date.now()
+}
+
+let depData2 = {
+	year: new Date().getFullYear()
+}
+
+let filter1 = {
+	momth: new Date().getMonth()
+}
+
+let filter2 = {
+	date: new Date().getDate()
+}
+
+dh5c1.when('testFetcher2',(value) => {
+	equalAssert(dh5c1.get('testFetcher2'), [depData])
+});
+
+dh5c1.when('testFetcher3',(value) => {
+	equalAssert(dh5c1.get('testFetcher3'), [Object.assign({}, depData, depData2)])
+});
+
+dh5c1.when('testFetcher4',(value) => {
+	equalAssert(dh5c1.get('testFetcher4'), [Object.assign({}, depData2, filter1)])
+});
+
+dh5c1.when('testFetcher5',(value) => {
+	// console.log(value);
+});
+
+dh5c1.set('testDependence1', depData);
+
+dh5c1.set('testDependence2', depData2);
+
+dh5c1.set('filter1', filter1);
+dh5c1.set('filter2', filter2);
+
+dh5c1.when('testFetcher6',(value) => {
+	// console.log(value);
+	
+	console.log('getPageInfo', dh5c1.getPageInfo('testFetcher6'));
+	dh5c1.pageTo('testFetcher6', 3);
+});
+
+setTimeout(() => {
+	dh5c1.pageTo('testFetcher6', 6);
+}, 500);
+
+dh5c1.setStatus("testLoading1", 'loading');
+
+equalAssert("testLoading1", dh5c1.isLoading("testLoading1"), true);
+equalAssert("testLoading2", dh5c1.isLoading("testLoading2"), false);
+equalAssert("testLoading1 + 2", dh5c1.isLoading(["testLoading1", "testLoading2"]), true);
+
+dh5c1.lock('testLock1');
+
+equalAssert("testLock1", dh5c1.isLocked("testLock1"), true);
+equalAssert("testLock2", dh5c1.isLocked("testLock2"), false);
+equalAssert("testLock1 + 2", dh5c1.isLocked(["testLock1", "testLock2"]), true);
 
 console.log('--------- test DataHub end ---------');

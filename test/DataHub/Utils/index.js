@@ -8,6 +8,10 @@ const {
 	uidSeed,
 	createUid,
 	getUniIndex,
+	onGlobal,
+	NumberFormat,
+	toCamel,
+	toUnderline,
 
 	udFun,
 	nvlFun,
@@ -17,7 +21,6 @@ const {
 	isNvl,
 	isEmpty,
 	isBlank,
-	isEmptyCollection,
 
 	getDeepValue,
 	snapshot,
@@ -26,7 +29,7 @@ const {
 	showLog
 } = Utils;
 
-console.log('process.env.NODE_ENV', process.env.NODE_ENV === 'development');
+console.log('process.env.NODE_ENV', process.env.NODE_ENV);
 
 let testLog = createLog('testLog', 'log', true);
 testLog('测试log');
@@ -45,7 +48,6 @@ let testLog2 = createLog('first', 'log', true).createLog('second').createLog().c
 testLog2('多层log');
 
 assert.strictEqual(udFun.createLog(), udFun);
-
 
 console.log('uidSeed', uidSeed);
 console.log('createUid', createUid());
@@ -90,29 +92,6 @@ assert.strictEqual(isBlank(' '), true);
 assert.strictEqual(isBlank(' s '), false);
 assert.strictEqual(isBlank(funValue), false);
 
-assert.strictEqual(isEmptyCollection(undefined), true);
-assert.strictEqual(isEmptyCollection(null), true);
-
-assert.strictEqual(isEmptyCollection(123), false);
-assert.strictEqual(isEmptyCollection('asdf'), false);
-assert.strictEqual(isEmptyCollection(funValue), false);
-
-assert.strictEqual(isEmptyCollection([]), true);
-assert.strictEqual(isEmptyCollection({}), true);
-
-assert.strictEqual(isEmptyCollection([1123]), false);
-assert.strictEqual(isEmptyCollection({
-	a: 123
-}), false);
-
-assert.strictEqual(isEmptyCollection(new Set()), true);
-assert.strictEqual(isEmptyCollection(new Map()), true);
-
-assert.strictEqual(isEmptyCollection(new Set([1])), false);
-assert.strictEqual(isEmptyCollection(new Map([
-	['name', '张三']
-])), false);
-
 
 const objectData = {
 	a: {
@@ -156,6 +135,26 @@ assert.strictEqual(snapshot(undefined), undefined);
 assert.strictEqual(snapshot(objectData).a.cc[1][2], objectData.a.cc[1][2]);
 assert.strictEqual(JSON.stringify(snapshot(objectData)),JSON.stringify(objectData));
 
+const {
+	percent,
+	thsepar,
+} = NumberFormat;
+
+onGlobal('testGlobal', (value) => {
+	console.log('testGlobal:', value);
+});
+
+onGlobal('testGlobal', (value) => {
+	console.log('testGlobal--2:', value);
+});
+
+global.testGlobal = 'testGlobalValue_' + Date.now();
+global.testGlobal = 'testGlobalValue_2_' + Date.now();
+
+assert.strictEqual(percent(0.125), '12.5%');
+assert.strictEqual(thsepar(123456789.123456), '123,456,789.12');
+assert.strictEqual(toCamel('test_camel_name'), 'testCamelName');
+assert.strictEqual(toUnderline('testUnderlineName'), 'test_underline_name');
 
 
 console.log('--------- test Utils end---------');

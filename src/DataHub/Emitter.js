@@ -14,15 +14,15 @@ import {
 
 export default class Emitter {
 
-	constructor() {
+	constructor(devLog = udFun, errLog = udFun) {
 		this._key = getUniIndex();
 
 		this._core = new EventEmitter();
 		this._core.setMaxListeners(Infinity);
 		this._destroyed = false;
 
-		this.devLog = udFun;
-		this.errLog = udFun;
+		this.devLog = devLog;
+		this.errLog = errLog;
 	}
 
 	_onAndOnce(name, callback, once) {
@@ -68,7 +68,7 @@ export default class Emitter {
 			return;
 		}
 
-		this.devLog(`emitter=${this._key} emit '${name}'`);
+		// this.devLog(`emitter=${this._key} emit '${name}'`);
 		this._core.emit(name, ...args);
 	}
 
@@ -78,10 +78,10 @@ export default class Emitter {
 		}
 
 		this.emit('$$destroy:emitter', this._key);
-		this.devLog(`emitter=${this._key} destroyed.`);
-
-		this._destroyed = true;
+		// this.devLog(`emitter=${this._key} destroyed.`);
 		this._core.removeAllListeners();
+		
+		this._destroyed = true;	
 		this._core = null;
 		this._key = null;
 	}

@@ -9,127 +9,31 @@ naraku2-dataHub
 Fetcher
 
 Emitter
-	on => off
-	once
-	off
-	emit
-	logHandle() => udFun
-	
 
 
 DataHub(dhConfig)
-	_key
-	_data
-	_status
-	_lockStack
-	_emitter
-	_controller
-	_destroyed
-	_dhConfig	
-	_errorMsg
-	logHandle()
-	_init()
-		_controller = new Controller(this)
-		
-	fetchData(...args)
-		_controller.fetchData(...args)
-	
-	statusList undefined set loading locked error
-	
-	changeHandler ({name,type,value})
-		
-	public
-		createController()	
-		stopFetchData(name);
-		
-		get(name)
-		getError(name)
-		getFirst(name, defaultValue = {})
-		assignFirst(name)
-		
-		set(name, value)
-			_errorMsg = null
-			$$data:
-		setStatus(name, value)
-			$$status:
-		getStatus(name)
-		
-		hasData(name)
-		
-		lock(name)
-		unLock(name)
-		
-		isLoading()
-		isReady()
-		isLocked()
-		
-		destroy()
-			$$destroy:dataHub _key
-		
-	config
-		$name
-		fetcher
-		dependence
-		filter
-		
-		off
-		
-		clear
-		reset
-		snapshot
-		
-		pagination
-			fetcher
-			sizeField
-			pageField
-			pageStart
-		
-		default
-		
-		name: [default]
-	
+
 Controller(dh)
-	_key
-	_dh
-	_emitter = dh._emitter
-	_willUpdate
-	_refreshInterval
-	_runner
-	_destroyed
-	_fetchTimeoutList
-	_fetchingMap
-	
 
-	public
-		on()
-		once()
-		when()
-		whenAll()
-		emit()
-		
-		register(name, callback)
-		run(name,...args)
-		
-		watch()
-			dh._onChange
-
-		destroy()
-			clearTimeout
-			clearTimeout _fetchingMap
-			stopFetch()
-			$$destroy:controller _key
-		
-		stopFetch(stopKey);
-		fetchData(name, param, dataInfo, stopKey)
-			if fetching narakuError
-			clearTimeout
-		
 
 --------------------------------------------
 naraku2-transformer
 
 --------------------------------------------
 naraku2-declare
+
+languages
+sentences
+	main
+	target
+	action
+	
+entity
+	names
+	nameAttribute
+	values
+	valueAttribute
+
 
 --------------------------------------------
 naraku2-codeTemplate
@@ -158,6 +62,8 @@ ViewModel
 		showDevLog()
 		
 		log()
+		
+	
 		
 		getValue()
 		setValue()
@@ -249,19 +155,20 @@ PageViewModel
 		addHeaderRight()
 		addHeaderCenter()
 		
+		getRouterInfo()
+		
+		
 		setHeader()
 		
 		getModuleAuthority();
 		getAllAuthority();
 		getAppAuthority();
 		
-		toPage(path, param)
-		
+
 		getPageParam() =>
 			param
 			routerParam
 			urlParam
-			requestParam
 
 FormViewModel
 
@@ -423,6 +330,7 @@ SliderMenuViewModel
 				name
 				label
 				dynamic
+				template
 				detail
 				hidden
 				routes[]
@@ -442,7 +350,7 @@ AppModel
 AuthorityModel
 
 	getAuthority
-		app.menu.page: module1,module2
+		app.menu.page: module1@c@r@u@d, module2 => area= 1|2|3|4
 		
 	
 
@@ -541,4 +449,38 @@ BMap
 		
 	public
 		showInfoWindow
+		
+		
+---------------------------------
+
+
+sourceDhName 数据名称 Table
+sourceData 数据列表
+
+field 字段
+declare 定义
+
+valueField 值字段
+labelField 标签字段
+
+MyName 组件名
+
+value 值 
+initValue 初始值
+exceptValue 例外值
+disabledValue 不可用值
+
+withDhName 相关数据名称 Tabs Form
+
+
+
+Input
+Password
+NumberInput
+Textarea
+Select
+ModalSelect
+MonthPicker
+DatePicker
+
 
