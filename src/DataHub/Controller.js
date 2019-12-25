@@ -22,7 +22,7 @@ import {
 const controllerOpMethods = [
 	'when', 'whenAll', 'on', 'once', 'emit',
 	'first', 'getValue', 'clear',
-	'isLoading', 'isLocked',
+	'isLoading', 'isLocked', 'register', 'run',
 	'getSwitchStatus', 'turnOn', 'turnOff',
 	'destroy',
 ];
@@ -109,6 +109,14 @@ export default class Controller {
 
 		this.on('$$data', watchChange);
 		this.on('$$status', watchChange);
+	}
+	
+	register = () => {
+		// TODO
+	}
+	
+	run = () => {
+		// TODO
 	}
 
 	// publicMethod
