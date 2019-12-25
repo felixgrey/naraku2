@@ -5,31 +5,37 @@ const Utils = require('../../../lib/Utils/index.js');
 console.log('--------- test Utils start ---------');
 
 const {
+	isDev,
+	showLog,
+	onGlobal,
+	
 	uidSeed,
 	createUid,
 	getUniIndex,
-	onGlobal,
-	NumberFormat,
-	toCamel,
-	toUnderline,
-
+	
 	udFun,
 	nvlFun,
 	eptFun,
 	sameFun,
-
+	
 	isNvl,
 	isEmpty,
 	isBlank,
-
+	
 	getDeepValue,
 	snapshot,
-
+	
 	createLog,
-	showLog
+	errorLog,
+	createDstroyedErrorLog,
+	getLogInfo,
+	
+	NumberFormat,
+	toCamel,
+	toUnderline
 } = Utils;
 
-console.log('process.env.NODE_ENV', process.env.NODE_ENV);
+// console.log('process.env.NODE_ENV', process.env.NODE_ENV);
 
 let testLog = createLog('testLog', 'log', true);
 testLog('测试log');
@@ -145,7 +151,7 @@ onGlobal('testGlobal', (value) => {
 });
 
 onGlobal('testGlobal', (value) => {
-	console.log('testGlobal--2:', value);
+	throw new Error('不应该执行的方法');
 });
 
 global.testGlobal = 'testGlobalValue_' + Date.now();
