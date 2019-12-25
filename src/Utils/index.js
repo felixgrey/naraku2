@@ -266,10 +266,14 @@ if (isDev) {
 			return;
 		}
 		definedName[name] = 1;
-
+		let _value;
 		Object.defineProperty(global, name, {
 			set: function(value) {
+				_value = value;
 				callback(value);
+			},
+			get: function() {
+				return _value;
 			}
 		});
 	};
