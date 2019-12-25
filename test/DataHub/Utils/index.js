@@ -27,7 +27,7 @@ const {
 
 	createLog,
 	errorLog,
-	createDstroyedErrorLog,
+	createDestroyedErrorLog,
 	getLogInfo,
 
 	NumberFormat,
@@ -76,6 +76,13 @@ testLog2('多层log');
 
 assert.strictEqual(getLogInfo()[0], `【first.second.?.third-log】:`);
 assert.strictEqual(getLogInfo()[1], '多层log');
+
+// `can't run 【${clazz}=${key}】=>【${funName}@${args}】 after it is destroyed.`
+let destroyLog = createDestroyedErrorLog('类名', 123456);
+destroyLog('方法名', ['参数1','参数2'])
+
+assert.strictEqual(getLogInfo()[0], `【after-dstroyed-error】:`);
+assert.strictEqual(getLogInfo()[1], `can't run 【类名=123456】=>【方法名@参数1,参数2】 after it is destroyed.`);
 
 assert.strictEqual(udFun.createLog(), udFun);
 
@@ -184,7 +191,11 @@ assert.strictEqual(getLogInfo()[1], global.testGlobal);
 
 assert.strictEqual(percent(0.125), '12.5%');
 assert.strictEqual(thsepar(123456789.123456), '123,456,789.12');
+
 assert.strictEqual(toCamel('test_camel_name'), 'testCamelName');
+assert.strictEqual(toCamel('_test_camel_name'), '_testCamelName');
+
 assert.strictEqual(toUnderline('testUnderlineName'), 'test_underline_name');
+assert.strictEqual(toUnderline('_testUnderlineName'), '_test_underline_name');
 
 console.log('--------- test Utils end---------');

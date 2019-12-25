@@ -6,7 +6,7 @@ import {
 	udFun,
 	sameFun,
 	isNvl,
-	createDstroyedErrorLog
+	createDestroyedErrorLog
 } from './../Utils';
 
 import {
@@ -36,7 +36,7 @@ export default class ConfigManager {
 		this.devLog = this._dh.devLog.createLog('ConfigManager');
 		this.errLog = this._dh.errLog.createLog('ConfigManager');
 
-		this.dstroyedErrorLog = createDstroyedErrorLog('ConfigManager', this._key);
+		this.dstroyedErrorLog = createDestroyedErrorLog('ConfigManager', this._key);
 
 
 		this.init();

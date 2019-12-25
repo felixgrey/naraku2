@@ -2,7 +2,7 @@ import {
 	getUniIndex,
 	udFun,
 	isNvl,
-	createDstroyedErrorLog,
+	createDestroyedErrorLog,
 } from './../Utils';
 
 import Emitter from './Emitter';
@@ -47,7 +47,7 @@ export default class DataHub {
 		this._controller = new Controller(this);
 		this._configManager = new ConfigManager(this);
 
-		this.dstroyedErrorLog = createDstroyedErrorLog('DataHub', this._key);
+		this.dstroyedErrorLog = createDestroyedErrorLog('DataHub', this._key);
 
 		this._emitter.on('$$status', ({
 			name,

@@ -4,7 +4,7 @@ import {
 	isNvl,
 	getDeepValue,
 	createUid,
-	createDstroyedErrorLog
+	createDestroyedErrorLog
 } from './../Utils';
 
 import {
@@ -59,7 +59,7 @@ export default class Controller {
 
 		this._offSet = new Set();
 
-		this.dstroyedErrorLog = createDstroyedErrorLog('Controller', this._key);
+		this.dstroyedErrorLog = createDestroyedErrorLog('Controller', this._key);
 
 		this.devLog = this._dh.devLog.createLog('Controller');
 		this.errLog = this._dh.errLog.createLog('Controller');

@@ -3,7 +3,7 @@ import {
 	createUid,
 	udFun,
 	isNvl,
-	createDstroyedErrorLog
+	createDestroyedErrorLog
 } from './../Utils';
 
 import {
@@ -31,7 +31,7 @@ export default class PaginationManager {
 	constructor(pageChange, dh, pgCfg) {
 		this._key = getUniIndex();
 		this._destroyed = false;
-		this.dstroyedErrorLog = createDstroyedErrorLog('PaginationManager', this._key);
+		this.dstroyedErrorLog = createDestroyedErrorLog('PaginationManager', this._key);
 
 		this._pageChange = pageChange;
 		this._jsonData = '';

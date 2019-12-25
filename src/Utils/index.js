@@ -104,7 +104,7 @@ udFun.createLog = udFun;
 
 const errorLog = createLog('Error', 'error', true);
 const dstroyedErrorLog = createLog('after-dstroyed', 'error', true);
-const createDstroyedErrorLog = (clazz, key) => {
+const createDestroyedErrorLog = (clazz, key) => {
 	return (funName, args = []) => {
 		if (!args.length) {
 			args = '[]';
@@ -302,7 +302,7 @@ export {
 
 	createLog,
 	errorLog,
-	createDstroyedErrorLog,
+	createDestroyedErrorLog,
 	getLogInfo,
 
 	NumberFormat,
