@@ -41,6 +41,8 @@ export default class Controller {
 		this._emitter = dh._emitter;
 
 		this._fetchManager = new FetchManager(this);
+		
+		// ListenerManager
 
 		dh._emitter.once('$$destroy:DataHub', () => {
 			this.destroy();
