@@ -17,6 +17,7 @@ const {
 	nvlFun,
 	eptFun,
 	sameFun,
+	pmsFun,
 
 	isNvl,
 	isEmpty,
@@ -39,6 +40,13 @@ console.log('process.env.NODE_ENV的值：', process.env.NODE_ENV);
 console.log('uidSeed的值：', uidSeed);
 console.log('createUid的值：', createUid());
 console.log('showLog的值：', showLog);
+
+assert.strictEqual(pmsFun() instanceof Promise, true);
+assert.strictEqual(udFun.then() instanceof Promise, true);
+assert.strictEqual(udFun.then().then() instanceof Promise, true);
+assert.strictEqual(udFun.catch() instanceof Promise, true);
+assert.strictEqual(udFun.finally() instanceof Promise, true);
+
 
 // `【${name}-${type}】:`
 let testLog = createLog('testLog' + uidSeed, 'log', true);
@@ -82,7 +90,7 @@ let destroyLog = createDestroyedErrorLog('类名', 123456);
 destroyLog('方法名', ['参数1','参数2'])
 
 assert.strictEqual(getLogInfo()[0], `【after-dstroyed-error】:`);
-assert.strictEqual(getLogInfo()[1], `can't run 【类名=123456】=>【方法名@参数1,参数2】 after it is destroyed.`);
+assert.strictEqual(getLogInfo()[1], `can't run 【类名=123456】=>【方法名@[参数1,参数2]】 after it is destroyed.`);
 
 assert.strictEqual(udFun.createLog(), udFun);
 

@@ -9,9 +9,20 @@ const {
 	getLogInfo
 } = Utils;
 
-var equalLog = exports.equalLog = function(name, b) {
-	assert.strictEqual(getLogInfo()[1], b);
-	console.log(`test-log '${name}' ok.`);
+var equalLog = exports.equalLog = function(...args) {
+	let name = null;
+	for (let i = 0 ; i < args.length; i++) {
+		// console.log(getLogInfo()[i + 1], args[i], i)
+		assert.strictEqual(getLogInfo()[i], args[i]);
+	}
+	
+	if (name) {
+		console.log(`test-log '${name}' ok.`);
+	}
+	
+	return function(value) {
+		name = value;
+	}
 }
 
 var equalAssert = exports.equalAssert = function(name, a, b) {

@@ -4,30 +4,30 @@ import {
 
 import {
 	getUniIndex,
-	createLog,
-	snapshot,
+	createDestroyedErrorLog,
 	udFun,
-	sameFun,
 	isNvl,
-	showLog
 } from './../Utils';
 
 export default class Emitter {
 
-	constructor(devLog = udFun, errLog = udFun) {
+	constructor(devLog = udFun, errLog = udFun, _devMode = false) {
 		this._key = getUniIndex();
 
 		this._core = new EventEmitter();
 		this._core.setMaxListeners(Infinity);
 		this._destroyed = false;
 
-		this.devLog = devLog;
-		this.errLog = errLog;
+		this.devLog = _devMode ? devLog.createLog(`Emitter=${this._key}`) : udFun;
+		this.errLog = errLog.createLog(`Emitter=${this._key}`);
+		this.destroyedErrorLog = createDestroyedErrorLog('Emitter', this._key);
+		
+		this.devLog(`created.`);
 	}
 
 	_onAndOnce(name, callback, once) {
 		if (this._destroyed) {
-			this.errLog(`can't run 'on/once' event='${name}' after emitter=${this._key} destroy.`);
+			this.destroyedErrorLog(once ? 'once' : 'on');
 			return udFun;
 		}
 
@@ -35,14 +35,14 @@ export default class Emitter {
 			return udFun;
 		}
 
-		this.devLog(`emitter=${this._key} listen in '${name}'${once ? ' once' : ''}.`);
+		this.devLog(`listen in '${name}'${once ? ' once' : ''}.`);
 
 		let hasOff = false;
 		let off = () => {
 			if (hasOff || this._destroyed) {
 				return;
 			}
-			this.devLog(`emitter=${this._key} removeListener '${name}'`);
+			this.devLog(`removeListener '${name}'`);
 			this._core.removeListener(name, callback);
 		}
 		this._core[once ? 'once' : 'on'](name, callback);
@@ -60,7 +60,7 @@ export default class Emitter {
 
 	emit(name, ...args) {
 		if (this._destroyed) {
-			this.errLog(`can't run 'emit' event='${name}' after emitter=${this._key} destroy.`);
+			this.destroyedErrorLog(`emit`);
 			return;
 		}
 
@@ -68,7 +68,7 @@ export default class Emitter {
 			return;
 		}
 
-		// this.devLog(`emitter=${this._key} emit '${name}'`);
+		this.devLog(`emit '${name}'`, `argsLength=${args.length}`);
 		this._core.emit(name, ...args);
 	}
 
@@ -77,8 +77,8 @@ export default class Emitter {
 			return;
 		}
 
-		this.emit('$$destroy:emitter', this._key);
-		// this.devLog(`emitter=${this._key} destroyed.`);
+		this.emit('$$destroy:Emitter', this._key);
+		this.devLog(`destroyed.`);
 		this._core.removeAllListeners();
 		
 		this._destroyed = true;	

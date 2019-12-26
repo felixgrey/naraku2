@@ -2,12 +2,9 @@ process.env.NODE_ENV = 'development';
 // process.env.NODE_ENV = 'product';
 process.env.SHOW_DEVLOG = 'true';
 
-require('./DataHub/Utils/index.js');
-// require('./DataHub/Fetcher.js');
-// require('./DataHub/Emitter.js');
-// require('./DataHub/DataHub.js');
+// require('./DataHub/Utils/index-0.js');
+// require('./DataHub/Fetcher-1.js');
+// require('./DataHub/Emitter-2.js');
+// require('./DataHub/DataStore-3.js');
+// require('./DataHub/Controller-4.js');
 
-// 需要单独测试
-// require('./DataHub/DataHub_switch.js');
-// require('./DataHub/DataHub_fetch.js');
-// require('./DataHub/DataHub_dependence.js');

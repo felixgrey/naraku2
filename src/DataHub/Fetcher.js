@@ -74,9 +74,9 @@ function stopFetchData(stopKey) {
 		name,
 		callback
 	} = stopKeyMap[stopKey];
-	
+
 	// devLog(`stopFetchData`, name, stopKey);
-	
+
 	callback();
 }
 
@@ -85,7 +85,7 @@ const NOt_ADD_FETCH = createUid('NOt_ADD_FETCH_');
 const FETCHING = createUid('FETCHING_');
 const NO_URL = createUid('NO_URL_');
 
-function fetchData(name, data = null, dataInfo = {}, paginationManager = null, stopKey = null) {
+function fetchData(name, data = null, dataInfo = {}, stopKey = null) {
 	if (!fetcher) {
 		errorLog(`must run 'initFetcher' first.`);
 		return Promise.reject(NOt_INIT_FETCHER);
@@ -105,7 +105,7 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 		errorLog(`fetch '${name}' not existed.`);
 		return Promise.reject(NOt_ADD_FETCH);
 	}
-	
+
 	url = fetch.url;
 
 	const {
@@ -140,8 +140,8 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 		if (!isNvl(stopKey)) {
 			if (stopKeyMap[stopKey]) {
 				errorLog(`stopKey ${stopKey} has existed stop will be invalid.`);
+				stopKey = null;
 			} else {
-
 				stopKeyMap[stopKey] = {
 					name,
 					callback: () => {
@@ -166,24 +166,11 @@ function fetchData(name, data = null, dataInfo = {}, paginationManager = null, s
 		}
 	});
 
-	let paginationInfo = null;
-	if (paginationManager instanceof PaginationManager) {
-		paginationInfo = paginationManager.getPaginationInfo(url);
-		let oldSetResult = setResult;
-		if (paginationInfo.isPagination) {
-			setResult = function(count) {
-				paginationManager.setDataCount(count);
-				oldSetResult(null);
-			}
-		}
-	}
-
 	fetcher({
 		url,
 		method,
 		data: snapshot(data),
 		dataInfo: snapshot(dataInfo),
-		paginationInfo,
 		setResult,
 		setError,
 		onStop,

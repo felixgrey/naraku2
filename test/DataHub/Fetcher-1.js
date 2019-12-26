@@ -85,7 +85,7 @@ fetchList.push(fetchPrimise);
 
 console.log('stopKey:', stopKey1);
 
-fetchPrimise = fetchData('test000', submitData1, {wait: 3000}, null, stopKey1)
+fetchPrimise = fetchData('test000', submitData1, {wait: 3000}, stopKey1)
 	.then(data => {
 		console.log('test000 result', data);
 	})

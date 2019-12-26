@@ -38,7 +38,6 @@ export default class ConfigManager {
 
 		this.dstroyedErrorLog = createDestroyedErrorLog('ConfigManager', this._key);
 
-
 		this.init();
 
 		this._controller.publicFunction.on('$$stopFetchData', (dhName) => {
@@ -73,22 +72,30 @@ export default class ConfigManager {
 			// this.devLog(`this._switchStatus[dhName]`, this._switchStatus[dhName]);
 
 			let checkReady = () => {
-				const param = {};
+				const data = {};
 
 				// this.devLog(dependence);
 				for (let dep of dependence) {
 					// this.devLog(dep, this._dh.hasData(dep));
 
 					if (!this._dh.hasData(dep)) {
-						this._controller.fetchData(fetcher, dhName, param, true, forceFetch);
+						
+						const param = {
+							fetcher,
+							dhName,
+							clear: true,
+							forceFetch
+						}
+						
+						this._controller.fetchData(param);
 						return;
 					}
 					// this.devLog(dep, this._controller.first(dep));
-					Object.assign(param, this._controller.first(dep));
+					Object.assign(data, this._controller.first(dep));
 				}
 
 				for (let ft of filter) {
-					Object.assign(param, this._controller.first(ft));
+					Object.assign(data, this._controller.first(ft));
 				}
 
 				if (this._switchStatus[dhName].off) {
@@ -104,20 +111,30 @@ export default class ConfigManager {
 							});
 						}
 					}
+					
+					const afterFetch = () => {
+						if (this._destroyed) {
+							return;
+						}
+						
+						if (!forceFetch) {
+							whenThem.forEach(thatName => {
+								this._dh.unLock(thatName);
+							});
+						}
+					}
+					
+					const param = {
+						fetcher,
+						dhName,
+						data,
+						clear: false,
+						forceFetch,
+						beforeFetch,
+						afterFetch
+					}
 
-					this._controller
-						.fetchData(fetcher, dhName, param, false, forceFetch, beforeFetch)
-						.then(() => {
-							if (this._destroyed) {
-								return;
-							}
-
-							if (!forceFetch) {
-								whenThem.forEach(thatName => {
-									this._dh.unLock(thatName);
-								});
-							}
-						});
+					this._controller.fetchData(param);
 				}
 			}
 
@@ -231,7 +248,8 @@ export default class ConfigManager {
 				this.extendConfig[dhName] = dhCfg;
 				continue;
 			}
-
+			
+			this.extendConfig[dhName] = {};
 			this._eternalData.push(dhName);
 
 			if (isNvl(dhCfg) || Array.isArray(dhCfg) || typeof dhCfg !== 'object') {
@@ -249,13 +267,14 @@ export default class ConfigManager {
 			}
 
 			for (let configName of this._configNames) {
+				const dhCfgValue = dhCfg[configName];
 				if (/\_|\$/g.test(configName.charAt(0))) {
-					// NEXT TODO
+					this.extendConfig[dhName][configName] = dhCfgValue
 					continue;
 				}
 
 				if (dhCfg.hasOwnProperty(configName) && this._configPolicy[configName]) {
-					this._configPolicy[configName].bind(this)(dhName, dhCfg[configName], dhCfg, cfg);
+					this._configPolicy[configName].bind(this)(dhName, dhCfgValue, dhCfg, cfg);
 				}
 			}
 		}
@@ -266,7 +285,7 @@ export default class ConfigManager {
 			return;
 		}
 
-		this._emitter.emit('$$destroy:configManager', this._key);
+		// this._emitter.emit('$$destroy:configManager', this._key);
 		// this.devLog(`configManager=${this._key} destroyed.`);
 
 		this._destroyed = true;
@@ -283,5 +302,10 @@ export default class ConfigManager {
 		this.devLog = null;
 		this.errLog = null;
 		this.extendConfig = null;
+		
+		this.devLog = null;
+		this.errLog = null;
+		
+		this.dstroyedErrorLog = null;
 	}
 }

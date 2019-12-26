@@ -28,23 +28,45 @@ function getUniIndex() {
 /**
 	各种空函数
 */
+
 // 返回 undefined
 function udFun() {}
+
+// 返回 Promise
+function pmsFun(a) {
+	return Promise.resolve(a);
+}
+const nextPms = () => Promise.resolve();
+const fake = {
+	'createLog': udFun,
+	'then': nextPms,
+	'catch': nextPms,
+	'finally': nextPms,
+};
+
+Object.assign(udFun, fake);
+Object.assign(pmsFun, fake);
 
 // 返回 null
 function nvlFun() {
 	return null;
 }
 
+Object.assign(nvlFun, fake);
+
 // 返回 空字符串
 function eptFun() {
 	return '';
 }
 
+Object.assign(eptFun, fake);
+
 // 返回 第一个参数
 function sameFun(a) {
 	return a;
 }
+
+Object.assign(sameFun, fake);
 
 /*
 	各种非空判断
@@ -100,16 +122,12 @@ if (isDev) {
 		return logger;
 	};
 }
-udFun.createLog = udFun;
 
 const errorLog = createLog('Error', 'error', true);
 const dstroyedErrorLog = createLog('after-dstroyed', 'error', true);
 const createDestroyedErrorLog = (clazz, key) => {
-	return (funName, args = []) => {
-		if (!args.length) {
-			args = '[]';
-		}
-		dstroyedErrorLog(`can't run 【${clazz}=${key}】=>【${funName}@${args}】 after it is destroyed.`);
+	return (funName, ...args) => {
+		dstroyedErrorLog(`can't run 【${clazz}=${key}】=>【${funName}@[${args.join(',')}]】 after it is destroyed.`);
 	}
 }
 
@@ -292,6 +310,7 @@ export {
 	nvlFun,
 	eptFun,
 	sameFun,
+	pmsFun,
 
 	isNvl,
 	isEmpty,

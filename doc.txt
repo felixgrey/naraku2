@@ -463,14 +463,16 @@ declare 定义
 valueField 值字段
 labelField 标签字段
 
-MyName 组件名
+parentSelect 父选择框
+
+uniName 组件名
 
 value 值 
 initValue 初始值
 exceptValue 例外值
 disabledValue 不可用值
 
-withDhName 相关数据名称 Tabs Form
+withDh 相关数据名称 Tabs Form
 
 
 
@@ -483,4 +485,31 @@ ModalSelect
 MonthPicker
 DatePicker
 
+
+
+@formRender({
+	uniName
+	withDh
+})
+
+<LsForm className style cols gutter labelWidth fieldWidth disabled>
+	<Item 
+		className style 
+		type field label 
+		labelWidth fieldWidth  
+		initValue exceptValue disabledValue
+		disabled onChange
+		mergeProps
+	/>
+<LsForm>
+
+
+<LsTable>
+	<Col label field render  sort filter="select|search|all"   />
+</LsTable>
+
+
+<LsTabs uniName withDh disabled>
+	<TabPane switchDh label key>
+</LsTabs>
 

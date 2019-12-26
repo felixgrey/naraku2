@@ -1,9 +1,10 @@
 import {
-	getUniIndex,
 	createUid,
+	getUniIndex,
 	udFun,
 	isNvl,
-	createDestroyedErrorLog
+	getDeepValue,
+	createDestroyedErrorLog,
 } from './../Utils';
 
 import {
@@ -12,144 +13,155 @@ import {
 	FETCHING,
 	stopFetchData,
 	fetchData,
-	getFetcher,
 } from './Fetcher';
 
-const defaultPagination = {
-	fetcher: null,
-	size: 10,
-	start: 1,
-}
-
-export {
-	defaultPagination
-}
-
-
 export default class PaginationManager {
-
-	constructor(pageChange, dh, pgCfg) {
+	constructor(dh, name, _devMode = false) {
 		this._key = getUniIndex();
 		this._destroyed = false;
-		this.dstroyedErrorLog = createDestroyedErrorLog('PaginationManager', this._key);
+		this._name = name;
 
-		this._pageChange = pageChange;
+		this._fetcher = null;
 		this._jsonData = '';
-
-		this._pgCfg = Object.assign({}, defaultPagination, pgCfg);
-		this._currentPage = this._pgCfg.start;
+		this._force = false;
+		this._on = false;
+		this._pageSize = 10;
+		this._pageNumber = 1;
+		this._startPage = 1;
+		this._stopKey = null;
 		this._count = 0;
-		this._dhName = this._pgCfg.dhName;
 
 		this._dh = dh;
 		this._emitter = dh._emitter;
-		this._controller = dh._controller;
-		
-		const fetcher = this._pgCfg.fetcher;
 
-		if (!isNvl(fetcher)) {
-			if (typeof fetcher === 'string') {
-				this._fetcher = getFetcher(fetcher);
-			} else {
-				this._fetcher = fetcher;
-			}
-		}
+		this._emitter.once('$$destroy:DataHub', () => {
+			this.destroy();
+		});
 
-		this.devLog = udFun;
-		this.errLog = udFun;
+		this.devLog = _devMode ? dh.devLog.createLog(`PaginationManager=${this._key}`) : udFun;
+		this.errLog = dh.errLog.createLog(`PaginationManager=${this._key}`);
+		this.destroyedErrorLog = createDestroyedErrorLog('PaginationManager', this._key);
+
+		this.devLog('created.');
 	}
 
-	setLogger(devLog = udFun, errLog = udFun) {
-		this.devLog = devLog;
-		this.errLog = errLog;
+	setCount(v) {
+		if (this._destroyed) {
+			this.destroyedErrorLog('setCount');
+			return;
+		}
+
+		if (this._stopKey) {
+			this.errLog(` ${this._name} can't set count when it is loading`);
+			return;
+		}
+
+		this._count = v;
+	}
+
+	getCount() {
+		if (this._destroyed) {
+			this.destroyedErrorLog('getCount');
+			return 0;
+		}
+
+		return this._count;
+	}
+
+	setInit(param = {}) {
+
+		const {
+			flag = false,
+				fetcher = null,
+				force = false,
+				startPage = 1,
+				pageSize = 10
+		} = param;
+
+		this._on = flag;
+		this._fetcher = fetcher;
+		this._force = force;
+		this._startPage = startPage;
+		this._pageSize = pageSize;
 	}
 
 	stopFetch() {
 		if (this._destroyed) {
-			this.dstroyedErrorLog('stopFetch');
+			this.destroyedErrorLog('stopFetch');
 			return;
 		}
-		
-		if (this.pageStopKey) {
-			stopFetchData(this.pageStopKey);
-			this.pageStopKey = null;
+
+		if (!this._on) {
+			return;
+		}
+
+		if (this._stopKey) {
+			stopFetchData(this._stopKey);
+			this._stopKey = null;
 		}
 	}
 
 	fetch(data) {
 		if (this._destroyed) {
-			this.dstroyedErrorLog('fetch');
-			return;
+			this.destroyedErrorLog('fetch');
+			return udFun;
 		}
-		
-		// this.devLog(data)
+
+		if (!this._on) {
+			return udFun;
+		}
+
+		if (!this._fetcher) {
+			return udFun;
+		}
+
+		this.stopFetch();
 
 		const jsonData = JSON.stringify(data);
-
-		if (!this._fetcher || this._jsonData === jsonData) {
-			return Promise.resolve();
+		if (!this._force && jsonData === this._jsonData) {
+			return;
 		}
-
 		this._jsonData = jsonData;
-		this.pageStopKey = createUid('pageStopKey_');
-		this._count = 0;
 
-		return fetchData(this._fetcher, data, {}, this, this.pageStopKey);
-	}
+		const stopKey = this._stopKey = createUid('pageStopKey-');
 
-	changePageInfo(page, pageSize) {
-		if (this._destroyed) {
-			this.dstroyedErrorLog('changePageInfo');
-			return;
-		}
+		// name, data = null, dataInfo = {}, stopKey = null
+		return fetchData(this._fetcher, data, {}, stopKey).then(result => {
+			if (this._destroyed) {
+				return;
+			}
 
-		if(this._dh.getStatus(this._dhName) === 'loading') {
-			this.errLog(`can't changePageInfo when ${this._dhName} is loading.`);
-			return;
-		}
-		
-		let changed = false;
-		if (!isNvl(page) && this._currentPage !== page) {
-			this._currentPage = page;
-			changed = true;
-		}
-		
-		if (!isNvl(pageSize) && this._pageSize !== pageSize) {
-			this._pageSize = pageSize;
-			changed = true;
-		}
-		
-		if (changed) {
-			this._emitter.emit(this._pageChange);
-		}
-	}
+			this._count = result;
 
-	setDataCount(count) {
-		if (this._destroyed) {
-			this.dstroyedErrorLog('setDataCount');
-			return;
-		}
-
-		this._count = count;
-		this._emitter.emit('$$data', {
-			name: '$$count',
-			value: count
+			this._emitter.emit('$$data', {
+				name: `$$count:${this.name}`,
+				value: result
+			});
 		});
 	}
 
-	getPaginationInfo(url) {
+	setPageInfo(pageSize, pageNumber) {
 		if (this._destroyed) {
-			this.dstroyedErrorLog('getPaginationInfo');
+			this.destroyedErrorLog('setPageInfo');
+			return;
+		}
+
+		if (!this._on) {
+			return;
+		}
+	}
+
+	getPageInfo() {
+		if (this._destroyed) {
+			this.destroyedErrorLog('getPageInfo');
 			return {};
 		}
 
-		return {
-			isPagination: this._fetcher && url && this._fetcher.url === url,
-			size: this._pgCfg.size,
-			start: this._pgCfg.start,
-			count: this._count,
-			page: this._currentPage,
-		};
+		if (!this._on) {
+			return {};
+		}
+
+		return {};
 	}
 
 	destroy() {
@@ -157,11 +169,18 @@ export default class PaginationManager {
 			return;
 		}
 
-		this.pageStopKey && stopFetchData(this.pageStopKey);
 		this._emitter.emit('$$destroy:PaginationManager', this._key);
+		this._emitter.emit(`$$destroy:PaginationManager:${this._key}`);
 
 		this._destroyed = true;
-		this._controller = null;
+
+		this._dh = null;
 		this._emitter = null;
+
+		this.devLog = null;
+		this.errLog = null;
+		this.destroyedErrorLog = null;
+
+		this._key = null;
 	}
 }
