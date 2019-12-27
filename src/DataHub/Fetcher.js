@@ -195,7 +195,7 @@ function fetchData(name, data = null, dataInfo = {}, stopKey = null) {
 		}
 	});
 
-	data = beforeFetch(snapshot(data));
+	data = beforeFetch(data);
 	dataInfo = snapshot(dataInfo);
 
 	fetcher({

@@ -40,19 +40,21 @@ export default class PaginationManager {
 
 		this.devLog = _devMode ? dh.devLog.createLog(`PaginationManager=${this._key}`) : udFun;
 		this.errLog = dh.errLog.createLog(`PaginationManager=${this._key}`);
-		this.destroyedErrorLog = createDestroyedErrorLog('PaginationManager', this._key);
 
 		this.devLog(`PaginationManager=${this._key} created.`);
 	}
 
-	init(param = {}) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('init');
-			return;
+	_hasErr(name) {
+		if (this._destroyed || !this._inited || !this._fetcher) {
+			this.devLog(`run '${name}' failed : `, this._destroyed, this._inited, this._fetcher);
+			return true;
 		}
 
-		if (this._inited) {
-			this.errLog(`has inited`);
+		return false;
+	}
+
+	init(param = {}) {
+		if (this._hasErr('init')) {
 			return;
 		}
 
@@ -72,18 +74,7 @@ export default class PaginationManager {
 	}
 
 	setCount(v) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('setCount');
-			return;
-		}
-
-		if (!this._inited) {
-			this.errLog(`can't run setCount, must init first`);
-			return;
-		}
-
-		if (this._stopKey) {
-			this.errLog(` ${this._name} can't set count when it is loading`);
+		if (this._hasErr('setCount')) {
 			return;
 		}
 
@@ -91,13 +82,7 @@ export default class PaginationManager {
 	}
 
 	getCount() {
-		if (this._destroyed) {
-			this.destroyedErrorLog('getCount');
-			return 0;
-		}
-
-		if (!this._inited) {
-			this.errLog(`can't run getCount, must init first`);
+		if (this._hasErr('getCount')) {
 			return;
 		}
 
@@ -105,18 +90,7 @@ export default class PaginationManager {
 	}
 
 	stopFetch() {
-		if (this._destroyed) {
-			this.destroyedErrorLog('stopFetch');
-			return;
-		}
-
-		if (!this._inited) {
-			this.errLog(`can't run stopFetch, must init first`);
-			return;
-		}
-
-		if (!this._fetcher) {
-			this.devLog('not fetcher: stopFetch');
+		if (this._hasErr('stopFetch')) {
 			return;
 		}
 
@@ -127,19 +101,8 @@ export default class PaginationManager {
 	}
 
 	fetch(data = {}) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('fetch');
-			return udFun;
-		}
-
-		if (!this._inited) {
-			this.errLog(`can't run fetch, must init first`);
+		if (this._hasErr('fetch')) {
 			return;
-		}
-
-		if (!this._fetcher) {
-			this.devLog('not fetcher: fetch');
-			return udFun;
 		}
 
 		this.stopFetch();
@@ -186,12 +149,12 @@ export default class PaginationManager {
 			});
 		}).catch((err) => {
 			if (err === NOT_INIT_FETCHER) {
-				this.errLog('must init fetcher first');
+				this.devLog('must init fetcher first');
 				return;
 			}
 
 			if (err === NOT_ADD_FETCH) {
-				this.errLog(`must add fetcher '${this._fetcher}' first`);
+				this.devLog(`must add fetcher '${this._fetcher}' first`);
 				return;
 			}
 
@@ -200,18 +163,7 @@ export default class PaginationManager {
 	}
 
 	setPageInfo(pageSize, pageNumber) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('setPageInfo');
-			return;
-		}
-
-		if (!this._inited) {
-			this.errLog(`can't run setPageInfo, must init first`);
-			return;
-		}
-
-		if (!this._fetcher) {
-			this.devLog('not fetcher: setPageInfo');
+		if (this._hasErr('setPageInfo')) {
 			return;
 		}
 
@@ -236,22 +188,13 @@ export default class PaginationManager {
 	}
 
 	getPageInfo() {
-		if (this._destroyed) {
-			this.destroyedErrorLog('getPageInfo');
-			return {};
-		}
-
-		if (!this._inited) {
-			this.errLog(`can't run getPageInfo, must init first`);
+		if (this._hasErr('getPageInfo')) {
 			return;
 		}
 
-		if (!this._fetcher) {
-			this.devLog('not fetcher: getPageInfo');
-			return {};
-		}
-
-		return {};
+		return {
+			count: this._count,
+		};
 	}
 
 	destroy() {
@@ -270,7 +213,6 @@ export default class PaginationManager {
 		this._emitter = null;
 		this._fetcher = null;
 
-		this.devLog = null;
 		this.errLog = null;
 
 		this._key = null;

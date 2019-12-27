@@ -183,7 +183,14 @@ function snapshot(value) {
 	if (isNvl(value) || typeof value !== 'object') {
 		return value;
 	}
-	return JSON.parse(JSON.stringify(value));
+	
+	try {
+		value = JSON.parse(JSON.stringify(value));
+	} catch (e) {
+		showLog && console.error('【snapshot-error】：', e);
+	}
+	
+	return value;
 }
 
 /*

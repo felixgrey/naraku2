@@ -13,7 +13,7 @@ import ListenerManager from './ListenerManager';
 const publicMethods = [
 	'createController',
 	'watch',
-	'fetch',
+	// 'fetch',
 ];
 
 let refreshRate = 40;
@@ -37,14 +37,12 @@ export default class Controller {
 			createController: () => this.createController(),
 			watch: (...args) => this.watch(...args),
 			fetch: (...args) => this.fetch(...args),
+			isLoading: (...args) => this.isLoading(...args),
+			isLocked: (...args) => this.isLocked(...args),
 		};
 
 		this._dh = dh;
 		this._emitter = dh._emitter;
-
-		this._fetchManager = new FetchManager(this, _devMode);
-
-		// ListenerManager
 
 		dh._emitter.once('$$destroy:DataHub', () => {
 			this.destroy();
@@ -56,8 +54,39 @@ export default class Controller {
 		this.devLog = _devMode ? dh.devLog.createLog(`Controller=${this._key}`) : udFun;
 		this.errLog = dh.errLog.createLog(`Controller=${this._key}`);
 		this.destroyedErrorLog = createDestroyedErrorLog('Controller', this._key);
+		
+		this._fetchManager = new FetchManager(this, refreshRate, _devMode);
+		
+		// ListenerManager
 
 		this.devLog(`Controller=${this._key} created.`);
+	}
+
+	_isStatus(names, type = 'isLoading') {
+		if (this._destroyed) {
+			this.destroyedErrorLog(type);
+			return false;
+		}
+
+		if (isNvl(names)) {
+			return false;
+		}
+
+		for (let _name of names) {
+			if (this._dh.getDataStore(_name)[type]) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	isLoading(names) {
+		return this._isStatus(names, 'isLoading');
+	}
+
+	isLocked(names) {
+		return this._isStatus(names, 'isLocked');
 	}
 
 	_refresh() {
@@ -177,7 +206,7 @@ export default class Controller {
 		this._watchSet = null;
 		this._dh = null;
 		this._emitter = null;
-		
+
 		this.devLog = null;
 		this.errLog = null;
 
@@ -187,4 +216,5 @@ export default class Controller {
 
 Controller.publicMethods = publicMethods
 	.concat(DataStore.publicMethods)
-	.concat(ListenerManager.publicMethods);
+	.concat(ListenerManager.publicMethods)
+	.concat(FetchManager.publicMethods);

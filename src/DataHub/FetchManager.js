@@ -13,14 +13,18 @@ import {
 	fetchData,
 } from './Fetcher';
 
+const publicMotheds = [
+	'fetch'
+];
+
 export default class FetchManager {
-	constructor(dhc, _devMode = false) {
+	constructor(dhc, refreshRate = 40, _devMode = false) {
 		this._key = getUniIndex();
 		this._destroyed = false;
 
 		this._fetchingDatastore = {};
 		this._stopKeys = {};
-		this._refreshRate = 40;
+		this._refreshRate = refreshRate;
 
 		this._controller = dhc;
 		this._dh = dhc._dh;
@@ -35,15 +39,6 @@ export default class FetchManager {
 		this.destroyedErrorLog = createDestroyedErrorLog('FetchManager', this._key);
 
 		this.devLog(`FetchManager=${this._key} created.`);
-	}
-
-	setRefreshRate(refreshRate) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('setRefreshRate');
-			return udFun;
-		}
-
-		this._refreshRate = refreshRate;
 	}
 
 	fetch(fetcher, data, dataInfo = {}, stop = null) {
@@ -101,11 +96,11 @@ export default class FetchManager {
 	fetchStoreData(param = {}) {
 		const {
 			name = null,
-			data = {},
-			clear = false,
-			force = false,
-			before = udFun,
-			after = udFun,
+				data = {},
+				clear = false,
+				force = false,
+				before = udFun,
+				after = udFun,
 		} = param;
 
 		if (this._destroyed || isNvl(name)) {
@@ -226,3 +221,5 @@ export default class FetchManager {
 		this._key = null;
 	}
 }
+
+FetchManager.publicMotheds = publicMotheds;

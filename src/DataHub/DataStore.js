@@ -16,8 +16,6 @@ const publicMethods = [
 	'getCount',
 	'getStatus',
 	'remove',
-	'isLocked',
-	'isLoading',
 	'setErrorMsg',
 	'getErrorMsg',
 	'lock',

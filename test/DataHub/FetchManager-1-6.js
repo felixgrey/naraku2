@@ -27,7 +27,7 @@ let emitterErrLogger = createLog('testFetchManager', 'error', true);
 let mdh = new MockDataHub1 ({}, emitterDevLogger, emitterErrLogger);
 let mdc = new MockController0(mdh);
 
-let fem = new FetchManager(mdc, true);
+let fem = new FetchManager(mdc, 40, true);
 
 // fem.fetch('test.get', { requestName:'返回数据',name: '123456', dataCount: 2}).then((data) => {
 // 	console.log(data);
