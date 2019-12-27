@@ -13,9 +13,9 @@ const {
 
 const {addFetcher} = require('../../lib/DataHub/Fetcher.js');
 
-const MockDataHub1 = require('./MockDataHub1');
-const MockController0 = require('./MockController0');
-require('./FetcherInit0.js');
+const MockDataHub1 = require('./Mock-DataHub1');
+const MockController0 = require('./Mock-Controller0');
+require('./Init-Fetcher0.js');
 
 const FetchManager = require('../../lib/DataHub/FetchManager.js').default;
 

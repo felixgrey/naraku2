@@ -63,7 +63,7 @@ fetchList.push(fetchPrimise);
 let submitData1 = {};
 const stopKey1 = Utils.createUid();
 
-initFetcher(function (arg) {
+const initCallback = function (arg) {
 		const {
 			url,
 			method,
@@ -100,7 +100,9 @@ initFetcher(function (arg) {
 
 		// assert.strictEqual(dataInfo.info, 'data-info');
 		
-});
+}
+
+initFetcher(initCallback);
 
 fetchPrimise = fetchData('test111').catch(err => {
 	assert.strictEqual(err, NOT_ADD_FETCH);

@@ -11,7 +11,7 @@ const {
 	udFun
 } = Utils;
 
-const MockDataHub0 = require('./MockDataHub0');
+const MockDataHub0 = require('./Mock-DataHub0');
 
 const Controller = require('../../lib/DataHub/Controller.js').default;
 

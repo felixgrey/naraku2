@@ -1,6 +1,6 @@
 var assert = require("assert");
 
-const Utils = require('../../../lib/Utils/index.js');
+const Utils = require('../../lib/Utils/index.js');
 
 console.log('--------- test Utils start ---------');
 
@@ -190,5 +190,7 @@ assert.strictEqual(toCamel('_test_camel_name'), '_testCamelName');
 
 assert.strictEqual(toUnderline('testUnderlineName'), 'test_underline_name');
 assert.strictEqual(toUnderline('_testUnderlineName'), '_test_underline_name');
+
+setPreLog('naraku-');
 
 console.log('--------- test Utils end---------');

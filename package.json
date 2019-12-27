@@ -1,16 +1,23 @@
 {
+	"name": "naraku2",
+	"version": "0.0.1",
+	"description": "DataHub DataTransformer DSL for OA and BI",
+	"author": "felixgrey",
+	"license": "MIT",
+	"repository": "https://github.com/felixgrey/naraku2.git",
   "scripts": {
-		"prebuild": "set NODE_ENV=production",
+    "prebuild": "set NODE_ENV=production",
     "build": "babel src --out-dir lib",
-		"pretestb": "npm run build",
-		"testb":"node ./test/index.js",
-		"test":"node ./test/index.js"
+    "pretestb": "npm run build",
+    "testb": "node ./test/index.js",
+    "test": "node ./test/index.js"
   },
   "devDependencies": {
-    "@babel/cli": "^7.4.4",
-    "@babel/core": "^7.4.4",
-    "@babel/plugin-proposal-class-properties": "^7.1.0",
-    "@babel/plugin-proposal-decorators": "^7.1.0",
-    "@babel/preset-env": "^7.4.4"
+    "@babel/cli": "^7.7.7",
+    "@babel/core": "^7.7.7",
+    "@babel/plugin-proposal-class-properties": "^7.7.4",
+    "@babel/plugin-proposal-decorators": "^7.7.4",
+    "@babel/preset-env": "^7.7.7",
+    "gulp": "^4.0.2"
   }
 }

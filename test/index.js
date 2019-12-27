@@ -1,10 +1,15 @@
 process.env.NODE_ENV = 'development';
 // process.env.NODE_ENV = 'product';
 
-// require('./DataHub/Utils/index-0.js');
-// require('./DataHub/Fetcher-1.js');
-// require('./DataHub/Emitter-2.js');
-// require('./DataHub/DataStore-3.js');
-// require('./DataHub/Controller-4.js');
-// require('./DataHub/PaginationManager-5.js');
-// require('./DataHub/FetchManager-1-6.js');
+// require('./DataHub/1-Utils.js');
+// require('./DataHub/2-Emitter.js');
+// require('./DataHub/2-Fetcher.js');
+// require('./DataHub/3-DataStore.js');
+// require('./DataHub/3-PaginationManager.js');
+// require('./DataHub/4-FetchManager.js');
+
+
+// require('./DataHub/4-ListenerManager.js');
+// require('./DataHub/5-ConfigManager.js');
+// require('./DataHub/6-Controller.js');
+// require('./DataHub/7-DataHub.js');

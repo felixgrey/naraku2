@@ -65,12 +65,17 @@ function getFetcher(name) {
 	return snapshot(fetchMap[name]);
 }
 
-function initFetcher(callback) {
+function initFetcher(callback, force = false) {
 	if (fetcher) {
-		return;
+		if (!force) {
+			errLog(`fetcher has initialized.`);
+			return;
+		}
+		
+		devMode && devLog('initialize fetch again.');
 	}
-
-	devMode && devLog('run initFetcher');
+	
+	devMode && devLog('run initFetcher.');
 
 	fetcher = callback || udFun;
 }

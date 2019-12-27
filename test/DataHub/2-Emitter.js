@@ -33,10 +33,10 @@ testEmitter.on('afterDestroy', udFun);
 testEmitter.destroy();
 
 testEmitter.emit('afterDestroy', msg);
-equalLog(`【naraku-AfterDstroyed.Emitter=1-error】:`,`can't run 'Emitter.emit()' after destroyed.`);
+equalLog(`【naraku-AfterDstroyed.Emitter=${testEmitterKey}-error】:`,`can't run 'Emitter.emit()' after destroyed.`);
 
 testEmitter.on('afterDestroy', udFun);
-equalLog(`【naraku-AfterDstroyed.Emitter=1-error】:`,`can't run 'Emitter.on()' after destroyed.`);
+equalLog(`【naraku-AfterDstroyed.Emitter=${testEmitterKey}-error】:`,`can't run 'Emitter.on()' after destroyed.`);
 
 let testEmitter2 = new Emitter(emitterDevLogger, emitterDevLogger, true);
 let testEmitter2Key = testEmitter2._key;

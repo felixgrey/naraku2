@@ -13,8 +13,8 @@ const {
 
 const {addFetcher} = require('../../lib/DataHub/Fetcher.js');
 
-const MockDataHub0 = require('./MockDataHub0');
-require('./FetcherInit0.js');
+const MockDataHub0 = require('./Mock-DataHub0');
+require('./Init-Fetcher0.js');
 
 const PaginationManager = require('../../lib/DataHub/PaginationManager.js').default;
 
