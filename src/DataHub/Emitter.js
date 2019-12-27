@@ -22,7 +22,7 @@ export default class Emitter {
 		this.errLog = errLog.createLog(`Emitter=${this._key}`);
 		this.destroyedErrorLog = createDestroyedErrorLog('Emitter', this._key);
 		
-		this.devLog(`created.`);
+		this.devLog(`Emitter=${this._key} created.`);
 	}
 
 	_onAndOnce(name, callback, once) {
@@ -78,7 +78,7 @@ export default class Emitter {
 		}
 
 		this.emit('$$destroy:Emitter', this._key);
-		this.devLog(`destroyed.`);
+		this.devLog(`Emitter=${this._key} destroyed.`);
 		this._core.removeAllListeners();
 		
 		this._destroyed = true;	

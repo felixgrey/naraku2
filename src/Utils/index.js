@@ -37,8 +37,10 @@ function pmsFun(a) {
 	return Promise.resolve(a);
 }
 const nextPms = () => Promise.resolve();
+// 返回用的兜底假数据；
 const fake = {
-	'createLog': udFun,
+	'FAKE_RETURN': true,
+	'createLog': () => udFun,
 	'then': nextPms,
 	'catch': nextPms,
 	'finally': nextPms,
@@ -91,43 +93,51 @@ const console = ((global || {}).console) || {
 	log: udFun,
 	error: udFun
 };
+
 const isDev = process && process.env && process.env.NODE_ENV === 'development';
-const showLog = process && process.env && process.env.SHOW_DEVLOG === 'true';
-let createLog = () => udFun;
+let showLog = true;
+let preLog = 'naraku-';
+let createLog = udFun;
 let logInfoArray = [];
+
+function setPreLog(text = '') {
+	preLog = text;
+}
+
+function logSwitch(flag) {
+	showLog = flag;
+}
 
 function getLogInfo() {
 	return [].concat(logInfoArray);
 }
+
 if (isDev) {
-	createLog = function(name, type, flag) {
-		// console.log('createLog', name, type, flag, isBlank(name) || !flag || typeof console[type] !== 'function');
-		let logger = udFun;
-		if (!isBlank(name) && flag) {
-			if (typeof console[type] !== 'function') {
-				console.log(`console.${type} not existed`);
-			}
-			// console.log('createLog udFun');
-			logger = function(...args) {
-				logInfoArray = [`【${name}-${type}】:`, ...args];
-				logInfoArray.logType = [type];
-				console[type](...logInfoArray);
-			}
+	createLog = function(name = '', type = 'log') {
+		if (typeof console[type] !== 'function') {
+			showLog && console.error('【createLog-error】：console.${type} not existed');
+			return udFun;
 		}
 
-		logger.createLog = function(name2 = '?', type2 = type, flag2 = flag) {
-			return createLog(`${name}.${name2}`, type2, flag2);
+		let logger = function(...args) {
+			logInfoArray = [`【${preLog}${name}-${type}】:`, ...args];
+			logInfoArray.logType = type;
+			showLog && console[type](...logInfoArray);
+		}
+
+		logger.createLog = function(name2 = '?') {
+			return createLog(`${name}.${name2}`, type);
 		}
 
 		return logger;
 	};
 }
 
-const errorLog = createLog('Error', 'error', true);
-const dstroyedErrorLog = createLog('after-dstroyed', 'error', true);
+const dstroyedErrorLog = createLog('AfterDstroyed', 'error');
 const createDestroyedErrorLog = (clazz, key) => {
+	const _dErr = dstroyedErrorLog.createLog(`${clazz}=${key}`);
 	return (funName, ...args) => {
-		dstroyedErrorLog(`can't run 【${clazz}=${key}】=>【${funName}@[${args.join(',')}]】 after it is destroyed.`);
+		_dErr(`can't run '${clazz}.${funName}(${args.join(',')})' after destroyed.`);
 	}
 }
 
@@ -195,6 +205,13 @@ function toUnderline(text) {
 	return (text + '').replace(/[A-Z]/g, function(charcter, index) {
 		return '_' + charcter.toLowerCase();
 	});
+}
+
+/*
+	命名空间格式
+*/
+function toNameSpace(text) {
+	return toUnderline(text).replace(/_/g, '.');
 }
 
 /*
@@ -278,7 +295,7 @@ let onGlobal = udFun;
 let definedName = null;
 if (isDev) {
 	definedName = {};
-	
+
 	onGlobal = function(name, callback = udFun) {
 		if (definedName[name] || !global) {
 			return;
@@ -299,7 +316,6 @@ if (isDev) {
 
 export {
 	isDev,
-	showLog,
 	onGlobal,
 
 	uidSeed,
@@ -319,12 +335,14 @@ export {
 	getDeepValue,
 	snapshot,
 
+	logSwitch,
+	setPreLog,
 	createLog,
-	errorLog,
 	createDestroyedErrorLog,
 	getLogInfo,
 
 	NumberFormat,
 	toCamel,
-	toUnderline
+	toUnderline,
+	toNameSpace
 }

@@ -6,7 +6,6 @@ console.log('--------- test Utils start ---------');
 
 const {
 	isDev,
-	showLog,
 	onGlobal,
 	
 	uidSeed,
@@ -26,8 +25,9 @@ const {
 	getDeepValue,
 	snapshot,
 
+	logSwitch,
+	setPreLog,
 	createLog,
-	errorLog,
 	createDestroyedErrorLog,
 	getLogInfo,
 
@@ -39,7 +39,6 @@ const {
 console.log('process.env.NODE_ENV的值：', process.env.NODE_ENV);
 console.log('uidSeed的值：', uidSeed);
 console.log('createUid的值：', createUid());
-console.log('showLog的值：', showLog);
 
 assert.strictEqual(pmsFun() instanceof Promise, true);
 assert.strictEqual(udFun.then() instanceof Promise, true);
@@ -47,12 +46,13 @@ assert.strictEqual(udFun.then().then() instanceof Promise, true);
 assert.strictEqual(udFun.catch() instanceof Promise, true);
 assert.strictEqual(udFun.finally() instanceof Promise, true);
 
+setPreLog('testLog-');
 
 // `【${name}-${type}】:`
 let testLog = createLog('testLog' + uidSeed, 'log', true);
 testLog('测试log-1', '测试log-2', '测试log-3');
 
-assert.strictEqual(getLogInfo()[0], `【testLog${uidSeed}-log】:`);
+assert.strictEqual(getLogInfo()[0], `【testLog-testLog${uidSeed}-log】:`);
 assert.strictEqual(getLogInfo()[1], '测试log-1');
 assert.strictEqual(getLogInfo()[2], '测试log-2');
 assert.strictEqual(getLogInfo()[3], '测试log-3');
@@ -60,37 +60,22 @@ assert.strictEqual(getLogInfo()[3], '测试log-3');
 let errLog = createLog('testLog' + uidSeed, 'error', true);
 errLog('测试err' + uidSeed);
 
-assert.strictEqual(getLogInfo()[0], `【testLog${uidSeed}-error】:`);
+assert.strictEqual(getLogInfo()[0], `【testLog-testLog${uidSeed}-error】:`);
 assert.strictEqual(getLogInfo()[1], '测试err' + uidSeed);
 
-let errLog2 = createLog('testLog不显示', 'error', false);
-errLog2('测试 不显示');
-
-assert.strictEqual(getLogInfo()[1], '测试err' + uidSeed);
-
-let errLog3 = createLog('testShowLog', 'error', showLog);
-errLog3('显示-不显示');
-
-if (showLog) {
-	assert.strictEqual(getLogInfo()[0], `【testShowLog-error】:`);
-	assert.strictEqual(getLogInfo()[1], '显示-不显示');
-} else {
-	assert.strictEqual(getLogInfo()[0], `【testLog-error】:`);
-	assert.strictEqual(getLogInfo()[1], '测试err');
-}
 
 let testLog2 = createLog('first', 'log', true).createLog('second').createLog().createLog('third');
 testLog2('多层log');
 
-assert.strictEqual(getLogInfo()[0], `【first.second.?.third-log】:`);
+assert.strictEqual(getLogInfo()[0], `【testLog-first.second.?.third-log】:`);
 assert.strictEqual(getLogInfo()[1], '多层log');
 
 // `can't run 【${clazz}=${key}】=>【${funName}@${args}】 after it is destroyed.`
 let destroyLog = createDestroyedErrorLog('类名', 123456);
 destroyLog('方法名', ['参数1','参数2'])
 
-assert.strictEqual(getLogInfo()[0], `【after-dstroyed-error】:`);
-assert.strictEqual(getLogInfo()[1], `can't run 【类名=123456】=>【方法名@[参数1,参数2]】 after it is destroyed.`);
+assert.strictEqual(getLogInfo()[0], `【testLog-AfterDstroyed.类名=123456-error】:`);
+assert.strictEqual(getLogInfo()[1], `can't run '类名.方法名(参数1,参数2)' after destroyed.`);
 
 assert.strictEqual(udFun.createLog(), udFun);
 

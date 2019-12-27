@@ -2,20 +2,46 @@ var assert = require("assert");
 
 const Utils = require('../../lib/Utils/index.js');
 const Fetcher = require('../../lib/DataHub/Fetcher.js');
-const PaginationManager = require('../../lib/DataHub/PaginationManager');
 
 
 console.log('--------- test Fetcher start ---------');
 const {
-	NOt_INIT_FETCHER,
-	NOt_ADD_FETCH,
+	NOT_INIT_FETCHER,
+	NOT_ADD_FETCH,
 	FETCHING,
+	ABORT_REQUEST,
 	addFetcher,
 	getFetcher,
 	initFetcher,
 	stopFetchData,
 	fetchData,
+	setDevMode,
 } = Fetcher;
+
+setDevMode(true);
+
+// ---------------------------------------------------- //
+// let fetchPrimise;
+// initFetcher(({onStop, setResult}) => {
+// 	onStop(() => {});
+// 	setTimeout(() => {
+// 		setResult(123456);
+// 	}, 40)
+	
+// });
+
+// fetchPrimise = fetchData({url: '123'}, {}, {}, '111111111')
+// .then(result => {
+// 	console.log(result);
+// })
+// .catch(err => {
+// 	console.log(err === ABORT_REQUEST, ABORT_REQUEST);
+// });
+
+// setTimeout(() => {
+// 	stopFetchData('111111111');
+// })
+// ---------------------------------------------------- //
 
 assert.strictEqual(getFetcher('test000'), undefined);
 
@@ -30,7 +56,7 @@ const fetchList = [];
 let fetchPrimise;
 
 fetchPrimise = fetchData('test111').catch(err => {
-	assert.strictEqual(err, NOt_INIT_FETCHER);
+	assert.strictEqual(err, NOT_INIT_FETCHER);
 });
 fetchList.push(fetchPrimise);
 
@@ -43,9 +69,7 @@ initFetcher(function (arg) {
 			method,
 			data,
 			dataInfo,
-			paginationInfo,
 			setResult,
-			setDataCount,
 			setError,
 			onStop,
 			stopKey,
@@ -79,7 +103,7 @@ initFetcher(function (arg) {
 });
 
 fetchPrimise = fetchData('test111').catch(err => {
-	assert.strictEqual(err, NOt_ADD_FETCH);
+	assert.strictEqual(err, NOT_ADD_FETCH);
 });
 fetchList.push(fetchPrimise);
 

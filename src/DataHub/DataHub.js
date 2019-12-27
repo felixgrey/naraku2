@@ -15,10 +15,12 @@ export default class DataHub {
 		this._key = getUniIndex();
 		this._cfg = cfg;
 		this._destroyed = false;
+		this._devMode = _devMode;
+		
 		this._dataCenter = {};
 		this._paginationData = {};
 
-		this._emitter = new Emitter(this.devLog, this.errLog);
+		this._emitter = new Emitter(this.devLog, this.errLog, _devMode);
 		this._initDsPublicMethods();
 		this._controller = new Controller(this);
 		
@@ -29,7 +31,7 @@ export default class DataHub {
 		this.errLog = errLog.createLog(`DataHub=${this._key}`);
 		this.destroyedErrorLog = createDestroyedErrorLog('DataHub', this._key);
 
-		this.devLog('created.');
+		this.devLog(`DataHub=${this._key} created.`);
 	}
 
 	_initDsPublicMethods() {
@@ -47,14 +49,14 @@ export default class DataHub {
 	
 	getPaginationManager(name) {
 		if (!this._paginationData[name]) {
-			this._paginationData[name] = new PaginationManager(this, name, this.devLog, this.errLog);
+			this._paginationData[name] = new PaginationManager(this, name, this.devLog, this.errLog, this._devMode);
 		}
 		return this._paginationData[name];
 	}
 
 	getDataStore(name) {
 		if (!this._dataCenter[name]) {
-			this._dataCenter[name] = new DataStore(this, name, this.devLog, this.errLog);
+			this._dataCenter[name] = new DataStore(this, name, this.devLog, this.errLog, this._devMode);
 		}
 		return this._dataCenter[name];
 	}
@@ -73,7 +75,7 @@ export default class DataHub {
 			return;
 		}
 
-		this.devLog('destroyed.');
+		this.devLog(`DataHub=${this._key} destroyed.`);
 
 		this._emitter.emit('$$destroy:DataHub', this._key);
 		this._emitter.emit(`$$destroy:DataHub:${this._key}`);

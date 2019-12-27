@@ -8,6 +8,7 @@ import {
 
 import DataStore from './DataStore';
 import FetchManager from './FetchManager';
+import ListenerManager from './ListenerManager';
 
 const publicMethods = [
 	'createController',
@@ -26,6 +27,7 @@ export default class Controller {
 	constructor(dh, _devMode = false) {
 		this._key = getUniIndex();
 		this._destroyed = false;
+		this._devMode = _devMode;
 
 		this._watchSet = new Set();
 		this._fetchingDatastore = {};
@@ -40,8 +42,8 @@ export default class Controller {
 		this._dh = dh;
 		this._emitter = dh._emitter;
 
-		this._fetchManager = new FetchManager(this);
-		
+		this._fetchManager = new FetchManager(this, _devMode);
+
 		// ListenerManager
 
 		dh._emitter.once('$$destroy:DataHub', () => {
@@ -55,7 +57,7 @@ export default class Controller {
 		this.errLog = dh.errLog.createLog(`Controller=${this._key}`);
 		this.destroyedErrorLog = createDestroyedErrorLog('Controller', this._key);
 
-		this.devLog('created.');
+		this.devLog(`Controller=${this._key} created.`);
 	}
 
 	_refresh() {
@@ -144,7 +146,7 @@ export default class Controller {
 			return udFun;
 		}
 
-		return new Controller(this._dh).getPublicMethods();
+		return new Controller(this._dh, this._devMode).getPublicMethods();
 	}
 
 	getPublicMethods() {
@@ -162,7 +164,7 @@ export default class Controller {
 			return;
 		}
 
-		this.devLog('destroyed.');
+		this.devLog(`Controller=${this._key} destroyed.`);
 
 		clearTimeout(this.refreshTimeoutIndex);
 
@@ -175,11 +177,14 @@ export default class Controller {
 		this._watchSet = null;
 		this._dh = null;
 		this._emitter = null;
+		
 		this.devLog = null;
 		this.errLog = null;
-		this.destroyedErrorLog = null;
+
 		this._key = null;
 	}
 }
 
-Controller.publicMethods = publicMethods.concat(DataStore.publicMethods);
+Controller.publicMethods = publicMethods
+	.concat(DataStore.publicMethods)
+	.concat(ListenerManager.publicMethods);

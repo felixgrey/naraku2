@@ -6,13 +6,19 @@ import {
 	createDestroyedErrorLog,
 } from './../Utils';
 
-export default class PaginationManager {
+export default class ? {
 	
-	constructor( _devMode = false) {
+	constructor(?, _devMode = false) {
 	  this._key = getUniIndex();
 	  this._destroyed = false;
 		
-		this._offOnDestroy = dh._emitter.once('$$destroy:DataHub', () => {
+		this._dhc = dhc;
+		this._dh = dhc._dh;
+		this._emitter = dhc._emitter;
+		
+		// TODO
+		
+		this._emitter.once(`$$destroy:Controller:${dhc._key}`, () => {
 			this.destroy();
 		});
 		
@@ -20,7 +26,7 @@ export default class PaginationManager {
 		this.errLog = dh.errLog.createLog(`=${this._key}`);
 		this.destroyedErrorLog = createDestroyedErrorLog('', this._key);
 		
-		this.devLog('created.');
+		this.devLog(`?=${this._key} created.`);
 	}
 	
 	destroy() {
@@ -28,18 +34,21 @@ export default class PaginationManager {
 			return;
 		}
 		
-		this.devLog('destroyed.');
+		this.devLog(`?=${this._key} destroyed.`);
 		
-		this._offOnDestroy();
-		this._offOnDestroy = null;
+		this._emitter.emit('$$destroy:'?, this._key);
+		this._emitter.emit(`$$destroy::${this._key}`);
 		
+		// TODO
+
 		this._destroyed = true;
+		
 		this._value = null;
 		this._dh = null;
 		this._emitter = null;
 		this.devLog = null;
 		this.errLog = null;
-		this.destroyedErrorLog = null;
+
 		this._key = null;
 	}
 }

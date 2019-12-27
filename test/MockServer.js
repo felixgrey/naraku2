@@ -1,12 +1,15 @@
 module.exports = function (url, data, method, callback, errCallback) {
 	
-	console.log('请求url', url);
-	console.log('请求数据', data);
-	console.log('请求类型', method);
+	console.log('=======================================================');
+	
+	console.log('MockServer: 请求url: ', url);
+	console.log('MockServer: 请求数据: ', data);
+	console.log('MockServer: 请求类型: ', method);
 	
 	let timeout = 0;
 	if (data.timeout) {
 		timeout = data.timeout;
+		console.log('MockServer: 返回延迟: ', timeout);
 	}
 	
 	let dataCount = 0;
@@ -30,17 +33,22 @@ module.exports = function (url, data, method, callback, errCallback) {
 	let errMsg = null;
 	if (data.errMsg) {
 		errMsg = data.errMsg;
+		console.log('MockServer: 错误信息', errMsg);
 	}
 	
 	if (data.isPagination) {
-		console.log('分页请求');
 		returnData = Date.now();
+		console.log('MockServer: 作为分页请求');
 	}
+	
+	console.log('MockServer: 返回结果: ', returnData);
 
 	setTimeout(() => {
 		if (errMsg === null) {
+			// console.log('callback=', callback);
 			callback && callback(returnData);
 		} else {
+			// console.log('errCallback=', errCallback);
 			errCallback && errCallback(errMsg);
 		}
 	}, timeout);

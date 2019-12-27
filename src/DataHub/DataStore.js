@@ -46,6 +46,7 @@ export default class DataStore {
 		this._emitter = dh._emitter;
 
 		this._value = [];
+		this._storeConfig = {};
 
 		this._oldStatus = 'undefined';
 		this._status = 'undefined';
@@ -60,11 +61,19 @@ export default class DataStore {
 		this.errLog = this._dh.errLog.createLog('DataStore:' + name);
 		this.destroyedErrorLog = createDestroyedErrorLog('DataStore', name);
 
-		this.devLog(`created.`);
+		this.devLog(`DataStore=${this._key} created.`);
 	}
 
 	setEternal(flag) {
 		this._eternal = flag;
+	}
+
+	setConfig(cfg) {
+		this._storeConfig = cfg;
+	}
+
+	getStoreConfig() {
+		return this._storeConfig;
 	}
 
 	_setStatus(status) {
@@ -107,6 +116,8 @@ export default class DataStore {
 		value = [].concat(value);
 		this._value = value;
 		this._errMsg = null;
+		
+		this.devLog(`run set`, value);
 
 		this._emitDataChange();
 		this._setStatus('ready');
@@ -256,18 +267,22 @@ export default class DataStore {
 			return;
 		}
 
-		this.devLog(`destroy`);
+		this.devLog(`DataStore=${this._key} destroy`);
 
 		this._emitter.emit('$$destroy:DataStore', this._key);
 		this._emitter.emit(`$$destroy:DataStore:${this._key}`);
 
 		this._destroyed = true;
+
 		this._value = null;
+		this._storeConfig = null;
+
 		this._dh = null;
 		this._emitter = null;
+
 		this.devLog = null;
 		this.errLog = null;
-		this.destroyedErrorLog = null;
+
 		this._key = null;
 	}
 }
