@@ -28,12 +28,10 @@ class MockController0 {
 		
 		this.devLog(`MockController0=${this._key} destroyed.`);
 		
-		this._emitter.emit('$$destroy:MockController0', this._key);
-		this._emitter.emit('$$destroy:MockController0:'+this._key);
+		this._emitter.emit('$$destroy:Controller', this._key);
+		this._emitter.emit('$$destroy:Controller:'+this._key);
 		
-
 		this._destroyed = true;
-		this._emitter = null;
 	}
 }
 

@@ -34,7 +34,7 @@ export default class PaginationManager {
 		this._dh = dh;
 		this._emitter = dh._emitter;
 
-		this._emitter.once('$$destroy:DataHub', () => {
+		this._emitter.once(`$$destroy:DataHub:${dh._key}`, () => {
 			this.destroy();
 		});
 
@@ -60,9 +60,9 @@ export default class PaginationManager {
 
 		const {
 			fetcher = null,
-				force = false,
-				startPage = 1,
-				pageSize = 10
+			force = false,
+			startPage = 1,
+			pageSize = 10
 		} = param;
 
 		this._inited = true;

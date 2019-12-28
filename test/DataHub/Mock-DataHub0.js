@@ -17,6 +17,7 @@ class MockDataHub0 {
 		this.errLog = errLog.createLog(`MockDataHub0=${this._key}`);;
 		
 		this._emitter = new Emitter(this.devLog, this.errLog, true);
+		
 		// Controller
 		// ConfigManager
 		// Controller.ListenerManager
@@ -34,7 +35,8 @@ class MockDataHub0 {
 		
 		this.devLog(`MockDataHub0=${this._key} destroyed.`);
 		
-		this._emitter.emit('$$destroy:dataHub', this._key);
+		this._emitter.emit('$$destroy:DataHub', this._key);
+		this._emitter.emit('$$destroy:DataHub:' + this._key);
 		this._emitter.destroy();
 		
 		this._destroyed = true;

@@ -115,7 +115,7 @@ export default class FetchManager {
 			}
 
 			const ds = this._dh.getDataStore(name);
-			const pagination = this._dh.getPaginationManager(name);
+			const pagination = ds.getPaginationManager();
 
 			const {
 				fetcher = null
@@ -215,7 +215,7 @@ export default class FetchManager {
 
 		this._dh = null;
 		this._emitter = null;
-		this.devLog = null;
+
 		this.errLog = null;
 
 		this._key = null;

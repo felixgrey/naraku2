@@ -29,68 +29,68 @@ let mdc = new MockController0(mdh);
 
 let fem = new FetchManager(mdc, 40, true);
 
-// fem.fetch('test.get', { requestName:'返回数据',name: '123456', dataCount: 2}).then((data) => {
-// 	console.log(data);
-// });
+fem.fetch('test.get', { requestName:'返回数据',name: '123456', dataCount: 2}).then((data) => {
+	console.log(data);
+});
 
-// fem.fetch('test.get', { requestName:'1000毫秒',timeout: 1000,name: '123456', dataCount: 3}, {} ,(stop) => {
-// 	console.log('设置中断回调');
+fem.fetch('test.get', { requestName:'1000毫秒',timeout: 1000,name: '123456', dataCount: 3}, {} ,(stop) => {
+	console.log('设置中断回调');
 	
-// 	setTimeout(() => {
-// 		console.log('执行中断')
-// 		stop();
-// 	}, 500);
+	setTimeout(() => {
+		console.log('执行中断')
+		stop();
+	}, 500);
 	
-// }).then((data) => {
-// 	console.log(data);
-// });
+}).then((data) => {
+	console.log(data);
+});
 
-// fem.fetch('test.get', { requestName:'销毁',timeout: 1000,name: '123456', dataCount: 3}, {} ,(stop) => {
-// 	console.log('中断回调');
+fem.fetch('test.get', { requestName:'销毁',timeout: 1000,name: '123456', dataCount: 3}, {} ,(stop) => {
+	console.log('中断回调');
 	
-// 	setTimeout(() => {
-// 		console.log('销毁')
-// 		fem.destroy();
-// 		fem.fetch();
-// 	}, 600);
+	setTimeout(() => {
+		console.log('销毁')
+		fem.destroy();
+		fem.fetch();
+	}, 600);
 	
-// }).then((data) => {
-// 	console.log(data);
-// });
+}).then((data) => {
+	console.log(data);
+});
 
-// fem.fetchStoreData();
+fem.fetchStoreData();
 
-// fem.fetchStoreData({
-// 	name: 'testStore'
-// });
-// fem.fetchStoreData({
-// 	name: 'testStore'
-// });
-// fem.fetchStoreData({
-// 	name: 'testStore'
-// });
+fem.fetchStoreData({
+	name: 'testStore'
+});
+fem.fetchStoreData({
+	name: 'testStore'
+});
+fem.fetchStoreData({
+	name: 'testStore'
+});
 
 mdh.getDataStore('testStore2').setConfig({
 	fetcher: 'test.get',
+	pagination: {
+		fetcher: 'test.post',
+		force: true
+	}
 });
 
-mdh.getPaginationManager('testStore2').init({
-	fetcher: 'test.post',
-	force: true
-});
 
-// fem.fetchStoreData({
-// 	name: 'testStore2',
-// 	data: {dataCount: 3,requestName: 'storeA'}
-// });
-// fem.fetchStoreData({
-// 	name: 'testStore2',
-// 	data: {dataCount: 3,requestName: 'storeB'}
-// });
-// fem.fetchStoreData({
-// 	name: 'testStore2',
-// 	data: {dataCount: 3,requestName: 'storeC'}
-// });
+fem.fetchStoreData({
+	name: 'testStore2',
+	data: {dataCount: 3,requestName: 'storeA'}
+});
+fem.fetchStoreData({
+	name: 'testStore2',
+	data: {dataCount: 3,requestName: 'storeB'}
+});
+fem.fetchStoreData({
+	name: 'testStore2',
+	data: {dataCount: 3,requestName: 'storeC'}
+});
 
 fem.fetchStoreData({
 	name: 'testStore2',
@@ -104,8 +104,8 @@ setTimeout(() => {
 	});
 }, 2000);
 
-// setTimeout(() => {
-// 	fem.stopFetch('testStore2');
-// }, 500);
+setTimeout(() => {
+	fem.stopFetch('testStore2');
+}, 500);
 
 console.log('--------- test FetchManager end ---------');

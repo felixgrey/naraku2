@@ -18,7 +18,6 @@ export default class DataHub {
 		this._devMode = _devMode;
 		
 		this._dataCenter = {};
-		this._paginationData = {};
 
 		this._emitter = new Emitter(this.devLog, this.errLog, _devMode);
 		this._initDsPublicMethods();
@@ -47,13 +46,6 @@ export default class DataHub {
 		});
 	}
 	
-	getPaginationManager(name) {
-		if (!this._paginationData[name]) {
-			this._paginationData[name] = new PaginationManager(this, name, this.devLog, this.errLog, this._devMode);
-		}
-		return this._paginationData[name];
-	}
-
 	getDataStore(name) {
 		if (!this._dataCenter[name]) {
 			this._dataCenter[name] = new DataStore(this, name, this.devLog, this.errLog, this._devMode);

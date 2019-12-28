@@ -21,13 +21,6 @@ class MockDataHub1  extends MockDataHub0 {
 		this.devLog(`MockDataHub1=${this._key} created.`);
 	}
 	
-	getPaginationManager(name) {
-		if (!this._paginationData[name]) {
-			this._paginationData[name] = new PaginationManager(this, name, this.devLog, this.errLog, true);
-		}
-		return this._paginationData[name];
-	}
-	
 	getDataStore(name) {
 		if (!this._dataCenter[name]) {
 			this._dataCenter[name] = new DataStore(this, name, this.devLog, this.errLog, true);
