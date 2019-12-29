@@ -14,9 +14,10 @@ class MockController0 {
 		
 		this._dh = dh;
 		this._emitter = dh._emitter;
+		this._dh._dhc = this;
 		
 		this.devLog = dh.devLog.createLog(`MockController0=${this._key}`);
-		this.errLog = dh.errLog.createLog(`MockController0=${this._key}`);;
+		this.errLog = dh.errLog.createLog(`MockController0=${this._key}`);
 
 		this.devLog(`MockController0=${this._key} created.`);
 	}

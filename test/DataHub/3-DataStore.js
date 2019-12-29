@@ -22,7 +22,7 @@ let emitterErrLogger = createLog('TestDataStore', 'error', true);
 
 let mdh = new MockDataHub0 ({}, emitterDevLogger, emitterErrLogger);
 
-let ds1 = new DataStore(mdh, 'test', false, true);
+let ds1 = new DataStore(mdh, 'test', true);
 
 let data = [1,2,3];
 

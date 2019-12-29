@@ -3,9 +3,11 @@ import {
 	getUniIndex,
 	getDeepValue,
 	createDestroyedErrorLog,
+	snapshot,
 } from './../Utils';
 
 import PaginationManager from './PaginationManager.js';
+import RelationManager from './RelationManager.js';
 
 const publicMethods = [
 	'set',
@@ -36,18 +38,18 @@ const allStatus = [
 ];
 
 export default class DataStore {
-	constructor(dh, name, eternal = false, _devMode = false) {
+	constructor(dh, name, _devMode = false) {
 		this._key = getUniIndex();
 		this._name = name;
-		this._eternal = eternal;
+		this._eternal = false;
 		this._destroyed = false;
 
 		this._dh = dh;
 		this._emitter = dh._emitter;
 
 		this._value = [];
-		this._storeConfig = {};
-		this._pagination = new PaginationManager(dh, name, _devMode);
+		this._storeConfig = null;
+		this._extendConfig = {};
 
 		this._oldStatus = 'undefined';
 		this._status = 'undefined';
@@ -64,6 +66,19 @@ export default class DataStore {
 		this.devLog = _devMode ? this._dh.devLog.createLog(logName) : udFun;
 		this.errLog = this._dh.errLog.createLog(logName);
 		this.destroyedErrorLog = createDestroyedErrorLog('DataStore', this._key);
+
+		this._pagination = new PaginationManager(this, _devMode);
+		this._relationManager = new RelationManager(this, _devMode);
+
+		RelationManager.publicMethods.forEach(method => {
+			this[method] = (...args) => {
+				if (this._hasErr(method)) {
+					return udFun;
+				}
+
+				return this._relationManager[method](...args);
+			}
+		})
 
 		this.devLog(`DataStore=${this._key} created.`);
 	}
@@ -85,26 +100,44 @@ export default class DataStore {
 		return this._pagination;
 	}
 
-	setEternal(flag) {
+	setConfig(cfg) {
 		if (this._hasErr()) {
 			return;
 		}
 
-		this._eternal = flag;
-	}
-
-	setConfig(cfg = {}) {
-		if (this._hasErr()) {
+		if (this._storeConfig) {
+			this.devLog(`run setConfig again`);
 			return;
 		}
 
-		const {
-			pagination = null
-		} = cfg;
+		if (cfg === undefined) {
+			cfg = {
+				default: []
+			};
+		} else if (cfg === null) {
+			cfg = {
+				default: [null]
+			};
+		} else if (typeof cfg !== 'object') {
+			cfg = {
+				default: [cfg]
+			};
+		} else if (Array.isArray(cfg)) {
+			cfg = {
+				default: cfg
+			};
+		};
 
-		if (typeof pagination === 'object') {
-			this._pagination.init(pagination);
-		}
+		Object.keys(cfg).forEach(name => {
+			let value = cfg[name];
+			if (/\_|\$/g.test(name.charAt(0))) {
+				this._extendConfig = value;
+				return;
+			}
+		});
+
+		this._relationManager.init(cfg);
+		this._pagination.init(cfg.pagination);
 
 		this._storeConfig = cfg;
 	}
@@ -414,10 +447,14 @@ export default class DataStore {
 		this._pagination.destroy();
 		this._pagination = null;
 
+		this._relationManager.destroy();
+		this._relationManager = null;
+
 		this._destroyed = true;
 
 		this._value = null;
 		this._storeConfig = null;
+		this._extendConfig = null
 
 		this._dh = null;
 		this._emitter = null;

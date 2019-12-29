@@ -92,6 +92,7 @@ export default class ListenerManager {
 		let offList = [];
 
 		const checkReady = () => {
+			this.devLog(`when checkReady`);
 			if (this._destroyed) {
 				return;
 			}
@@ -120,6 +121,8 @@ export default class ListenerManager {
 			let _off = this._emitter.on('$$data:' + _name, checkReady);
 			offList.push(_off);
 		});
+		
+		this.devLog(`when param : `, names);
 
 		checkReady();
 

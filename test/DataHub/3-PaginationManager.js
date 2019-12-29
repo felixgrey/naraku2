@@ -7,6 +7,7 @@ const {
 } = require('./../TestTools.js');
 
 const {
+	getUniIndex,
 	createLog,
 	udFun
 } = Utils;
@@ -24,8 +25,18 @@ let emitterDevLogger = createLog('TestPaginationManager', 'log', true);
 let emitterErrLogger = createLog('TestPaginationManager', 'error', true);
 
 let mdh = new MockDataHub0 ({}, emitterDevLogger, emitterErrLogger);
+mdh._key = getUniIndex();
 
-let pagem = new PaginationManager(mdh, 'test1',true);
+let mockStore = {
+	_key: getUniIndex(),
+	_name:'test1',
+	_dh: mdh, 
+	devLog: emitterDevLogger, 
+	errLog: emitterErrLogger,
+	_emitter: mdh._emitter
+};
+
+let pagem = new PaginationManager(mockStore, true);
 
 pagem.init();
 
@@ -47,7 +58,16 @@ pagem.fetch();
 pagem.stopFetch();
 pagem.setPageInfo();
 
-let pagem2 = new PaginationManager(mdh, true);
+let mockStore2 = {
+	_key: getUniIndex(),
+	_name:'test1',
+	_dh: mdh, 
+	devLog: emitterDevLogger, 
+	errLog: emitterErrLogger,
+	_emitter: mdh._emitter
+};
+
+let pagem2 = new PaginationManager(mockStore2, true);
 
 addFetcher('pagination.lag','url://a','get', {
 	beforeFetch: () => {

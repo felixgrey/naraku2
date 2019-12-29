@@ -8,9 +8,9 @@ process.env.NODE_ENV = 'development';
 // require('./DataHub/3-PaginationManager.js');
 // require('./DataHub/4-FetchManager.js');
 // require('./DataHub/4-ListenerManager.js');
+require('./DataHub/5-RelationManager.js');
 
 
-// require('./DataHub/5-ConfigManager.js');
 // require('./DataHub/6-Controller.js');
 // require('./DataHub/7-DataHub.js');
 

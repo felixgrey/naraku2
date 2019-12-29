@@ -10,18 +10,19 @@ import {
 import {
 	NOT_INIT_FETCHER,
 	NOT_ADD_FETCH,
+	ABORT_REQUEST,
 	FETCHING,
 	stopFetchData,
 	fetchData,
 } from './Fetcher';
 
 export default class PaginationManager {
-	constructor(dh, name, _devMode = false) {
+	constructor(store, _devMode = false) {
 		this._key = getUniIndex();
 		this._destroyed = false;
 		this._inited = false;
 
-		this._name = name;
+		this._name = store._name;
 		this._fetcher = null;
 		this._jsonData = '';
 		this._force = false;
@@ -31,15 +32,18 @@ export default class PaginationManager {
 		this._stopKey = null;
 		this._count = 0;
 
-		this._dh = dh;
-		this._emitter = dh._emitter;
+		this._store = store;
+		this._dh = store._dh;
+		this._emitter = store._emitter;
+		
+		// console.log('----------------------', this._dh ,this._store._dh , this._store)
 
-		this._emitter.once(`$$destroy:DataHub:${dh._key}`, () => {
+		this._emitter.once(`$$destroy:DataHub:${this._dh._key}`, () => {
 			this.destroy();
 		});
 
-		this.devLog = _devMode ? dh.devLog.createLog(`PaginationManager=${this._key}`) : udFun;
-		this.errLog = dh.errLog.createLog(`PaginationManager=${this._key}`);
+		this.devLog = _devMode ? store.devLog.createLog(`PaginationManager=${this._key}`) : udFun;
+		this.errLog = store.errLog.createLog(`PaginationManager=${this._key}`);
 
 		this.devLog(`PaginationManager=${this._key} created.`);
 	}
@@ -53,8 +57,14 @@ export default class PaginationManager {
 		return false;
 	}
 
-	init(param = {}) {
-		if (this._hasErr('init')) {
+	init(param) {
+		if (this._destroyed) {
+			this.devLog(`can't run init after destroyed`);
+			return;
+		}
+		
+		if (isNvl(param)) {
+			this._inited = true;
 			return;
 		}
 
@@ -64,7 +74,7 @@ export default class PaginationManager {
 			startPage = 1,
 			pageSize = 10
 		} = param;
-
+		
 		this._inited = true;
 
 		this._fetcher = fetcher;
@@ -155,6 +165,10 @@ export default class PaginationManager {
 
 			if (err === NOT_ADD_FETCH) {
 				this.devLog(`must add fetcher '${this._fetcher}' first`);
+				return;
+			}
+			
+			if (err === ABORT_REQUEST) {
 				return;
 			}
 
