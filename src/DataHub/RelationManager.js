@@ -75,21 +75,21 @@ export default class RelationManager {
 	}
 
 	_configPolicy = {
-		default:(value, cfg) => {
+		default: (value, cfg) => {
 			if (value === undefined) {
 				value = [];
 			}
 			value = [].concat(value);
-			
+
 			this._defaultData = value;
 			this._store.set(snapshot(value));
 		},
 		fetcher: (value, cfg) => {
 			let {
 				dependence = [],
-				filter = [],
-				off = false,
-				force = false,
+					filter = [],
+					off = false,
+					force = false,
 			} = cfg;
 
 			let ableFlag = this._dh.getDataStore;

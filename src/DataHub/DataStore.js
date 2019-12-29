@@ -147,7 +147,7 @@ export default class DataStore {
 			return {};
 		}
 
-		return this._storeConfig;
+		return this._storeConfig || {};
 	}
 
 	_setStatus(status) {

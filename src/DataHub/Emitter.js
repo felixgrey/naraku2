@@ -21,7 +21,7 @@ export default class Emitter {
 		this.devLog = _devMode ? devLog.createLog(`Emitter=${this._key}`) : udFun;
 		this.errLog = errLog.createLog(`Emitter=${this._key}`);
 		this.destroyedErrorLog = createDestroyedErrorLog('Emitter', this._key);
-		
+
 		this.devLog(`Emitter=${this._key} created.`);
 	}
 
@@ -80,8 +80,8 @@ export default class Emitter {
 		this.emit('$$destroy:Emitter', this._key);
 		this.devLog(`Emitter=${this._key} destroyed.`);
 		this._core.removeAllListeners();
-		
-		this._destroyed = true;	
+
+		this._destroyed = true;
 		this._core = null;
 		this._key = null;
 	}

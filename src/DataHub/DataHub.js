@@ -16,13 +16,13 @@ export default class DataHub {
 		this._cfg = cfg;
 		this._destroyed = false;
 		this._devMode = _devMode;
-		
+
 		this._dataCenter = {};
 
 		this._emitter = new Emitter(this.devLog, this.errLog, _devMode);
 		this._initDsPublicMethods();
 		this._controller = new Controller(this);
-		
+
 		// ConfigManager
 
 
@@ -45,7 +45,7 @@ export default class DataHub {
 			}
 		});
 	}
-	
+
 	getDataStore(name) {
 		if (!this._dataCenter[name]) {
 			this._dataCenter[name] = new DataStore(this, name, this.devLog, this.errLog, this._devMode);
@@ -58,7 +58,7 @@ export default class DataHub {
 			this.destroyedErrorLog('getController');
 			return udFun;
 		}
-		
+
 		return this._controller.getPublicMethods();
 	}
 

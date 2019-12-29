@@ -35,7 +35,7 @@ export default class PaginationManager {
 		this._store = store;
 		this._dh = store._dh;
 		this._emitter = store._emitter;
-		
+
 		// console.log('----------------------', this._dh ,this._store._dh , this._store)
 
 		this._emitter.once(`$$destroy:DataHub:${this._dh._key}`, () => {
@@ -62,7 +62,7 @@ export default class PaginationManager {
 			this.devLog(`can't run init after destroyed`);
 			return;
 		}
-		
+
 		if (isNvl(param)) {
 			this._inited = true;
 			return;
@@ -70,11 +70,11 @@ export default class PaginationManager {
 
 		const {
 			fetcher = null,
-			force = false,
-			startPage = 1,
-			pageSize = 10
+				force = false,
+				startPage = 1,
+				pageSize = 10
 		} = param;
-		
+
 		this._inited = true;
 
 		this._fetcher = fetcher;
@@ -167,7 +167,7 @@ export default class PaginationManager {
 				this.devLog(`must add fetcher '${this._fetcher}' first`);
 				return;
 			}
-			
+
 			if (err === ABORT_REQUEST) {
 				return;
 			}

@@ -121,7 +121,7 @@ export default class ListenerManager {
 			let _off = this._emitter.on('$$data:' + _name, checkReady);
 			offList.push(_off);
 		});
-		
+
 		this.devLog(`when param : `, names);
 
 		checkReady();

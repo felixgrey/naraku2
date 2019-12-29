@@ -71,10 +71,10 @@ function initFetcher(callback, force = false) {
 			errLog(`fetcher has initialized.`);
 			return;
 		}
-		
+
 		devMode && devLog('initialize fetch again.');
 	}
-	
+
 	devMode && devLog('run initFetcher.');
 
 	fetcher = callback || udFun;
