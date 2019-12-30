@@ -1,13 +1,25 @@
 import {
 	isNvl,
-	getUniIndex,
 	getDeepValue,
-	createDestroyedErrorLog,
 	snapshot,
 } from './../Utils';
 
+import Component from './Component';
+
 import PaginationManager from './PaginationManager.js';
 import RelationManager from './RelationManager.js';
+
+const {
+	publicMethod
+} = Component;
+
+const allStatus = [
+	'undefined',
+	'ready',
+	'loading',
+	'locked',
+	'error'
+];
 
 const publicMethods = [
 	'set',
@@ -29,82 +41,61 @@ const publicMethods = [
 	'loaded'
 ];
 
-const allStatus = [
-	'undefined',
-	'ready',
-	'loading',
-	'locked',
-	'error'
-];
 
-export default class DataStore {
-	constructor(dh, name, _devMode = false) {
-		this._key = getUniIndex();
-		this._name = name;
+export default class DataStore extends Component {
+
+	afterCreate(dh, name) {
+		this._store = this;
 		this._eternal = false;
-		this._destroyed = false;
-
-		this._dh = dh;
-		this._emitter = dh._emitter;
-
 		this._value = [];
 		this._storeConfig = null;
 		this._extendConfig = {};
-
 		this._oldStatus = 'undefined';
 		this._status = 'undefined';
 		this._lockStack = 0;
 		this._errMsg = null;
-
-		dh._emitter.once(`$$destroy:DataHub:${dh._key}`, () => {
-			this.devLog && this.devLog(`DataHub destroyed .`);
-			this.destroy();
-		});
-
-		let logName = `DataStore=${this._key}@${name}`;
-
-		this.devLog = _devMode ? this._dh.devLog.createLog(logName) : udFun;
-		this.errLog = this._dh.errLog.createLog(logName);
-		this.destroyedErrorLog = createDestroyedErrorLog('DataStore', this._key);
-
-		this._pagination = new PaginationManager(this, _devMode);
-		this._relationManager = new RelationManager(this, _devMode);
+		this._name = name;
 
 		RelationManager.publicMethods.forEach(method => {
 			this[method] = (...args) => {
-				if (this._hasErr(method)) {
+				if (this._destroyed) {
 					return udFun;
 				}
 
 				return this._relationManager[method](...args);
 			}
-		})
+		});
 
-		this.devLog(`DataStore=${this._key} created.`);
+		this._pagination = new PaginationManager(this, this._devMode);
+		this._relationManager = new RelationManager(this, this._devMode);
 	}
 
-	_hasErr(name) {
-		if (this._destroyed) {
-			this.devLog(`run '${name}' failed : `, this._destroyed);
-			return true;
-		}
+	beforeDestroy() {
+		this._pagination.destroy();
+		this._pagination = null;
 
-		return false;
+		this._relationManager.destroy();
+		this._relationManager = null;
+
+		this._value = null;
+		this._storeConfig = null;
+		this._extendConfig = null
 	}
 
 	getPaginationManager() {
-		if (this._hasErr()) {
-			return;
+		if (this._destroyed) {
+			return udFun;
 		}
-
 		return this._pagination;
 	}
 
-	setConfig(cfg) {
-		if (this._hasErr()) {
-			return;
-		}
+	@publicMethod
+	getPageInfo() {
+		return this._pagination.getPageInfo();
+	}
 
+	@publicMethod
+	setConfig(cfg) {
 		if (this._storeConfig) {
 			this.devLog(`run setConfig again`);
 			return;
@@ -131,7 +122,7 @@ export default class DataStore {
 		Object.keys(cfg).forEach(name => {
 			let value = cfg[name];
 			if (/\_|\$/g.test(name.charAt(0))) {
-				this._extendConfig = value;
+				this._extendConfig[name] = value;
 				return;
 			}
 		});
@@ -142,26 +133,29 @@ export default class DataStore {
 		this._storeConfig = cfg;
 	}
 
-	getStoreConfig() {
-		if (this._hasErr()) {
-			return {};
-		}
+	@publicMethod
+	getExtendConfig() {
+		return {
+			...
+			this._extendConfig
+		};
+	}
 
-		return this._storeConfig || {};
+	@publicMethod
+	getStoreConfig() {
+		return { ...(this._storeConfig || {})
+		};
 	}
 
 	_setStatus(status) {
-		if (this._hasErr()) {
-			return;
-		}
-
 		if (status === this._status) {
 			return;
 		}
 
 		this.devLog(`changeStatus :${this._status} => ${status}`);
-
-		this._oldStatus = this._status;
+		if (this._status !== 'locked' && this._status !== 'loading') {
+			this._oldStatus = this._status;
+		}
 		this._status = status;
 
 		this._emitter.emit('$$status', {
@@ -169,7 +163,7 @@ export default class DataStore {
 			value: this._status
 		});
 
-		this._emitter.emit(`$$status:${this._name}:${this._status}`);
+		this._emitter.emit(`$$status:${this._name}@${this._status}`);
 	}
 
 	_emitDataChange() {
@@ -181,13 +175,11 @@ export default class DataStore {
 		this._emitter.emit(`$$data:${this._name}`, this._value);
 	}
 
+	@publicMethod
 	set(value) {
-		if (this._hasErr()) {
-			return;
-		}
-
 		if (this._status === 'locked' || this._status === 'loading') {
-			this.errLog(`can't set value when '${this._name}' is locked or loading.`);
+			this.methodErrLog('set', value, 'locked/loading',
+				`can't set value when '${this._name}' is locked or loading.`);
 			return;
 		}
 
@@ -205,13 +197,11 @@ export default class DataStore {
 		this._emitDataChange();
 	}
 
+	@publicMethod
 	merge0(data) {
-		if (this._hasErr()) {
-			return;
-		}
-
 		if (this._status === 'locked' || this._status === 'loading') {
-			this.errLog(`can't set merge0 when '${this._name}' is locked or loading.`);
+			this.methodErrLog('merge0', [data], 'locked/loading',
+				`can't set merge0 when '${this._name}' is locked or loading.`);
 			return;
 		}
 
@@ -224,91 +214,67 @@ export default class DataStore {
 		}
 	}
 
+	@publicMethod
 	first(defaultValue = {}) {
-		if (this._hasErr()) {
-			return defaultValue;
-		}
-
 		return this.getValue('0', defaultValue);
 	}
 
+	@publicMethod
 	getValue(path, defaultValue) {
-		if (this._hasErr()) {
-			return false;
-		}
-
 		return getDeepValue(this._value, path, defaultValue);
 	}
 
+	@publicMethod
 	hasData() {
-		if (this._hasErr()) {
-			return false;
-		}
-
 		return this.getStatus() !== 'undefined';
 	}
 
+	@publicMethod
 	get() {
-		if (this._hasErr()) {
-			return [];
-		}
-
 		return this._value;
 	}
 
+	@publicMethod
 	clear() {
-		if (this._hasErr()) {
-			return;
-		}
-
 		if (this._status === 'undefined') {
 			return;
 		}
 
 		if (this._status === 'locked' || this._status === 'loading') {
-			this.errLog(`can't clear when '${this._name}' is locked or loading.`);
+			this.methodErrLog('clear', [], 'locked/loading',
+				`can't clear when '${this._name}' is locked or loading.`);
 			return;
 		}
 
 		this.set([]);
 	}
 
+	@publicMethod
 	isEmpty() {
-		if (this._hasErr()) {
-			return false;
-		}
-
 		return this.getCount() === 0;
 	}
 
+	@publicMethod
 	getCount() {
-		if (this._hasErr()) {
-			return 0;
-		}
-
 		return this._value.length;
 	}
 
+	@publicMethod
 	getStatus() {
-		if (this._hasErr()) {
-			return 'undefined';
-		}
-
 		return this._status;
 	}
 
+	@publicMethod
 	remove() {
-		if (this._hasErr()) {
-			return;
-		}
-
 		if (this._eternal) {
-			this.errLog(`can't remove eternal dataStore '${this._name}'.`);
+			this.methodErrLog('remove', [], 'eternal',
+				`can't remove eternal dataStore '${this._name}'.`);
 			return;
 		}
 
 		if (this._status === 'locked' || this._status === 'loading') {
-			this.errLog(`can't remove when '${this._name}' is locked or loading.`);
+			this.methodErrLog('remove', [], 'locked/loading',
+				`can't remove when '${this._name}' is locked or loading.`);
 			return;
 		}
 
@@ -319,29 +285,21 @@ export default class DataStore {
 		this._emitDataChange();
 	}
 
+	@publicMethod
 	isLocked() {
-		if (this._hasErr()) {
-			return false;
-		}
-
 		return this._status === 'locked';
 	}
 
+	@publicMethod
 	isLoading() {
-		if (this._hasErr()) {
-			return false;
-		}
-
 		return this._status === 'loading';
 	}
 
+	@publicMethod
 	setErrorMsg(msg) {
-		if (this._hasErr()) {
-			return false;
-		}
-
 		if (isNvl(msg)) {
-			this.errLog(`can't set null error message to '${this._name}'.`);
+			this.methodErrLog('setErrorMsg', [msg], 'null',
+				`can't set null error message to '${this._name}'.`);
 			return;
 		}
 
@@ -349,16 +307,16 @@ export default class DataStore {
 		this._setStatus('error');
 	}
 
+	@publicMethod
 	getErrorMsg() {
-		if (this._hasErr()) {
-			return null;
-		}
-
 		return this._errMsg;
 	}
 
+	@publicMethod
 	lock() {
-		if (this._hasErr()) {
+		if (this._status === 'loading') {
+			this.methodErrLog('lock', [], 'loading',
+				`can't lock  when '${this._name}' is loading.`);
 			return;
 		}
 
@@ -366,11 +324,8 @@ export default class DataStore {
 		this._setStatus('locked');
 	}
 
+	@publicMethod
 	unLock() {
-		if (this._hasErr()) {
-			return;
-		}
-
 		if (this._lockStack > 0) {
 			this._lockStack--;
 		}
@@ -381,52 +336,42 @@ export default class DataStore {
 		}
 	}
 
+	@publicMethod
 	unLockAll() {
-		if (this._hasErr()) {
-			return;
-		}
-
 		this._lockStack = 0;
 		this.unLock();
 	}
 
+	@publicMethod
 	loading() {
-		if (this._hasErr()) {
-			return;
-		}
-
 		this.devLog(`loading: status=${this._status}`);
 
 		if (this._status === 'locked' || this._status === 'loading') {
-			this.errLog(`can't set status=loading when '${this._name}' is locked or loading.`);
+			this.methodErrLog('loading', [], 'locked/loading',
+				`can't set status=loading when '${this._name}' is locked or loading.`);
 			return;
 		}
 
 		this._setStatus('loading');
 	}
 
+	@publicMethod
 	clearLoading() {
-		if (this._hasErr()) {
-			return;
-		}
-
 		if (this._status === 'loading') {
 			this._setStatus(this._oldStatus);
 		}
 	}
 
+	@publicMethod
 	loaded(value) {
-		if (this._hasErr()) {
-			return;
-		}
-
 		if (this._status !== 'loading') {
-			this.errLog(`'${this._name}' isn't loading.`);
+			this.methodErrLog('loaded', [value], 'locked/loading', `'${this._name}' isn't loading.`);
 			return;
 		}
 
 		if (this._status === 'locked') {
-			this.errLog(`can't set status=${this._oldStatus} when '${this._name}' is locked.`);
+			this.methodErrLog('loaded', [value], 'locked/loading',
+				`can't set status=${this._oldStatus} when '${this._name}' is locked.`);
 			return;
 		}
 
@@ -434,36 +379,6 @@ export default class DataStore {
 		this.set(value);
 	}
 
-	destroy() {
-		if (this._destroyed) {
-			return;
-		}
-
-		this.devLog(`DataStore=${this._key} destroy.`);
-
-		this._emitter.emit('$$destroy:DataStore', this._key);
-		this._emitter.emit(`$$destroy:DataStore:${this._key}`);
-
-		this._pagination.destroy();
-		this._pagination = null;
-
-		this._relationManager.destroy();
-		this._relationManager = null;
-
-		this._destroyed = true;
-
-		this._value = null;
-		this._storeConfig = null;
-		this._extendConfig = null
-
-		this._dh = null;
-		this._emitter = null;
-
-		this.devLog = null;
-		this.errLog = null;
-
-		this._key = null;
-	}
 }
 
 DataStore.publicMethods = publicMethods;

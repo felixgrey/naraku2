@@ -13,16 +13,18 @@ export default class Emitter {
 
 	constructor(devLog = udFun, errLog = udFun, _devMode = false) {
 		this._key = getUniIndex();
+		this._clazz = this.constructor.name;
+		this._logName = `${this._clazz}=${this._key}`;
+		this._destroyed = false;
 
 		this._core = new EventEmitter();
 		this._core.setMaxListeners(Infinity);
-		this._destroyed = false;
 
-		this.devLog = _devMode ? devLog.createLog(`Emitter=${this._key}`) : udFun;
-		this.errLog = errLog.createLog(`Emitter=${this._key}`);
-		this.destroyedErrorLog = createDestroyedErrorLog('Emitter', this._key);
+		this.devLog = _devMode ? devLog.createLog(this._logName) : udFun;
+		this.errLog = errLog.createLog(this._logName);
+		this.destroyedErrorLog = createDestroyedErrorLog(this._clazz, this._key);
 
-		this.devLog(`Emitter=${this._key} created.`);
+		this.devLog(`${this._logName} created.`);
 	}
 
 	_onAndOnce(name, callback, once) {
@@ -77,8 +79,11 @@ export default class Emitter {
 			return;
 		}
 
-		this.emit('$$destroy:Emitter', this._key);
-		this.devLog(`Emitter=${this._key} destroyed.`);
+		this.devLog(`${this._logName} destroyed.`);
+
+		this.emit(`$$destroy:${this._clazz}`, this._key);
+		this.emit(`$$destroy:${this._clazz}=${this._key}`);
+
 		this._core.removeAllListeners();
 
 		this._destroyed = true;

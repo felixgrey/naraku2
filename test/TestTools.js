@@ -2,49 +2,72 @@ var assert = require("assert");
 
 const Utils = require('../lib/Utils/index.js');
 
+// console.log(assert)
+
+const Emitter = require('../lib/DataHub/Emitter.js').default;
+
 const {
 	createLog,
 	udFun,
 	isNvl,
-	getLogInfo
+	getLogInfo,
+	setLogHandle,
+	createUid,
+	setPreLog,
+	getUniIndex
 } = Utils;
 
+const Component = require('../lib/DataHub/Component.js').default;
+
+setPreLog('test-');
+
+exports.Container = class Container {
+	constructor() {
+		let devLog = createLog('Container','log');
+		let errLog = createLog('Container','error');
+	  let emitter = new Emitter(devLog, errLog, true);
+		return	new Component.Container(emitter, devLog, errLog, true);
+	}
+} 
+
+const IGNORE_TEST = exports.IGNORE_TEST = createUid('IGNORE_TEST-');
+
+let lastRun = [];
+let lastRunErr = [];
+setLogHandle((logArray) => {
+	// console.log('logArray', logArray);
+	if ((logArray[1] || '').indexOf(`#run:`) === 0) {
+		lastRun = logArray
+	}
+	
+	if ((logArray[1] || '').indexOf(`#runErr:`) === 0) {
+		lastRunErr = logArray
+	}
+})
+
+var equalRunLog = exports.equalRunLog = function(result, args, trueResult) {
+	// console.log('lastRun', lastRun)
+	assert.deepStrictEqual(lastRun[2], args);
+	assert.deepStrictEqual(result, trueResult);
+}
+
+var equalErrLog = exports.equalErrLog = function(result, args, desc) {
+	// console.log('lastRun', lastRun)
+	assert.deepStrictEqual(lastRunErr[2], args);
+	assert.deepStrictEqual(lastRunErr[3], desc);
+}
+
 var equalLog = exports.equalLog = function(...args) {
-	let name = null;
 	for (let i = 0 ; i < args.length; i++) {
-		// console.log(getLogInfo()[i + 1], args[i], i)
-		assert.strictEqual(getLogInfo()[i], args[i]);
-	}
-	
-	if (name) {
-		console.log(`test-log '${name}' ok.`);
-	}
-	
-	return function(value) {
-		name = value;
+		if (args[i] === IGNORE_TEST) {
+			continue;
+		}
+		assert.deepStrictEqual(getLogInfo()[i], args[i]);
 	}
 }
 
-var equalAssert = exports.equalAssert = function(name, a, b) {
-	if (arguments.length === 2) {
-		b = a;
-		a = name;
-		name = null;
-	}
-	
-	if (typeof a === 'object') {
-		a = JSON.stringify(a);
-	}
-	
-	if (typeof b === 'object') {
-		b = JSON.stringify(b);
-	}
-
-	assert.strictEqual(a, b);
-	
-	if (name !== null) {
-		console.log(`测试 '${name}' 通过!\n`);
-	}
+var equalAssert = exports.equalAssert = function(a, b) {
+	assert.deepStrictEqual(a, b);
 }
 
 var createAsyncEqualAssert = exports.createAsyncEqualAssert = function(showLog = true) {
@@ -71,13 +94,13 @@ var createAsyncEqualAssert = exports.createAsyncEqualAssert = function(showLog =
 					resolve();
 				}
 				
-				let next2 = function( b){
+				let next2 = function(...args){
 					if (!arguments.length) {
 						resolve();
 						return;
 					}
 					
-					equalLog(name, b);
+					equalLog(...args);
 					resolve();
 				}
 				

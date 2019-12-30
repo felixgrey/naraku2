@@ -16,63 +16,57 @@ import {
 	fetchData,
 } from './Fetcher';
 
-export default class PaginationManager {
-	constructor(store, _devMode = false) {
-		this._key = getUniIndex();
-		this._destroyed = false;
-		this._inited = false;
+import Component from './Component';
 
+let defaultPageInfo = {
+	force: false,
+	page: 1,
+	size: 10,
+	start: 1,
+};
+
+const {
+	publicMethod
+} = Component;
+
+export function setDefaultPageInfo(v) {
+	Object.assign(defaultPageInfo, v);
+}
+
+export default class PaginationManager extends Component {
+
+	afterCreate(store) {
 		this._name = store._name;
 		this._fetcher = null;
-		this._jsonData = '';
-		this._force = false;
-		this._pageSize = 10;
-		this._pageNumber = 1;
-		this._startPage = 1;
+		this._stringData = '';
+		this._force = defaultPageInfo.force;
+		this._pageSize = defaultPageInfo.size;
+		this._pageNumber = defaultPageInfo.page;
+		this._startPage = defaultPageInfo.start;
 		this._stopKey = null;
+		this._noPage = false;
 		this._count = 0;
-
-		this._store = store;
-		this._dh = store._dh;
-		this._emitter = store._emitter;
-
-		// console.log('----------------------', this._dh ,this._store._dh , this._store)
-
-		this._emitter.once(`$$destroy:DataHub:${this._dh._key}`, () => {
-			this.destroy();
-		});
-
-		this.devLog = _devMode ? store.devLog.createLog(`PaginationManager=${this._key}`) : udFun;
-		this.errLog = store.errLog.createLog(`PaginationManager=${this._key}`);
-
-		this.devLog(`PaginationManager=${this._key} created.`);
 	}
 
-	_hasErr(name) {
-		if (this._destroyed || !this._inited || !this._fetcher) {
-			this.devLog(`run '${name}' failed : `, this._destroyed, this._inited, this._fetcher);
-			return true;
-		}
+	beforeDestroy() {}
 
-		return false;
-	}
-
+	@publicMethod
 	init(param) {
-		if (this._destroyed) {
-			this.devLog(`can't run init after destroyed`);
+		if (isNvl(param) || param === false) {
+			this._inited = true;
+			this._noPage = true;
 			return;
 		}
 
-		if (isNvl(param)) {
-			this._inited = true;
-			return;
+		if (param === true) {
+			param = {};
 		}
 
 		const {
 			fetcher = null,
-				force = false,
-				startPage = 1,
-				pageSize = 10
+				force = defaultPageInfo.force,
+				startPage = defaultPageInfo.start,
+				pageSize = defaultPageInfo.size
 		} = param;
 
 		this._inited = true;
@@ -83,53 +77,61 @@ export default class PaginationManager {
 		this._pageSize = pageSize;
 	}
 
+	@publicMethod
 	setCount(v) {
-		if (this._hasErr('setCount')) {
-			return;
-		}
-
 		this._count = v;
 	}
 
+	@publicMethod
 	getCount() {
-		if (this._hasErr('getCount')) {
-			return;
-		}
-
 		return this._count;
 	}
 
+	@publicMethod
 	stopFetch() {
-		if (this._hasErr('stopFetch')) {
-			return;
-		}
-
 		if (this._stopKey) {
 			stopFetchData(this._stopKey);
 			this._stopKey = null;
 		}
 	}
 
+	@publicMethod
 	fetch(data = {}) {
-		if (this._hasErr('fetch')) {
-			return;
+		if (this._fetcher === null) {
+			this._emitter.emit('$$data', {
+				name: `$$count:${this._name}`,
+				value: this._count
+			});
+			return Promise.resolve();
+		}
+
+		if (isNvl(data)) {
+			data = {};
 		}
 
 		this.stopFetch();
 
-		try {
-			const jsonData = JSON.stringify(data);
-			if (jsonData === this._jsonData) {
-				this.devLog(`same data`, jsonData);
-				if (!this._force) {
-					return;
-				}
-				this.devLog(`same data but force fetch`);
+		let stringData = null;
+		if (typeof data.$uniStringify === 'function') {
+			stringData = data.$uniStringify();
+		} else {
+			try {
+				stringData = JSON.stringify(data);
+			} catch (e) {
+				this.devLog('stringData Error:', e);
 			}
-			this._jsonData = jsonData;
-		} catch (e) {
-			this.devLog('jsonData Error:', e);
 		}
+
+		if (!isNvl(stringData) && stringData === this._stringData) {
+			this.devLog(`same data`, stringData);
+			if (!this._force) {
+				return;
+			}
+			this.devLog(`same data but force fetch`);
+		}
+
+		this._stringData = stringData;
+		this.setPageInfo(1);
 
 		const stopKey = this._stopKey = createUid('pageStopKey-');
 
@@ -159,12 +161,12 @@ export default class PaginationManager {
 			});
 		}).catch((err) => {
 			if (err === NOT_INIT_FETCHER) {
-				this.devLog('must init fetcher first');
+				this.devLog && this.devLog('must init fetcher first');
 				return;
 			}
 
 			if (err === NOT_ADD_FETCH) {
-				this.devLog(`must add fetcher '${this._fetcher}' first`);
+				this.devLog && this.devLog(`must add fetcher '${this._fetcher}' first`);
 				return;
 			}
 
@@ -176,20 +178,17 @@ export default class PaginationManager {
 		});
 	}
 
-	setPageInfo(pageSize, pageNumber) {
-		if (this._hasErr('setPageInfo')) {
-			return;
-		}
-
+	@publicMethod
+	setPageInfo(pageNumber, pageSize) {
 		let changed = false;
-
-		if (!isNvl(pageSize) && pageSize !== this._pageSize) {
-			this._pageSize = pageSize;
-			changed = true;
-		}
 
 		if (!isNvl(pageNumber) && pageNumber !== this._pageNumber) {
 			this._pageNumber = pageNumber;
+			changed = true;
+		}
+
+		if (!isNvl(pageSize) && pageSize !== this._pageSize) {
+			this._pageSize = pageSize;
 			changed = true;
 		}
 
@@ -201,34 +200,20 @@ export default class PaginationManager {
 
 	}
 
+	@publicMethod
 	getPageInfo() {
-		if (this._hasErr('getPageInfo')) {
-			return;
+		if (this._noPage) {
+			return {
+				hasPagiNation: false
+			};
 		}
 
 		return {
+			hasPagiNation: true,
 			count: this._count,
+			page: this._pageNumber,
+			size: this._pageSize,
+			start: this._startPage,
 		};
-	}
-
-	destroy() {
-		if (this._destroyed) {
-			return;
-		}
-
-		this.devLog(`PaginationManager=${this._key} destroyed.`);
-
-		this._emitter.emit('$$destroy:PaginationManager', this._key);
-		this._emitter.emit(`$$destroy:PaginationManager:${this._key}`);
-
-		this._destroyed = true;
-
-		this._dh = null;
-		this._emitter = null;
-		this._fetcher = null;
-
-		this.errLog = null;
-
-		this._key = null;
 	}
 }

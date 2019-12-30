@@ -26,6 +26,8 @@ export default class ? {
 			this.devLog && this.devLog(`${container._clazz} destroyed => ${this._clazz} destroy .`);
 			this.destroy();
 		});
+		
+		afterCreate
 
 		this.devLog(`${this._logName} created.`);
 	}
@@ -38,7 +40,9 @@ export default class ? {
 		this.devLog(`${this._logName} destroyed.`);
 		
 		this._emitter.emit(`$$destroy:${this._clazz}`, this._key);
-		this._emitter.emit(`$$destroy:${this._clazz}:${this._key}`);
+		this._emitter.emit(`$$destroy:${this._clazz}=${this._key}`);
+		
+		beforeDestroy
 		
 		this._destroyed = true;
 		

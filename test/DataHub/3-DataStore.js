@@ -1,96 +1,122 @@
-const Utils = require('../../lib/Utils/index.js');
 
 const {
 	equalAssert,
 	equalLog,
-	createAsyncEqualAssert
+	equalRunLog,
+	equalErrLog,
+	createAsyncEqualAssert,
+	IGNORE_TEST,
+	Container,
 } = require('./../TestTools.js');
 
 const {
 	createLog,
-	udFun
-} = Utils;
+	getUniIndex,
+	setPreLog,
+	setLogHandle,
+} =  require('../../lib/Utils/index.js');
 
-const MockDataHub0 = require('./Mock-DataHub0');
 
-const DataStore = require('../../lib/DataHub/DataStore.js').default;
+// ----------------------------------------------------------- //
+const testName = 'DataStore';
+const DataStore = require(`../../lib/DataHub/${testName}.js`).default;
+// ----------------------------------------------------------- //
 
-console.log('--------- test DataStore start ---------');
 
-let emitterDevLogger = createLog('TestDataStore', 'log', true);
-let emitterErrLogger = createLog('TestDataStore', 'error', true);
+let container =new Container();
 
-let mdh = new MockDataHub0 ({}, emitterDevLogger, emitterErrLogger);
+console.log(`\n--------- test ${testName} start ---------\n`);
 
-let ds1 = new DataStore(mdh, 'test', true);
+let component = new DataStore(container, 'testStore1', true);
+
+console.log(`\n--- ${testName}.destroy() ---\n`);
+component.destroy();
+
+console.log(`\n--- Container.destroy() ---\n`);
+component = new DataStore(container, 'testStore2', true);
+container.destroy();
+
+container = new Container();
+component = new DataStore(container, 'testStore3', true);
 
 let data = [1,2,3];
 
-ds1.set(data);
+equalRunLog(component.get(), [], []);
+equalRunLog(component.first(), [], {});
+equalRunLog(component.first(123), [123], 123);
+equalRunLog(component.set(data), [data]);
+equalRunLog(component.get(), [], data);
+equalRunLog(component.first(), [], 1);
+equalRunLog(component.getCount(), [], 3);
 
-equalAssert(ds1.get(), data);
+data = [
+	{a: 'a'},
+	{b: {
+			bb: ['c'],
+		},
+	},
+]
 
-ds1.lock();
-equalAssert(ds1.isLocked(), true);
+equalRunLog(component.set(data), [data]);
+equalRunLog(component.first(), [], {a: 'a'});
+equalRunLog(component.getValue('1.b.bb.0'), ['1.b.bb.0'], 'c');
+equalRunLog(component.getValue('1.b.bb.2', 999), ['1.b.bb.2', 999], 999);
 
-ds1.set(data);
+component.remove();
+equalRunLog(component.getStatus(), [], 'undefined');
 
-ds1.unLock();
-ds1.set(data);
+equalRunLog(component.getStoreConfig(), [], {});
 
-ds1.lock();
-ds1.lock();
-ds1.unLock();
-equalAssert(ds1.isLocked(), true);
+component.setConfig({$extend123: 123});
+equalRunLog(component.getExtendConfig(), [], {$extend123: 123});
 
-ds1.loading();
+component = new DataStore(container, 'testStore4', true);
 
-ds1.unLock();
-ds1.loading();
-ds1.loading();
+component.setConfig({
+	pagination: true,
+});
 
-ds1.loaded([4,5,6]);
+equalRunLog(component.getPageInfo(), [], {
+	hasPagiNation: true,
+	count: 0,
+	page: 1,
+	size: 10,
+	start: 1,
+});
 
-equalAssert(ds1.get(), [4,5,6]);
+component.lock();
+equalRunLog(component.isLocked(), [], true);
 
-ds1.loading();
+component.unLock();
+equalRunLog(component.isLocked(), [], false);
 
-equalAssert(ds1.isLoading(), true);
+component.lock();
+component.lock();
+component.unLock();
+equalRunLog(component.isLocked(), [], true);
 
-ds1.clearLoading();
+component.unLock();
+component.unLock();
+equalRunLog(component.isLocked(), [], false);
 
-equalAssert(ds1.isLoading(), false);
+equalRunLog(component.isLoading(), [], false);
+component.loading();
+equalRunLog(component.isLoading(), [], true);
 
-equalAssert(ds1.getStatus(), 'ready');
+component.loaded(987);
+equalRunLog(component.isLoading(), [], false);
+equalRunLog(component.get(),[], [987]);
 
-ds1.loading();
+component.loading();
+equalRunLog(component.isLoading(), [], true);
+component.clearLoading();
+equalRunLog(component.isLoading(), [], false);
 
-ds1.remove();
+component.lock();
+equalErrLog(component.loading(), [], 'locked/loading');
+component.unLock();
 
-ds1.clearLoading();
-ds1.remove();
+component.loading();
+equalErrLog(component.lock(), [], 'loading');
 
-ds1.set([{a:'a'},{b:{bb:['c']}}]);
-
-equalAssert(ds1.getValue('1.b.bb.0'), 'c');
-
-equalAssert(ds1.getValue('1.b.bb.2', 999), 999);
-
-equalAssert(ds1.first(), {a:'a'});
-
-ds1.remove();
-equalAssert(ds1.first(), {});
-equalAssert(ds1.first(444), 444);
-
-ds1.merge0({t:9});
-
-equalAssert(ds1.first(), {t:9});
-
-equalAssert(ds1.getCount(), 1);
-
-ds1.clear();
-
-equalAssert(ds1.isEmpty(), true);
-
-
-console.log('--------- test DataStore end ---------');
+console.log(`\n--------- test ${testName} end   ---------\n`);

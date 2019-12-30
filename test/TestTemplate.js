@@ -11,12 +11,11 @@ const {
 require('./Init-Fetcher0.js');
 
 // ----------------------------------------------------------- //
-const testName = 'PaginationManager';
+const testName = ?;
 const Component = require(`../../lib/DataHub/${testName}.js`).default;
 // ----------------------------------------------------------- //
 
 let container = new Container();
-container._name ='mockStore'
 
 console.log(`\n--------- test ${testName} start ---------\n`);
 
@@ -30,27 +29,9 @@ console.log(`\n--- Container.destroy() ---\n`);
 component = new Component(container, true);
 container.destroy();
 
-console.log(`\n------\n`);
 
 container = new Container();;
-container._name ='mockStore'
 component = new Component(container, true);
-
-component.init();
-
-
-component.init({
-	fetcher: 'test.get'
-});
-
-component.fetch();
-// component.stopFetch();
-component.setPageInfo();
-
-// component.destroy();
-
-// component.fetch();
-
 
 
 console.log(`\n--------- test ${testName} end   ---------\n`);

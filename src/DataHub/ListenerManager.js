@@ -6,6 +6,8 @@ import {
 	createDestroyedErrorLog,
 } from './../Utils';
 
+import Component from './Component';
+
 const publicMethods = [
 	'on',
 	'once',
@@ -14,35 +16,21 @@ const publicMethods = [
 	'emit'
 ];
 
-export default class ListenerManager {
+const {
+	publicMethod
+} = Component;
 
-	constructor(dhc, _devMode = false) {
-		this._key = getUniIndex();
-		this._destroyed = false;
-
-		this._dhc = dhc;
-		this._dh = dhc._dh;
-		this._emitter = dhc._emitter;
-
+export default class ListenerManager extends Component {
+	afterCreate(dhc) {
 		this._offSet = new Set();
+	}
 
-		this.devLog = _devMode ? dhc.devLog.createLog(`ListenerManager=${this._key}`) : udFun;
-		this.errLog = dhc.errLog.createLog(`ListenerManager=${this._key}`);
-		this.destroyedErrorLog = createDestroyedErrorLog('', this._key);
-
-		this._emitter.once(`$$destroy:Controller:${dhc._key}`, () => {
-			this.devLog && this.devLog(`Controller destroyed .`);
-			this.destroy();
-		});
-
-		this.devLog(`ListenerManager=${this._key} created.`);
+	beforeDestroy() {
+		Array.from(this._offSet.values()).forEach(fun => fun());
+		this._offSet = null;
 	}
 
 	_onAndOnce(name, callback, once) {
-		if (this._destroyed) {
-			this.dstroyedErrorLog('on or once');
-			return udFun;
-		}
 
 		let _off = this._emitter[once ? 'once' : 'on'](name, callback);
 
@@ -59,28 +47,23 @@ export default class ListenerManager {
 		return off;
 	}
 
+	@publicMethod
 	on(name, callback) {
 		return this._onAndOnce(name, callback, false);
 	}
 
+	@publicMethod
 	once(name, callback) {
 		return this._onAndOnce(name, callback, true);
 	}
 
+	@publicMethod
 	emit(name, ...args) {
-		if (this._destroyed) {
-			this.dstroyedErrorLog('emit');
-			return udFun;
-		}
-
 		return this._emitter.emit(name, ...args);
 	}
 
+	@publicMethod
 	when(...args) {
-		if (this._destroyed) {
-			this.dstroyedErrorLog('when');
-			return udFun;
-		}
 
 		let callback = args.pop();
 		let names = args;
@@ -141,12 +124,8 @@ export default class ListenerManager {
 		return off;
 	}
 
+	@publicMethod
 	whenAll(...args) {
-		if (this._destroyed) {
-			this.dstroyedErrorLog('whenAll');
-			return udFun;
-		}
-
 		let callback = args.pop();
 		let names = args;
 
@@ -207,31 +186,6 @@ export default class ListenerManager {
 		this._offSet.add(off);
 
 		return off;
-	}
-
-	destroy() {
-		if (this._destroyed) {
-			return;
-		}
-
-		this.devLog(`ListenerManager=${this._key} destroyed.`);
-
-		this._emitter.emit('$$destroy:ListenerManager', this._key);
-		this._emitter.emit(`$$destroy:ListenerManager:${this._key}`);
-
-		Array.from(this._offSet.values()).forEach(fun => fun());
-		this._offSet = null;
-
-		this._destroyed = true;
-
-		this._value = null;
-		this._dh = null;
-		this._emitter = null;
-
-		this.devLog = null;
-		this.errLog = null;
-
-		this._key = null;
 	}
 }
 

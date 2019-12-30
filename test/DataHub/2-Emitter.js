@@ -20,35 +20,35 @@ let emitterErrLogger = createLog('TestEmitter', 'error');
 let testEmitter = new Emitter(emitterDevLogger, emitterDevLogger, true);
 let testEmitterKey = testEmitter._key;
 testEmitter.emit('event1', 'msg1');
-equalLog(`【naraku-TestEmitter.Emitter=${testEmitterKey}-log】:`,`emit 'event1'`);
+equalLog(`【test-TestEmitter.Emitter=${testEmitterKey}-log】:`,`emit 'event1'`);
 
 let msg = Date.now();
 testEmitter.on('now', (result) => {
-	equalLog(`【naraku-TestEmitter.Emitter=${testEmitterKey}-log】:`, `emit 'now'`);
+	equalLog(`【test-TestEmitter.Emitter=${testEmitterKey}-log】:`, `emit 'now'`);
 });
-equalLog(`【naraku-TestEmitter.Emitter=${testEmitterKey}-log】:`,`listen in 'now'.`);
+equalLog(`【test-TestEmitter.Emitter=${testEmitterKey}-log】:`,`listen in 'now'.`);
 testEmitter.emit('now', msg);
 
 testEmitter.on('afterDestroy', udFun);
 testEmitter.destroy();
 
 testEmitter.emit('afterDestroy', msg);
-equalLog(`【naraku-AfterDstroyed.Emitter=${testEmitterKey}-error】:`,`can't run 'Emitter.emit()' after destroyed.`);
+equalLog(`【test-AfterDstroyed.Emitter=${testEmitterKey}-error】:`,`can't run 'Emitter.emit()' after destroyed.`);
 
 testEmitter.on('afterDestroy', udFun);
-equalLog(`【naraku-AfterDstroyed.Emitter=${testEmitterKey}-error】:`,`can't run 'Emitter.on()' after destroyed.`);
+equalLog(`【test-AfterDstroyed.Emitter=${testEmitterKey}-error】:`,`can't run 'Emitter.on()' after destroyed.`);
 
 let testEmitter2 = new Emitter(emitterDevLogger, emitterDevLogger, true);
 let testEmitter2Key = testEmitter2._key;
 
 testEmitter2.once('args', () => {
-	equalLog(`【naraku-TestEmitter.Emitter=${testEmitter2Key}-log】:`, `emit 'args'`, `argsLength=3`);
+	equalLog(`【test-TestEmitter.Emitter=${testEmitter2Key}-log】:`, `emit 'args'`, `argsLength=3`);
 });
 
 testEmitter2.emit('args', 'a', 'b', 'c');
 
 testEmitter2.once('args', () => {
-	equalLog(`【naraku-TestEmitter.Emitter=${testEmitter2Key}-log】:`, `emit 'args'`, `argsLength=4`);
+	equalLog(`【test-TestEmitter.Emitter=${testEmitter2Key}-log】:`, `emit 'args'`, `argsLength=4`);
 });
 testEmitter2.emit('args', 1,2,3,4);
 

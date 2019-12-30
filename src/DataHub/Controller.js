@@ -28,7 +28,10 @@ export default class Controller {
 
 	constructor(dh, _devMode = false) {
 		this._key = getUniIndex();
+		this._clazz = this.constructor.name;
+		this._logName = `${this._clazz}=${this._key}`;
 		this._destroyed = false;
+
 		this._devMode = _devMode;
 
 		this._watchSet = new Set();
@@ -38,15 +41,17 @@ export default class Controller {
 		this._publicMethods = {};
 
 		this._dh = dh;
+		this._dhc = this;
 		this._emitter = dh._emitter;
 
-		dh._emitter.once('$$destroy:DataHub', () => {
+		this.devLog = _devMode ? dh.devLog.createLog(this._logName) : udFun;
+		this.errLog = dh.errLog.createLog(this._logName);
+		this.destroyedErrorLog = createDestroyedErrorLog(this._clazz, this._key);
+		
+		this._emitter.once(`$$destroy:${dh._clazz}:${dh._key}`, () => {
+			this.devLog && this.devLog(`${dh._clazz} destroyed => ${this._clazz} destroy .`);
 			this.destroy();
 		});
-
-		this.devLog = _devMode ? dh.devLog.createLog(`Controller=${this._key}`) : udFun;
-		this.errLog = dh.errLog.createLog(`Controller=${this._key}`);
-		this.destroyedErrorLog = createDestroyedErrorLog('Controller', this._key);
 
 		this._fetchManager = new FetchManager(this, refreshRate, _devMode);
 		this._runnerManager = new RunnerManager(this, _devMode);
@@ -55,7 +60,7 @@ export default class Controller {
 		this._initPublicMethods();
 		this._initWatch();
 
-		this.devLog(`Controller=${this._key} created.`);
+		this.devLog(`${this._logName} created.`);
 	}
 
 	_isStatus(names, type = 'isLoading') {
@@ -163,6 +168,10 @@ export default class Controller {
 		}
 
 		const off = () => {
+			if (this._destroyed) {
+				return;
+			}
+
 			if (!this._watchSet.has(callback)) {
 				return;
 			}
@@ -208,7 +217,7 @@ export default class Controller {
 			return;
 		}
 
-		this.devLog(`Controller=${this._key} destroyed.`);
+		this.devLog(`${this._logName} destroyed.`);
 
 		clearTimeout(this.refreshTimeoutIndex);
 
@@ -221,11 +230,13 @@ export default class Controller {
 		this._listenerManager.destroy();
 		this._fetchManager = null;
 
-		this._emitter.emit('$$destroy:Controller', this._key);
-		this._emitter.emit(`$$destroy:Controller:${this._key}`);
+		this._emitter.emit(`$$destroy:${this._clazz}`, this._key);
+		this._emitter.emit(`$$destroy:${this._clazz}=${this._key}`);
 
 		this._watchSet = null;
+
 		this._dh = null;
+		this._dhc = null;
 		this._emitter = null;
 
 		this.devLog = null;

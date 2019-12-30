@@ -7,24 +7,20 @@ import {
 	snapshot,
 } from './../Utils';
 
+import Component from './Component';
+
 const publicMethods = [
 	'turnOn',
 	'turnOff'
 ];
 
-export default class RelationManager {
+const {
+	publicMethod
+} = Component;
 
-	constructor(dataStore, _devMode = false) {
-		this._key = getUniIndex();
-		this._clazz = this.constructor.name;
-		this._logName = `${this._clazz}=${this._key}`;
-		this._destroyed = false;
-
-		this._store = dataStore;
-		this._dh = dataStore._dh;
-		this._dhc = this._dh._dhc;
-		this._emitter = dataStore._emitter;
-		this._name = dataStore._name;
+export default class RelationManager extends Component {
+	afterCreate(store) {
+		this._name = store._name;
 		this._checkReady = udFun;
 		this._defaultData = null;
 
@@ -32,33 +28,20 @@ export default class RelationManager {
 			off: false,
 			willFetch: false,
 		};
-
-		this.devLog = _devMode ? dataStore.devLog.createLog(this._logName) : udFun;
-		this.errLog = dataStore.errLog.createLog(this._logName);
-		this.destroyedErrorLog = createDestroyedErrorLog(this._clazz, this._key);
-
-		this._emitter.once(`$$destroy:${this._dh._clazz}:${this._dh._key}`, () => {
-			this.devLog && this.devLog(`${this._clazz} destroyed => ${this._clazz} destroy .`);
-			this.destroy();
-		});
-
-		this.devLog(`${this._logName} created.`);
 	}
 
-	_hasErr(name) {
-		if (this._destroyed) {
-			this.devLog(`run '${name}' failed : `, this._destroyed);
-			return true;
-		}
+	beforeDestroy() {
+		this._offFetcher && this._offFetcher();
+		this._offFetcher = null;
 
-		return false;
+		this._checkReady = null;
+		this._defaultData = null;
+		this._switchStatus = null;
+
 	}
 
+	@publicMethod
 	turnOn() {
-		if (this._hasErr()) {
-			return;
-		}
-
 		this._switchStatus.off = false;
 		if (this._switchStatus.willFetch) {
 			this._switchStatus.willFetch = false;
@@ -66,11 +49,8 @@ export default class RelationManager {
 		}
 	}
 
+	@publicMethod
 	turnOff() {
-		if (this._hasErr()) {
-			return;
-		}
-
 		this._switchStatus.off = true;
 	}
 
@@ -83,6 +63,55 @@ export default class RelationManager {
 
 			this._defaultData = value;
 			this._store.set(snapshot(value));
+		},
+		clear: (value, cfg) => {
+			if (!this._dhc._listenerManager) {
+				this.devLog(`config clear err: no listenerManager`);
+				return;
+			}
+
+			this._dhc._listenerManager.when(value, () => {
+				this._store.clear();
+			});
+		},
+		reset: (value, cfg) => {
+			if (!this._dhc._listenerManager) {
+				this.devLog(`config reset err: no listenerManager`);
+				return;
+			}
+
+			if (!this._defaultData) {
+				this._dhc._listenerManager.when(value, () => {
+					this._store.clear();
+				});
+			} else {
+				this._dhc._listenerManager.when(value, () => {
+					this._store.set(snapshot(this._defaultData));
+				});
+			}
+		},
+		snapshot: (value, cfg) => {
+			if (!this._dhc._listenerManager) {
+				this.devLog(`config snapshot err: no listenerManager`);
+				return;
+			}
+
+			this._dhc._listenerManager.when(value, (data) => {
+				this._store.set(snapshot(data));
+			});
+		},
+		stop: (value, cfg) => {
+			if (!this._dhc._listenerManager || !this._dhc._fetchManager) {
+				this.devLog(`config stop err: no listenerManager/fetchManager`,
+					!!this._dhc._fetchManager,
+					!!this._dhc._listenerManager
+				);
+				return;
+			}
+
+			this._dhc._listenerManager.when(value, (data) => {
+				this._fetchManager.stopFetch(this._name);
+			});
 		},
 		fetcher: (value, cfg) => {
 			let {
@@ -172,11 +201,8 @@ export default class RelationManager {
 		}
 	}
 
+	@publicMethod
 	init(cfg = {}) {
-		if (this._hasErr()) {
-			return;
-		}
-
 		this._configNames.forEach(cfgName => {
 			const has1 = cfg.hasOwnProperty(cfgName);
 			const has2 = this._configPolicy[cfgName];
@@ -187,35 +213,8 @@ export default class RelationManager {
 		});
 	}
 
-	_configNames = ['fetcher', 'clear', 'reset', 'snapshot', 'default'];
+	_configNames = ['default', 'clear', 'fetcher', 'reset', 'snapshot', 'stop'];
 
-	destroy() {
-		if (this._destroyed) {
-			return;
-		}
-
-		this.devLog(`${this._logName} destroyed.`);
-
-		this._emitter.emit(`$$destroy:${this._clazz}`, this._key);
-		this._emitter.emit(`$$destroy:${this._clazz}:${this._key}`);
-
-		this._offFetcher && this._offFetcher();
-		this._offFetcher = null;
-
-		this._destroyed = true;
-
-		this._checkReady = null;
-		this._defaultData = null;
-
-		this._dh = null;
-		this._dhc = null;
-		this._emitter = null;
-
-		this.devLog = null;
-		this.errLog = null;
-
-		this._key = null;
-	}
 }
 
 RelationManager.publicMethods = publicMethods;

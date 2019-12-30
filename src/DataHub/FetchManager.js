@@ -13,40 +13,38 @@ import {
 	fetchData,
 } from './Fetcher';
 
+import Component from './Component';
+
 const publicMotheds = [
 	'fetch'
 ];
 
-export default class FetchManager {
-	constructor(dhc, refreshRate = 40, _devMode = false) {
-		this._key = getUniIndex();
-		this._destroyed = false;
+const {
+	publicMethod
+} = Component;
 
+export default class FetchManager extends Component {
+
+	afterCreate(dhc, refreshRate = 40, _devMode = false) {
 		this._fetchingDatastore = {};
 		this._stopKeys = {};
 		this._refreshRate = refreshRate;
-
-		this._controller = dhc;
-		this._dh = dhc._dh;
-		this._emitter = dhc._emitter;
-
-		this._emitter.once(`$$destroy:Controller:${dhc._key}`, () => {
-			this.destroy();
-		});
-
-		this.devLog = _devMode ? dhc.devLog.createLog(`FetchManager=${this._key}`) : udFun;
-		this.errLog = dhc.errLog.createLog(`FetchManager=${this._key}`);
-		this.destroyedErrorLog = createDestroyedErrorLog('FetchManager', this._key);
-
-		this.devLog(`FetchManager=${this._key} created.`);
 	}
 
-	fetch(fetcher, data, dataInfo = {}, stop = null) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('fetch');
-			return udFun;
-		}
+	beforeDestroy() {
+		Object.values(this._stopKeys).forEach(key => {
+			stopFetchData(key);
+		});
+		this._stopKeys = null;
 
+		Object.values(this._fetchingDatastore).forEach(index => {
+			clearTimeout(index);
+		});
+		this._fetchingDatastore = null;
+	}
+
+	@publicMethod
+	fetch(fetcher, data, dataInfo = {}, stop = null) {
 		const stopKey = createUid('stopKey-');
 		this._stopKeys[stopKey] = stopKey;
 
@@ -76,12 +74,8 @@ export default class FetchManager {
 		});
 	}
 
+	@publicMethod
 	stopFetch(name) {
-		if (this._destroyed || isNvl(name)) {
-			this.devLog(`stopFetch failed: destroyed=${this._destroyed}, name=${name}`);
-			return;
-		}
-
 		if (this._stopKeys[name]) {
 			stopFetchData(this._stopKeys[name]);
 			this._stopKeys[name] = null;
@@ -93,6 +87,7 @@ export default class FetchManager {
 		}
 	}
 
+	@publicMethod
 	fetchStoreData(param = {}) {
 		const {
 			name = null,
@@ -102,11 +97,6 @@ export default class FetchManager {
 				before = udFun,
 				after = udFun,
 		} = param;
-
-		if (this._destroyed || isNvl(name)) {
-			this.devLog(`fetchStoreData failed: destroyed=${this._destroyed}, name=${name}`);
-			return;
-		}
 
 		clearTimeout(this._fetchingDatastore[name]);
 		this._fetchingDatastore[name] = setTimeout(() => {
@@ -191,35 +181,6 @@ export default class FetchManager {
 		}, this._refreshRate);
 	}
 
-	destroy() {
-		if (this._destroyed) {
-			return;
-		}
-
-		this.devLog(`FetchManager=${this._key} destroyed.`);
-
-		this._emitter.emit('$$destroy:FetchManager', this._key);
-		this._emitter.emit(`$$destroy:FetchManager:${this._key}`);
-
-		Object.values(this._stopKeys).forEach(key => {
-			stopFetchData(key);
-		});
-		this._stopKeys = null;
-
-		Object.values(this._fetchingDatastore).forEach(index => {
-			clearTimeout(index);
-		});
-		this._fetchingDatastore = null;
-
-		this._destroyed = true;
-
-		this._dh = null;
-		this._emitter = null;
-
-		this.errLog = null;
-
-		this._key = null;
-	}
 }
 
 FetchManager.publicMotheds = publicMotheds;

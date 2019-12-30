@@ -1,64 +1,63 @@
-const Utils = require('../../lib/Utils/index.js');
 
 const {
 	equalAssert,
 	equalLog,
-	createAsyncEqualAssert
+	equalRunLog,
+	equalErrLog,
+	createAsyncEqualAssert,
+	IGNORE_TEST,
+	Container,
 } = require('./../TestTools.js');
+require('./Init-Fetcher0.js');
 
-const {
-	createLog,
-	udFun
-} = Utils;
+// ----------------------------------------------------------- //
+const testName = 'RunnerManager';
+const Component = require(`../../lib/DataHub/${testName}.js`).default;
+// ----------------------------------------------------------- //
 
-const MockDataHub0 = require('./Mock-DataHub0');
-const MockController0 = require('./Mock-Controller0');
+let container = new Container();;
 
-const RunnerManager = require('../../lib/DataHub/RunnerManager.js').default;
+console.log(`\n--------- test ${testName} start ---------\n`);
 
-console.log('--------- test RunnerManager start ---------');
+let component = new Component(container,  true);
 
-let emitterDevLogger = createLog('testRunnerManager', 'log', true);
-let emitterErrLogger = createLog('testRunnerManager', 'error', true);
+console.log(`\n--- ${testName}.destroy() ---\n`);
+component.destroy();
 
-console.log('--- create ---');
-let mdh = new MockDataHub0 ({}, emitterDevLogger, emitterErrLogger);
-let mdc = new MockController0(mdh);
-let rm = new RunnerManager(mdc, true);
+console.log(`\n--- Container.destroy() ---\n`);
 
-// console.log('--- RunnerManager.destroy ---');
-// rm.destroy();
-// rm = new RunnerManager(mdc, true);
+component = new Component(container, true);
+container.destroy();
 
-// console.log('--- Controller.destroy ---');
-// mdc.destroy();
-// mdc = new MockController0(mdh);
-// lsnm = new RunnerManager(mdc, true);
 
-console.log('--- hasRunner unRegister register run ---');
-rm.run('test1');
-equalAssert(rm.hasRunner('test1'), false);
-rm.register('test1', (a, b, c) => {
+container = new Container();;
+component = new Component(container, true);
+
+component.run('test1');
+equalAssert(component.hasRunner('test1'), false);
+component.register('test1', (a, b, c) => {
 	console.log('run test1', a, b, c);
 	equalAssert(a, 123);
 });
-equalAssert(rm.hasRunner('test1'), true);
-rm.run('test1', 123);
-rm.run('test1', 123, 111, 222);
+equalAssert(component.hasRunner('test1'), true);
+component.run('test1', 123);
+component.run('test1', 123, 111, 222);
 
-rm.unRegister('test1');
-equalAssert(rm.hasRunner('test1'), false);
-rm.run('test1');
+component.unRegister('test1');
+equalAssert(component.hasRunner('test1'), false);
+component.run('test1');
 
-rm.register('test2', (a, b, c) => {
+component.register('test2', (a, b, c) => {
 	console.log('run test2', a, b, c);
 	equalAssert(a, 999);
 });
 
-rm.destroy();
+component.destroy();
 
-rm.run('test2');
-rm.unRegister('test1');
-rm.hasRunner('test1')
+component.run('test2');
+component.unRegister('test1');
+component.hasRunner('test1')
 
-console.log('--------- test RunnerManager end ---------');
+
+
+console.log(`\n--------- test ${testName} end   ---------\n`);

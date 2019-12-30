@@ -2,20 +2,8 @@ naraku2
 
 --------------------------------------------
 naraku-utils
-
 --------------------------------------------
 naraku2-dataHub
-
-Fetcher
-
-Emitter
-
-
-DataHub(dhConfig)
-
-Controller(dh)
-
-
 --------------------------------------------
 naraku2-transformer
 
@@ -453,8 +441,12 @@ BMap
 		
 ---------------------------------
 
+$$内置事件名称:子名称@name=key
 
-sourceDhName 数据名称 Table
+
+
+sourceStore 数据名称 Table
+switchStore Tabs
 sourceData 数据列表
 
 field 字段
@@ -472,7 +464,7 @@ initValue 初始值
 exceptValue 例外值
 disabledValue 不可用值
 
-withDh 相关数据名称 Tabs Form
+withStore 相关数据名称 Tabs Form
 
 
 
@@ -486,16 +478,28 @@ MonthPicker
 DatePicker
 
 
-
-@formRender({
-	uniName
-	withDh
+@createForm
+@renderForm({
+	uniName,
+	fetcher,
+	withStore,
+	labelWidth,
+	fieldWidth,
+	requireErrFormatter
+	formatSubmit
 })
+
+form.checkData.then
+form.submit.then //锁死
+form.reset
+form.clear
+form.stop
 
 <LsForm className style cols gutter labelWidth fieldWidth disabled>
 	<Item 
 		className style 
-		type field label 
+		type 
+		field label require
 		labelWidth fieldWidth  
 		initValue exceptValue disabledValue
 		disabled onChange
@@ -504,12 +508,42 @@ DatePicker
 <LsForm>
 
 
-<LsTable>
-	<Col label field render  sort filter="select|search|all"   />
+<LsTable 
+	menu 
+	server 
+	
+	className
+	style
+	onExportAll
+	onExportVisible
+	
+	select='single|muti'
+	
+	onSearch
+	onSort
+	
+	onSelect
+	
+	onChangePageNumber
+	onChangePageSize
+	
+	onDetail
+	
+	pageNumber
+	initPageSize
+	
+	renderMap
+	
+	tableProps
+>
+	<Col label field render exceptMe sort filter="select|search|all" />
+	<Col >
+		<Col />
+	</Col>
 </LsTable>
 
 
-<LsTabs uniName withDh disabled>
-	<TabPane switchDh label key>
+<LsTabs uniName disabled>
+	<TabPane switchStore label key>
 </LsTabs>
 

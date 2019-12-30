@@ -13,24 +13,48 @@ import Controller from './Controller';
 export default class DataHub {
 	constructor(cfg, devLog = udFun, errLog = udFun, _devMode = false) {
 		this._key = getUniIndex();
-		this._cfg = cfg;
+		this._clazz = this.constructor.name;
+		this._logName = `${this._clazz}=${this._key}`;
 		this._destroyed = false;
+
+		this._cfg = cfg;
 		this._devMode = _devMode;
 
 		this._dataCenter = {};
+		this._extendConfig = {};
 
 		this._emitter = new Emitter(this.devLog, this.errLog, _devMode);
-		this._initDsPublicMethods();
-		this._controller = new Controller(this);
+		this._dh = this;
+		this._dhc = new Controller(this);
 
-		// ConfigManager
+		this._emitter.once(`$$destroy:Emitter=${this._emitter._key}`, () => {
+			this.devLog && this.devLog(`Emitter destroyed => DataHub destroy .`);
+			this.destroy();
+		});
 
+		this._emitter.once(`$$destroy:Controller=${this._dhc._key}`, () => {
+			this.devLog && this.devLog(`Controller destroyed => DataHub destroy .`);
+			this.destroy();
+		});
 
-		this.devLog = _devMode ? devLog.createLog(`DataHub=${this._key}`) : udFun;
-		this.errLog = errLog.createLog(`DataHub=${this._key}`);
+		this.devLog = _devMode ? devLog.createLog(this._logName) : udFun;
+		this.errLog = errLog.createLog(this._logName);
 		this.destroyedErrorLog = createDestroyedErrorLog('DataHub', this._key);
 
-		this.devLog(`DataHub=${this._key} created.`);
+		this._initDsPublicMethods();
+		this._init();
+
+		this.devLog(`${this._logName} created.`);
+	}
+
+	_init() {
+		for (let name in this._cfg) {
+			if (/\_|\$/g.test(name.charAt(0))) {
+				this._extendConfig[name] = this._cfg[name];
+				continue;
+			}
+			this.getDataStore(name).setConfig(this._cfg[name]);
+		}
 	}
 
 	_initDsPublicMethods() {
@@ -59,7 +83,7 @@ export default class DataHub {
 			return udFun;
 		}
 
-		return this._controller.getPublicMethods();
+		return this._dhc.getPublicMethods();
 	}
 
 	destroy() {
@@ -67,23 +91,23 @@ export default class DataHub {
 			return;
 		}
 
-		this.devLog(`DataHub=${this._key} destroyed.`);
+		this.devLog(`${this._logName} destroyed.`);
 
-		this._emitter.emit('$$destroy:DataHub', this._key);
-		this._emitter.emit(`$$destroy:DataHub:${this._key}`);
-
-		// ConfigManager
-
-		this._controller.destroy();
-		this._controller = null;
+		this._emitter.emit(`$$destroy:${this._clazz}`, this._key);
+		this._emitter.emit(`$$destroy:${this._clazz}=${this._key}`);
 
 		Object.values(this._dataCenter).forEach(ds => ds.destroy());
 		this._dataCenter = null;
+
+		this._dhc.destroy();
+		this._dhc = null;
 
 		this._emitter.destroy();
 		this._emitter = null;
 
 		this._destroyed = true;
+
+		this._dh = null;
 		this._key = null;
 	}
 }

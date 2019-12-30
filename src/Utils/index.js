@@ -36,15 +36,27 @@ function udFun() {}
 function pmsFun(a) {
 	return Promise.resolve(a);
 }
+
 const nextPms = () => Promise.resolve();
 // 返回用的兜底假数据；
 const fake = {
-	'FAKE_RETURN': true,
+	'$uniStringify': () => '{"FAKE_RETURN": true}',
+	'$snapshot': () => {
+		FAKE_RETURN: true
+	},
 	'createLog': () => udFun,
+	'emit': udFun,
+	'on': udFun,
+	'once': udFun,
 	'then': nextPms,
 	'catch': nextPms,
 	'finally': nextPms,
 };
+
+Object.values(fake).forEach(item => {
+	item.FAKE_RETURN = true;
+})
+fake.FAKE_RETURN = true;
 
 Object.assign(udFun, fake);
 Object.assign(pmsFun, fake);
@@ -111,6 +123,11 @@ function logSwitch(flag) {
 function getLogInfo() {
 	return [].concat(logInfoArray);
 }
+let logHandle = udFun;
+
+function setLogHandle(v) {
+	logHandle = v;
+}
 
 if (isDev) {
 	createLog = function(name = '', type = 'log') {
@@ -122,6 +139,7 @@ if (isDev) {
 		let logger = function(...args) {
 			logInfoArray = [`【${preLog}${name}-${type}】:`, ...args];
 			logInfoArray.logType = type;
+			logHandle(logInfoArray);
 			showLog && console[type](...logInfoArray);
 		}
 
@@ -180,16 +198,24 @@ function getDeepValue(data, path = '', defValue) {
 	JSON数据快照
 */
 function snapshot(value) {
-	if (isNvl(value) || typeof value !== 'object') {
+	if (isNvl(value)) {
 		return value;
 	}
-	
+
+	if (typeof value.$snapshot === 'function') {
+		return value.$snapshot();
+	}
+
+	if (typeof value !== 'object') {
+		return value;
+	}
+
 	try {
 		value = JSON.parse(JSON.stringify(value));
 	} catch (e) {
 		showLog && console.error('【snapshot-error】：', e);
 	}
-	
+
 	return value;
 }
 
@@ -346,6 +372,7 @@ export {
 	setPreLog,
 	createLog,
 	createDestroyedErrorLog,
+	setLogHandle,
 	getLogInfo,
 
 	NumberFormat,

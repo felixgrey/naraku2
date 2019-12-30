@@ -1,59 +1,89 @@
-const Utils = require('../../lib/Utils/index.js');
 
 const {
 	equalAssert,
 	equalLog,
-	createAsyncEqualAssert
+	equalRunLog,
+	equalErrLog,
+	createAsyncEqualAssert,
+	IGNORE_TEST,
+	Container,
 } = require('./../TestTools.js');
-
-const {
-	createLog,
-	udFun
-} = Utils;
-
-const MockDataHub1 = require('./Mock-DataHub1');
-const MockController1 = require('./Mock-Controller1');
 require('./Init-Fetcher0.js');
 
-const RelationManager = require('../../lib/DataHub/RelationManager.js').default;
+// ----------------------------------------------------------- //
+const testName = 'RelationManager';
+const Component = require(`../../lib/DataHub/${testName}.js`).default;
 
-console.log('--------- test RelationManager start ---------');
+const FetchManager = require('../../lib/DataHub/FetchManager.js').default;
+const RunnerManager = require('../../lib/DataHub/RunnerManager.js').default;
+const ListenerManager = require('../../lib/DataHub/ListenerManager.js').default;
+const DataStore = require(`../../lib/DataHub/DataStore.js`).default;
 
-let emitterDevLogger = createLog('testRelationManager', 'log', true);
-let emitterErrLogger = createLog('testRelationManager', 'error', true);
+// ----------------------------------------------------------- //
 
-let mdh = new MockDataHub1 ({}, emitterDevLogger, emitterErrLogger);
-let mdc = new MockController1(mdh);
+let container = new Container();
 
-mdh.getDataStore('testStore0').setConfig([123, 456, 789]);
+console.log(`\n--------- test ${testName} start ---------\n`);
 
-console.log(mdh.getDataStore('testStore0').get());
+let component = new Component(container,  true);
 
-mdh.getDataStore('testStore1').setConfig({
+console.log(`\n--- ${testName}.destroy() ---\n`);
+component.destroy();
+
+console.log(`\n--- Container.destroy() ---\n`);
+
+component = new Component(container, true);
+container.destroy();
+
+
+container = new Container();;
+component = new Component(container, true);
+
+container._clazz = 'Mock-DataHub-Controller-DataStore'
+container._dataCenter = {};
+container.getDataStore = function(name) {
+	if (!this._dataCenter[name]) {
+		this._dataCenter[name] = new DataStore(this, name, this.devLog, this.errLog, true);
+	}
+	return this._dataCenter[name];
+}
+container._fetchManager = new FetchManager(container, 40, true);
+container._runnerManager = new RunnerManager(container, true);
+container._listenerManager = new ListenerManager(container, true);
+
+
+container.getDataStore('testStore0').setConfig([123, 456, 789]);
+
+console.log(container.getDataStore('testStore0').get());
+
+container.getDataStore('testStore1').setConfig({
 	default: [111, 222, 333],
 });
-console.log(mdh.getDataStore('testStore1').get());
+console.log(container.getDataStore('testStore1').get());
 
-mdh.getDataStore('testStore2').setConfig(123456);
-console.log(mdh.getDataStore('testStore2').get());
+container.getDataStore('testStore2').setConfig(123456);
+console.log(container.getDataStore('testStore2').get());
 
-mdh.getDataStore('testStore3').setConfig({
+container.getDataStore('testStore3').setConfig({
 	fetcher: 'test.get',
 });
 
-mdc._listenerManager.when('testStore3', (data) => {
+container._listenerManager.when('testStore3', (data) => {
 	console.log('testStore3', data);
 });
 
-mdh.getDataStore('testStore4').setConfig({
+container.getDataStore('testStore4').setConfig({
 	fetcher: 'test.get',
 	dependence: 'dep1'
 });
 
-mdh.getDataStore('dep1').set({aaa: 'aaa',bbb: "bbb", dataCount: 3});
+container.getDataStore('dep1').set({aaa: 'aaa',bbb: "bbb", dataCount: 3});
 
-mdc._listenerManager.when('testStore4', (data) => {
+container._listenerManager.when('testStore4', (data) => {
 	console.log('testStore4', data);
 });
 
-console.log('--------- test RelationManager end ---------');
+
+
+
+console.log(`\n--------- test ${testName} end   ---------\n`);

@@ -5,6 +5,8 @@ import {
 	udFun
 } from './../Utils';
 
+import Component from './Component';
+
 const publicMethods = [
 	'hasRunner',
 	'unRegister',
@@ -12,36 +14,22 @@ const publicMethods = [
 	'run'
 ];
 
-export default class RunnerManager {
-	constructor(dhc, _devMode = false) {
-		this._key = getUniIndex();
-		this._clazz = this.constructor.name;
-		this._logName = `${this._clazz}=${this._key}`;
-		this._destroyed = false;
+const {
+	publicMethod
+} = Component;
 
+export default class RunnerManager extends Component {
+
+	afterCreate() {
 		this._runner = {};
-
-		this._dhc = dhc;
-		this._emitter = dhc._emitter;
-
-		this.devLog = _devMode ? dhc.devLog.createLog(this._logName) : udFun;
-		this.errLog = dhc.errLog.createLog(this._logName);
-		this.destroyedErrorLog = createDestroyedErrorLog(this._clazz, this._key);
-
-		this._emitter.once(`$$destroy:Controller:${dhc._key}`, () => {
-			this.devLog && this.devLog(`Controller destroyed => ${this._clazz} destroy .`);
-			this.destroy();
-		});
-
-		this.devLog(`${this._logName} created.`);
 	}
 
-	hasRunner(name) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('hasRunner');
-			return false;
-		}
+	beforeDestroy() {
+		this._runner = null;
+	}
 
+	@publicMethod
+	hasRunner(name) {
 		if (isNvl(name)) {
 			return false;
 		}
@@ -49,12 +37,8 @@ export default class RunnerManager {
 		return !!this._runner[name];
 	}
 
+	@publicMethod
 	unRegister(name) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('unRegister');
-			return;
-		}
-
 		if (isNvl(name)) {
 			return;
 		}
@@ -62,12 +46,8 @@ export default class RunnerManager {
 		delete this._runner[name];
 	}
 
+	@publicMethod
 	register(name, callback) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('register');
-			return;
-		}
-
 		if (isNvl(name)) {
 			return;
 		}
@@ -80,12 +60,8 @@ export default class RunnerManager {
 		this._runner[name] = callback;
 	}
 
+	@publicMethod
 	run(name, ...args) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('run');
-			return udFun;
-		}
-
 		if (isNvl(name)) {
 			return udFun;
 		}
@@ -117,12 +93,13 @@ export default class RunnerManager {
 		this.devLog(`${this._logName} destroyed.`);
 
 		this._emitter.emit(`$$destroy:${this._clazz}`, this._key);
-		this._emitter.emit(`$$destroy:${this._clazz}:${this._key}`);
+		this._emitter.emit(`$$destroy:${this._clazz}=${this._key}`);
 
 		this._runner = null;
 
 		this._destroyed = true;
 
+		this._dh = null;
 		this._dhc = null;
 		this._emitter = null;
 

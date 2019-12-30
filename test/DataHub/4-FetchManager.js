@@ -1,39 +1,49 @@
-const Utils = require('../../lib/Utils/index.js');
 
 const {
 	equalAssert,
 	equalLog,
-	createAsyncEqualAssert
+	equalRunLog,
+	equalErrLog,
+	createAsyncEqualAssert,
+	IGNORE_TEST,
+	Container,
 } = require('./../TestTools.js');
-
-const {
-	createLog,
-	udFun
-} = Utils;
-
-const {addFetcher} = require('../../lib/DataHub/Fetcher.js');
-
-const MockDataHub1 = require('./Mock-DataHub1');
-const MockController0 = require('./Mock-Controller0');
 require('./Init-Fetcher0.js');
 
-const FetchManager = require('../../lib/DataHub/FetchManager.js').default;
+// ----------------------------------------------------------- //
+const testName = 'FetchManager';
+const Component = require(`../../lib/DataHub/${testName}.js`).default;
 
-console.log('--------- test FetchManager start ---------');
+const DataStore = require(`../../lib/DataHub/DataStore.js`).default;
+// ----------------------------------------------------------- //
 
-let emitterDevLogger = createLog('testFetchManager', 'log', true);
-let emitterErrLogger = createLog('testFetchManager', 'error', true);
+let container = new Container();
 
-let mdh = new MockDataHub1 ({}, emitterDevLogger, emitterErrLogger);
-let mdc = new MockController0(mdh);
+console.log(`\n--------- test ${testName} start ---------\n`);
 
-let fem = new FetchManager(mdc, 40, true);
+let component = new Component(container,  true);
 
-fem.fetch('test.get', { requestName:'返回数据',name: '123456', dataCount: 2}).then((data) => {
+console.log(`\n--- ${testName}.destroy() ---\n`);
+component.destroy();
+
+console.log(`\n--- Container.destroy() ---\n`);
+
+component = new Component(container, true);
+container.destroy();
+
+
+container = new Container();
+component = new Component(container, true);
+
+console.log('-------9999999999999999999999999999999999999999999999999999999999999999999999------',
+component._key,component._dh._key, container._key, component._dh , container)
+
+
+component.fetch('test.get', { requestName:'返回数据',name: '123456', dataCount: 2}).then((data) => {
 	console.log(data);
 });
 
-fem.fetch('test.get', { requestName:'1000毫秒',timeout: 1000,name: '123456', dataCount: 3}, {} ,(stop) => {
+component.fetch('test.get', { requestName:'1000毫秒',timeout: 1000,name: '123456', dataCount: 3}, {} ,(stop) => {
 	console.log('设置中断回调');
 	
 	setTimeout(() => {
@@ -45,32 +55,43 @@ fem.fetch('test.get', { requestName:'1000毫秒',timeout: 1000,name: '123456', d
 	console.log(data);
 });
 
-fem.fetch('test.get', { requestName:'销毁',timeout: 1000,name: '123456', dataCount: 3}, {} ,(stop) => {
+component.fetch('test.get', { requestName:'销毁',timeout: 1000,name: '123456', dataCount: 3}, {} ,(stop) => {
 	console.log('中断回调');
 	
 	setTimeout(() => {
 		console.log('销毁')
-		fem.destroy();
-		fem.fetch();
+		component.destroy();
+		component.fetch();
 	}, 600);
 	
 }).then((data) => {
 	console.log(data);
 });
 
-fem.fetchStoreData();
+component.fetchStoreData();
 
-fem.fetchStoreData({
+component.fetchStoreData({
 	name: 'testStore'
 });
-fem.fetchStoreData({
+component.fetchStoreData({
 	name: 'testStore'
 });
-fem.fetchStoreData({
+component.fetchStoreData({
 	name: 'testStore'
 });
 
-mdh.getDataStore('testStore2').setConfig({
+container._clazz = 'Mock-DataHub'
+container._dataCenter = {};
+container.getDataStore = function(name) {
+	if (!this._dataCenter[name]) {
+		this._dataCenter[name] = new DataStore(this, name, this.devLog, this.errLog, true);
+	}
+	return this._dataCenter[name];
+}
+
+
+
+container.getDataStore('testStore2').setConfig({
 	fetcher: 'test.get',
 	pagination: {
 		fetcher: 'test.post',
@@ -79,33 +100,34 @@ mdh.getDataStore('testStore2').setConfig({
 });
 
 
-fem.fetchStoreData({
+component.fetchStoreData({
 	name: 'testStore2',
 	data: {dataCount: 3,requestName: 'storeA'}
 });
-fem.fetchStoreData({
+component.fetchStoreData({
 	name: 'testStore2',
 	data: {dataCount: 3,requestName: 'storeB'}
 });
-fem.fetchStoreData({
+component.fetchStoreData({
 	name: 'testStore2',
 	data: {dataCount: 3,requestName: 'storeC'}
 });
 
-fem.fetchStoreData({
+component.fetchStoreData({
 	name: 'testStore2',
 	data: {timeout: 1000, dataCount: 3, requestName: 'storeD'}
 });
 
 setTimeout(() => {
-	fem.fetchStoreData({
+	component.fetchStoreData({
 		name: 'testStore2',
 		data: {timeout: 1000, dataCount: 3, requestName: 'storeD'}
 	});
 }, 2000);
 
 setTimeout(() => {
-	fem.stopFetch('testStore2');
+	component.stopFetch('testStore2');
 }, 500);
 
-console.log('--------- test FetchManager end ---------');
+
+console.log(`\n--------- test ${testName} end   ---------\n`);
