@@ -21,7 +21,7 @@ export default class ViewModel extends LifeCycle {
 		this._parentKey = null;
 		this._viewContext = null;
 		this._changeHandle = udFun;
-		this._gdhc = DataHub.createController();
+		this._moment = null;
 
 		this._withStore = config.withStore || null;
 
@@ -63,6 +63,12 @@ export default class ViewModel extends LifeCycle {
 		this._showLog = flag;
 	}
 
+	_momentMethods = [
+		'getContextDataHub',
+		'getMyDataHub',
+		'showDevLog',
+	];
+
 	@publicMethod
 	getLifeCycleMethods() {
 		return {
@@ -72,9 +78,12 @@ export default class ViewModel extends LifeCycle {
 					return;
 				}
 
-				moment.getContextDataHub = () => this.getContextDataHub();
-				moment.getMyDataHub = () => this.getMyDataHub();
-				moment.showDevLog = (flag) => this.showDevLog(flag);
+				this._momentMethods.forEach(method => {
+					moment[method] = (...args) => this[method](...args);
+				});
+
+				moment.viewModel = this;
+				this._moment = moment;
 			},
 			destroyHandler: () => {
 				if (this._destroyed) {
@@ -143,6 +152,14 @@ export default class ViewModel extends LifeCycle {
 
 		this._viewContext = null;
 		this._view = null;
+
+		if (this._moment) {
+			this._momentMethods.forEach(method => {
+				moment[method] = null;
+			});
+			this._moment.viewModel = null;
+			this._moment = null;
+		}
 	}
 
 }
