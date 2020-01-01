@@ -76,9 +76,9 @@ assert.strictEqual(i2 + 1, i3);
 
 const funValue = function() {};
 
-assert.strictEqual(udFun(), undefined);
-assert.strictEqual(udFun(123), undefined);
-assert.strictEqual(udFun(funValue), undefined);
+assert.strictEqual(udFun(), udFun);
+assert.strictEqual(udFun(123), udFun);
+assert.strictEqual(udFun(funValue), udFun);
 
 assert.strictEqual(sameFun(123), 123);
 assert.strictEqual(sameFun('aaa'), 'aaa');

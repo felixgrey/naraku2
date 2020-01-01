@@ -10,7 +10,7 @@ const {
 } = require('./../TestTools.js');
 
 // ----------------------------------------------------------- //
-const testName = 'ViewModel';
+const testName = 'ViewContext';
 const Component = require(`../../lib/ViewModel/${testName}.js`).default;
 // ----------------------------------------------------------- //
 
@@ -19,14 +19,14 @@ const errLog = Utils.createLog('Emitter','error');
 
 console.log(`\n--------- test ${testName} start ---------\n`);
 
-let component = new Component({}, {}, true);
+let component = new Component({}, devLog, errLog, true);
 
 console.log(`\n--- ${testName}.destroy() ---\n`);
 component.destroy();
 
 console.log(`\n--------- ${testName} ---------\n`);
 
-component = new Component({}, {}, true);
+component = new Component({}, devLog, errLog, true);
 
 
 console.log(`\n--------- test ${testName} end   ---------\n`);

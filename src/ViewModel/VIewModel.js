@@ -139,6 +139,7 @@ export default class ViewModel extends LifeCycle {
 
 }
 
-ViewModel.$loggerByParam = false;
+ViewModel.$loggerByParam = true;
+
 ViewModel.createMainView = udFun;
 ViewModel.createSubView = udFun;

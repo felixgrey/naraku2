@@ -67,4 +67,4 @@ export default class ViewContext extends LifeCycle {
 
 }
 
-// ViewContext.$loggerByParam = true;
+ViewContext.$loggerByParam = true;
