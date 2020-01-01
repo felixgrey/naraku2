@@ -16,7 +16,8 @@ const publicMethods = [
 	'watch',
 	'isLoading',
 	'isLocked',
-	'isWillRefresh'
+	'isWillRefresh',
+	'destroy',
 ];
 
 let refreshRate = 40;

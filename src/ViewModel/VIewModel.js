@@ -21,6 +21,7 @@ export default class ViewModel extends LifeCycle {
 		this._parentKey = null;
 		this._viewContext = null;
 		this._changeHandle = udFun;
+		this._gdhc = DataHub.createController();
 
 		this._withStore = config.withStore || null;
 
@@ -30,8 +31,12 @@ export default class ViewModel extends LifeCycle {
 			this._dh = new DataHub(dhOrCfg, this.devLog, this.errLog, this._devMode);
 		}
 
+		this._gdhc.watch(() => {
+			this._changeHandle();
+		});
+
 		this._dh.getController().watch(() => {
-			if (DataHub.isWillRefresh()) {
+			if (this._gdhc.isWillRefresh()) {
 				return;
 			}
 
@@ -132,6 +137,9 @@ export default class ViewModel extends LifeCycle {
 	_destruction() {
 		this._dh && this._dh.destroy();
 		this._dh = null;
+
+		this._gdhc.destroy();
+		this._gdhc = null;
 
 		this._viewContext = null;
 		this._view = null;
