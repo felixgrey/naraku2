@@ -41,7 +41,6 @@ const publicMethods = [
 	'loaded'
 ];
 
-
 export default class DataStore extends Component {
 
 	afterCreate(dh, name) {
@@ -190,8 +189,6 @@ export default class DataStore extends Component {
 		value = [].concat(value);
 		this._value = value;
 		this._errMsg = null;
-
-		this.devLog(`run set`, value);
 
 		this._setStatus('ready');
 		this._emitDataChange();
@@ -378,7 +375,6 @@ export default class DataStore extends Component {
 		this.clearLoading();
 		this.set(value);
 	}
-
 }
 
 DataStore.publicMethods = publicMethods;

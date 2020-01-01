@@ -1,55 +1,62 @@
-const Utils = require('../../lib/Utils/index.js');
-const Emitter = require('../../lib/DataHub/Emitter.js').default;
-
-const {
-	createLog,
-	udFun
-} = Utils;
+const Utils = require('./../../lib/Utils/index.js');
 
 const {
 	equalAssert,
 	equalLog,
-	createAsyncEqualAssert
+	equalRunLog,
+	equalErrLog,
+	createAsyncEqualAssert,
+	IGNORE_TEST,
+	Container,
 } = require('./../TestTools.js');
+require('./Init-Fetcher0.js');
 
-console.log('--------- test Emitter start ---------');
+// ----------------------------------------------------------- //
+const testName = 'Emitter';
+const Component = require(`../../lib/DataHub/${testName}.js`).default;
+// ----------------------------------------------------------- //
 
-let emitterDevLogger = createLog('TestEmitter', 'log');
-let emitterErrLogger = createLog('TestEmitter', 'error');
+const devLog = Utils.createLog('Emitter','log');
+const errLog = Utils.createLog('Emitter','error');
 
-let testEmitter = new Emitter(emitterDevLogger, emitterDevLogger, true);
-let testEmitterKey = testEmitter._key;
-testEmitter.emit('event1', 'msg1');
-equalLog(`【test-TestEmitter.Emitter=${testEmitterKey}-log】:`,`emit 'event1'`);
+let component = new Component(devLog, errLog, true);
 
-let msg = Date.now();
-testEmitter.on('now', (result) => {
-	equalLog(`【test-TestEmitter.Emitter=${testEmitterKey}-log】:`, `emit 'now'`);
+console.log(`\n--------- test ${testName} start ---------\n`);
+
+console.log(`\n--- ${testName}.destroy() ---\n`);
+component.emit('1111');
+component.destroy();
+
+component.emit('1111');
+
+console.log(`\n--------- test ${testName} ---------\n`);
+
+component = new Component(devLog, errLog, true);
+
+equalRunLog(component.emit('event1'), ['event1']);
+equalRunLog(component.emit('event1', 1,2,3), ['event1', 1,2,3]);
+
+let off1 = component.on('event1', (arg1, arg2, arg3) => {
+	console.log('run event1 callback')
+	equalAssert(arg1, 1);
+	equalAssert(arg2, 2);
+	equalAssert(arg3, 3);
 });
-equalLog(`【test-TestEmitter.Emitter=${testEmitterKey}-log】:`,`listen in 'now'.`);
-testEmitter.emit('now', msg);
 
-testEmitter.on('afterDestroy', udFun);
-testEmitter.destroy();
-
-testEmitter.emit('afterDestroy', msg);
-equalLog(`【test-AfterDstroyed.Emitter=${testEmitterKey}-error】:`,`can't run 'Emitter.emit()' after destroyed.`);
-
-testEmitter.on('afterDestroy', udFun);
-equalLog(`【test-AfterDstroyed.Emitter=${testEmitterKey}-error】:`,`can't run 'Emitter.on()' after destroyed.`);
-
-let testEmitter2 = new Emitter(emitterDevLogger, emitterDevLogger, true);
-let testEmitter2Key = testEmitter2._key;
-
-testEmitter2.once('args', () => {
-	equalLog(`【test-TestEmitter.Emitter=${testEmitter2Key}-log】:`, `emit 'args'`, `argsLength=3`);
+component.once('event1', (arg1, arg2, arg3) => {
+	console.log('run event1 callback once')
+	equalAssert(arg1, 1);
+	equalAssert(arg2, 2);
+	equalAssert(arg3, 3);
 });
 
-testEmitter2.emit('args', 'a', 'b', 'c');
+equalRunLog(component.emit('event1', 1,2,3), ['event1', 1,2,3]);
+equalRunLog(component.emit('event1', 1,2,3), ['event1', 1,2,3]);
 
-testEmitter2.once('args', () => {
-	equalLog(`【test-TestEmitter.Emitter=${testEmitter2Key}-log】:`, `emit 'args'`, `argsLength=4`);
-});
-testEmitter2.emit('args', 1,2,3,4);
+off1();
 
-console.log('--------- test Emitter end ---------');
+equalRunLog(component.emit('event1', 1,2,3), ['event1', 1,2,3]);
+
+off1();
+
+console.log(`\n--------- test ${testName} end   ---------\n`);

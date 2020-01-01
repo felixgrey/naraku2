@@ -1,9 +1,6 @@
 import {
-	getUniIndex,
 	udFun,
 	isNvl,
-	getDeepValue,
-	createDestroyedErrorLog,
 } from './../Utils';
 
 import Component from './Component';
@@ -31,7 +28,6 @@ export default class ListenerManager extends Component {
 	}
 
 	_onAndOnce(name, callback, once) {
-
 		let _off = this._emitter[once ? 'once' : 'on'](name, callback);
 
 		const off = () => {
@@ -64,7 +60,6 @@ export default class ListenerManager extends Component {
 
 	@publicMethod
 	when(...args) {
-
 		let callback = args.pop();
 		let names = args;
 

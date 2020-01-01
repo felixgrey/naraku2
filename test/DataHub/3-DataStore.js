@@ -36,6 +36,8 @@ console.log(`\n--- Container.destroy() ---\n`);
 component = new DataStore(container, 'testStore2', true);
 container.destroy();
 
+console.log(`\n--------- ${testName} ---------\n`);
+
 container = new Container();
 component = new DataStore(container, 'testStore3', true);
 

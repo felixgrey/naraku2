@@ -35,9 +35,6 @@ container.destroy();
 container = new Container();
 component = new Component(container, true);
 
-console.log('-------9999999999999999999999999999999999999999999999999999999999999999999999------',
-component._key,component._dh._key, container._key, component._dh , container)
-
 
 component.fetch('test.get', { requestName:'返回数据',name: '123456', dataCount: 2}).then((data) => {
 	console.log(data);

@@ -1,9 +1,5 @@
 import {
-	getUniIndex,
 	udFun,
-	isNvl,
-	getDeepValue,
-	createDestroyedErrorLog,
 	snapshot,
 } from './../Utils';
 
@@ -37,7 +33,6 @@ export default class RelationManager extends Component {
 		this._checkReady = null;
 		this._defaultData = null;
 		this._switchStatus = null;
-
 	}
 
 	@publicMethod
@@ -214,7 +209,6 @@ export default class RelationManager extends Component {
 	}
 
 	_configNames = ['default', 'clear', 'fetcher', 'reset', 'snapshot', 'stop'];
-
 }
 
 RelationManager.publicMethods = publicMethods;

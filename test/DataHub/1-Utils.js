@@ -13,10 +13,8 @@ const {
 	getUniIndex,
 
 	udFun,
-	nvlFun,
-	eptFun,
 	sameFun,
-	pmsFun,
+
 
 	isNvl,
 	isEmpty,
@@ -28,7 +26,6 @@ const {
 	logSwitch,
 	setPreLog,
 	createLog,
-	createDestroyedErrorLog,
 	getLogInfo,
 
 	NumberFormat,
@@ -40,7 +37,6 @@ console.log('process.env.NODE_ENV的值：', process.env.NODE_ENV);
 console.log('uidSeed的值：', uidSeed);
 console.log('createUid的值：', createUid());
 
-assert.strictEqual(pmsFun() instanceof Promise, true);
 assert.strictEqual(udFun.then() instanceof Promise, true);
 assert.strictEqual(udFun.then().then() instanceof Promise, true);
 assert.strictEqual(udFun.catch() instanceof Promise, true);
@@ -70,13 +66,6 @@ testLog2('多层log');
 assert.strictEqual(getLogInfo()[0], `【testLog-first.second.?.third-log】:`);
 assert.strictEqual(getLogInfo()[1], '多层log');
 
-// `can't run 【${clazz}=${key}】=>【${funName}@${args}】 after it is destroyed.`
-let destroyLog = createDestroyedErrorLog('类名', 123456);
-destroyLog('方法名', ['参数1','参数2'])
-
-assert.strictEqual(getLogInfo()[0], `【testLog-AfterDstroyed.类名=123456-error】:`);
-assert.strictEqual(getLogInfo()[1], `can't run '类名.方法名(参数1,参数2)' after destroyed.`);
-
 assert.strictEqual(udFun.createLog(), udFun);
 
 const i1 = getUniIndex();
@@ -90,14 +79,6 @@ const funValue = function() {};
 assert.strictEqual(udFun(), undefined);
 assert.strictEqual(udFun(123), undefined);
 assert.strictEqual(udFun(funValue), undefined);
-
-assert.strictEqual(nvlFun(), null);
-assert.strictEqual(nvlFun(123), null);
-assert.strictEqual(nvlFun(funValue), null);
-
-assert.strictEqual(eptFun(123), '');
-assert.strictEqual(eptFun(null), '');
-assert.strictEqual(eptFun(funValue), '');
 
 assert.strictEqual(sameFun(123), 123);
 assert.strictEqual(sameFun('aaa'), 'aaa');

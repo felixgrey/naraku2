@@ -7,36 +7,26 @@ const {
 	equalErrLog,
 	createAsyncEqualAssert,
 	IGNORE_TEST,
-	Container,
 } = require('./../TestTools.js');
-require('./Init-Fetcher0.js');
 
 // ----------------------------------------------------------- //
-const testName = 'DataHub';
-const Component = require(`../../lib/DataHub/${testName}.js`).default;
+const testName = 'ViewModel';
+const Component = require(`../../lib/ViewModel/${testName}.js`).default;
 // ----------------------------------------------------------- //
 
-// let container = new Container();
+const devLog = Utils.createLog('Emitter','log');
+const errLog = Utils.createLog('Emitter','error');
 
 console.log(`\n--------- test ${testName} start ---------\n`);
 
-Utils.createLog.showPublicMethods = false;
-
-const devLog = Utils.createLog('DataHub','log');
-const errLog = Utils.createLog('DataHub','error');
-
-let component = new Component({}, devLog, errLog, true);
+let component = new Component({}, {}, true);
 
 console.log(`\n--- ${testName}.destroy() ---\n`);
 component.destroy();
 
-console.log(`\n--- ${testName} ---\n`);
-component = new Component({
-	testData1: [1,2,3]
-}, devLog, errLog, true);
+console.log(`\n--------- ${testName} ---------\n`);
 
-
-
+component = new Component({}, {}, true);
 
 
 console.log(`\n--------- test ${testName} end   ---------\n`);

@@ -1,10 +1,6 @@
 import {
-	getUniIndex,
 	createUid,
 	udFun,
-	isNvl,
-	getDeepValue,
-	createDestroyedErrorLog,
 } from './../Utils';
 
 import {
@@ -15,7 +11,7 @@ import {
 
 import Component from './Component';
 
-const publicMotheds = [
+const publicMethods = [
 	'fetch'
 ];
 
@@ -180,7 +176,6 @@ export default class FetchManager extends Component {
 
 		}, this._refreshRate);
 	}
-
 }
 
-FetchManager.publicMotheds = publicMotheds;
+FetchManager.publicMethods = publicMethods;

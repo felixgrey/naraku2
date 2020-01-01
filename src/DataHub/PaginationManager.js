@@ -1,10 +1,7 @@
 import {
 	createUid,
-	getUniIndex,
-	udFun,
 	isNvl,
-	getDeepValue,
-	createDestroyedErrorLog,
+	uniStringify,
 } from './../Utils';
 
 import {
@@ -111,16 +108,7 @@ export default class PaginationManager extends Component {
 
 		this.stopFetch();
 
-		let stringData = null;
-		if (typeof data.$uniStringify === 'function') {
-			stringData = data.$uniStringify();
-		} else {
-			try {
-				stringData = JSON.stringify(data);
-			} catch (e) {
-				this.devLog('stringData Error:', e);
-			}
-		}
+		let stringData = uniStringify(data);
 
 		if (!isNvl(stringData) && stringData === this._stringData) {
 			this.devLog(`same data`, stringData);

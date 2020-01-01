@@ -4,19 +4,17 @@ import {
 	snapshot,
 	udFun,
 	sameFun,
-	isNvl,
-	showLog
+	isNvl
 } from './../Utils';
 
 let fetchMap = {};
 let stopKeyMap = {};
 let fetchingMap = {};
 
-let errLog = createLog('Fetcher', 'error', true);
-let devLog = createLog('Fetcher', 'log', showLog);
+let errLog = createLog('Fetcher', 'error');
+let devLog = createLog('Fetcher', 'log');
 
 let fetcher = null;
-
 let devMode = false;
 
 function setDevMode(flag) {
@@ -133,8 +131,6 @@ function fetchData(name, data = null, dataInfo = {}, stopKey = null) {
 		method = 'get',
 			extend = {},
 	} = fetch;
-
-	// console.log(extend);
 
 	if (!url) {
 		errLog(`no url.`);

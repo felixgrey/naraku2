@@ -482,6 +482,7 @@ DatePicker
 @renderForm({
 	uniName,
 	fetcher,
+	wiewMode,
 	withStore,
 	labelWidth,
 	fieldWidth,
@@ -495,6 +496,7 @@ form.reset
 form.clear
 form.stop
 
+// 根据key update
 <LsForm className style cols gutter labelWidth fieldWidth disabled>
 	<Item 
 		className style 
@@ -546,4 +548,23 @@ form.stop
 <LsTabs uniName disabled>
 	<TabPane switchStore label key>
 </LsTabs>
+
+=====================================
+
+createPage cfg
+
+ new context cfg
+ key
+ 
+ 
+ new ViewModel(view, context, log, log, dev)
+ 
+	
+ 
+ 
+ public
+	createHandle(momentPoint)
+	onChange(callback)
+	destroyHandler
+	imYourFather();
 

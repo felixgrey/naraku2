@@ -1,4 +1,9 @@
 /*
+	判断开发模式
+*/
+const isDev = process && process.env && process.env.NODE_ENV === 'development';
+
+/*
 	随机18位整数
 */
 function getRandom() {
@@ -26,24 +31,18 @@ function getUniIndex() {
 }
 
 /**
-	各种空函数
+	通用兜底空函数
 */
-
-// 返回 undefined
-function udFun() {}
-
-// 返回 Promise
-function pmsFun(a) {
-	return Promise.resolve(a);
+let udFun = function () {
+	return udFun;
 }
 
 const nextPms = () => Promise.resolve();
-// 返回用的兜底假数据；
 const fake = {
-	'$uniStringify': () => '{"FAKE_RETURN": true}',
-	'$snapshot': () => {
-		FAKE_RETURN: true
-	},
+	'$uniStringify': () => '{"$FAKE_RETURN": true}',
+	'$snapshot': () => ({
+		$FAKE_RETURN: true
+	}),
 	'createLog': () => udFun,
 	'emit': udFun,
 	'on': udFun,
@@ -51,36 +50,20 @@ const fake = {
 	'then': nextPms,
 	'catch': nextPms,
 	'finally': nextPms,
+	'destroy': udFun,
 };
 
 Object.values(fake).forEach(item => {
-	item.FAKE_RETURN = true;
-})
-fake.FAKE_RETURN = true;
-
+	item.$FAKE_RETURN = true;
+});
 Object.assign(udFun, fake);
-Object.assign(pmsFun, fake);
 
-// 返回 null
-function nvlFun() {
-	return null;
-}
-
-Object.assign(nvlFun, fake);
-
-// 返回 空字符串
-function eptFun() {
-	return '';
-}
-
-Object.assign(eptFun, fake);
-
-// 返回 第一个参数
+/*
+	返回输入值的通用空函数
+*/
 function sameFun(a) {
 	return a;
 }
-
-Object.assign(sameFun, fake);
 
 /*
 	各种非空判断
@@ -100,13 +83,16 @@ function isBlank(value) {
 /*
  log
 */
-const console = ((global || {}).console) || {
+let logPrinter = ((global || {}).console) || {
 	warn: udFun,
 	log: udFun,
 	error: udFun
 };
 
-const isDev = process && process.env && process.env.NODE_ENV === 'development';
+function setLogger(v) {
+	logPrinter = v;
+}
+
 let showLog = true;
 let preLog = 'naraku-';
 let createLog = udFun;
@@ -131,16 +117,16 @@ function setLogHandle(v) {
 
 if (isDev) {
 	createLog = function(name = '', type = 'log') {
-		if (typeof console[type] !== 'function') {
-			showLog && console.error('【createLog-error】：console.${type} not existed');
+		if (typeof logPrinter[type] !== 'function') {
+			showLog && logPrinter.error('【createLog-error】：logPrinter.${type} not existed');
 			return udFun;
 		}
 
-		let logger = function(...args) {
+		let logger = function logger(...args) {
 			logInfoArray = [`【${preLog}${name}-${type}】:`, ...args];
 			logInfoArray.logType = type;
 			logHandle(logInfoArray);
-			showLog && console[type](...logInfoArray);
+			showLog && logPrinter[type](...logInfoArray);
 		}
 
 		logger.createLog = function(name2 = '?') {
@@ -149,14 +135,6 @@ if (isDev) {
 
 		return logger;
 	};
-}
-
-const dstroyedErrorLog = createLog('AfterDstroyed', 'error');
-const createDestroyedErrorLog = (clazz, key) => {
-	const _dErr = dstroyedErrorLog.createLog(`${clazz}=${key}`);
-	return (funName, ...args) => {
-		_dErr(`can't run '${clazz}.${funName}(${args.join(',')})' after destroyed.`);
-	}
 }
 
 /*
@@ -195,7 +173,7 @@ function getDeepValue(data, path = '', defValue) {
 }
 
 /*
-	JSON数据快照
+	数据快照
 */
 function snapshot(value) {
 	if (isNvl(value)) {
@@ -217,6 +195,30 @@ function snapshot(value) {
 	}
 
 	return value;
+}
+
+/*
+	数据的字符串表示
+*/
+function uniStringify(obj) {
+	if (isNvl(obj)) {
+		return null;
+	}
+
+	if (typeof obj.$uniStringify === 'function') {
+		return obj.$uniStringify();
+	}
+
+	if (typeof obj.toString === 'function') {
+		return obj.toString();
+	}
+
+	let v = '';
+	try {
+		v = JSON.stringify(obj);
+	} catch (e) {}
+
+	return v;
 }
 
 /*
@@ -356,10 +358,7 @@ export {
 	getUniIndex,
 
 	udFun,
-	nvlFun,
-	eptFun,
 	sameFun,
-	pmsFun,
 
 	isNvl,
 	isEmpty,
@@ -367,12 +366,13 @@ export {
 
 	getDeepValue,
 	snapshot,
+	uniStringify,
 
 	logSwitch,
 	setPreLog,
 	createLog,
-	createDestroyedErrorLog,
 	setLogHandle,
+	setLogger,
 	getLogInfo,
 
 	NumberFormat,

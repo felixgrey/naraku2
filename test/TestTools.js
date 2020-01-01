@@ -23,10 +23,20 @@ setPreLog('test-');
 
 exports.Container = class Container {
 	constructor() {
-		let devLog = createLog('Container','log');
-		let errLog = createLog('Container','error');
-	  let emitter = new Emitter(devLog, errLog, true);
-		return	new Component.Container(emitter, devLog, errLog, true);
+		this._key = getUniIndex();
+		this._clazz = this.constructor.name;
+		this._logName = `${this._clazz}=${this._key}`;
+		this._devMode = true;
+		this._destroyed = false;
+		this._name = null;
+		this.devLog = createLog('Container','log');
+		this.destroyedErrorLog = this.errLog = createLog('Container','error');
+		this._store = this._dh = this._dhc = this;
+		this._emitter =  new Emitter(this.devLog, this.errLog, true);
+	}
+	
+	destroy() {
+		this._emitter.emit(`$$destroy:${this._logName}`);
 	}
 } 
 

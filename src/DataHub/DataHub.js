@@ -1,50 +1,51 @@
 import {
-	getUniIndex,
 	udFun,
-	isNvl,
-	getDeepValue,
-	createDestroyedErrorLog,
 } from './../Utils';
 
 import Emitter from './Emitter';
 import DataStore from './DataStore';
 import Controller from './Controller';
+import Component from './Component';
 
-export default class DataHub {
+const {
+	publicMethod
+} = Component;
+
+export default class DataHub extends Component {
+
 	constructor(cfg, devLog = udFun, errLog = udFun, _devMode = false) {
-		this._key = getUniIndex();
-		this._clazz = this.constructor.name;
-		this._logName = `${this._clazz}=${this._key}`;
-		this._destroyed = false;
+		super({
+			devLog,
+			errLog
+		}, cfg, _devMode);
+	}
 
-		this._cfg = cfg;
-		this._devMode = _devMode;
+	afterCreate(dh, cfg) {
+		this._cfg = cfg || {};
+		this._dh = this;
+
+		this._emitter = new Emitter(this.devLog, this.errLog, this._devMode);
+		this._dhc = new Controller(this, this._devMode);
 
 		this._dataCenter = {};
 		this._extendConfig = {};
 
-		this._emitter = new Emitter(this.devLog, this.errLog, _devMode);
-		this._dh = this;
-		this._dhc = new Controller(this);
-
-		this._emitter.once(`$$destroy:Emitter=${this._emitter._key}`, () => {
-			this.devLog && this.devLog(`Emitter destroyed => DataHub destroy .`);
-			this.destroy();
-		});
-
-		this._emitter.once(`$$destroy:Controller=${this._dhc._key}`, () => {
-			this.devLog && this.devLog(`Controller destroyed => DataHub destroy .`);
-			this.destroy();
-		});
-
-		this.devLog = _devMode ? devLog.createLog(this._logName) : udFun;
-		this.errLog = errLog.createLog(this._logName);
-		this.destroyedErrorLog = createDestroyedErrorLog('DataHub', this._key);
-
 		this._initDsPublicMethods();
 		this._init();
+	}
 
-		this.devLog(`${this._logName} created.`);
+	beforeDestroy() {
+		Object.values(this._dataCenter).forEach(ds => ds.destroy());
+		this._dataCenter = null;
+
+		this._dhc.destroy();
+		this._dhc = null;
+	}
+
+	destroy() {
+		const _emitter = this._emitter;
+		super.destroy();
+		_emitter.destroy();
 	}
 
 	_init() {
@@ -70,6 +71,7 @@ export default class DataHub {
 		});
 	}
 
+	@publicMethod
 	getDataStore(name) {
 		if (!this._dataCenter[name]) {
 			this._dataCenter[name] = new DataStore(this, name, this.devLog, this.errLog, this._devMode);
@@ -77,6 +79,7 @@ export default class DataHub {
 		return this._dataCenter[name];
 	}
 
+	@publicMethod
 	getController() {
 		if (this._destroyed) {
 			this.destroyedErrorLog('getController');
@@ -85,29 +88,13 @@ export default class DataHub {
 
 		return this._dhc.getPublicMethods();
 	}
-
-	destroy() {
-		if (this._destroyed) {
-			return;
-		}
-
-		this.devLog(`${this._logName} destroyed.`);
-
-		this._emitter.emit(`$$destroy:${this._clazz}`, this._key);
-		this._emitter.emit(`$$destroy:${this._clazz}=${this._key}`);
-
-		Object.values(this._dataCenter).forEach(ds => ds.destroy());
-		this._dataCenter = null;
-
-		this._dhc.destroy();
-		this._dhc = null;
-
-		this._emitter.destroy();
-		this._emitter = null;
-
-		this._destroyed = true;
-
-		this._dh = null;
-		this._key = null;
-	}
 }
+
+const globalDataHub = new DataHub({}, udFun, udFun, false);
+const globalMethods = globalDataHub.getController();
+
+DataHub.globalDataHub = globalDataHub;
+Object.keys(globalMethods).forEach(method => {
+	DataHub[method] = (...args) => globalMethods[method](...args);
+});
+

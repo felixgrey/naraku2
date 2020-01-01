@@ -1,74 +1,71 @@
 import {
-	getUniIndex,
 	udFun,
 	isNvl,
-	getDeepValue,
-	createDestroyedErrorLog,
 } from './../Utils';
 
 import DataStore from './DataStore.js';
 import FetchManager from './FetchManager.js';
 import RunnerManager from './RunnerManager.js';
+import ListenerManager from './ListenerManager.js';
 
+
+import Component from './Component';
 
 const publicMethods = [
 	'createController',
 	'watch',
 	'isLoading',
 	'isLocked',
+	'isWillRefresh'
 ];
 
 let refreshRate = 40;
+
+const {
+	publicMethod
+} = Component;
 
 export function setRefreshRate(v) {
 	refreshRate = v;
 }
 
-export default class Controller {
+export default class Controller extends Component {
 
-	constructor(dh, _devMode = false) {
-		this._key = getUniIndex();
-		this._clazz = this.constructor.name;
-		this._logName = `${this._clazz}=${this._key}`;
-		this._destroyed = false;
+	afterCreate(dh) {
+		this._dhc = this;
 
-		this._devMode = _devMode;
-
-		this._watchSet = new Set();
-		this._fetchingDatastore = {};
-		this._refreshTime = Date.now();
+		this._fetchManager = new FetchManager(this, refreshRate, this._devMode);
+		this._runnerManager = new RunnerManager(this, this._devMode);
+		this._listenerManager = new ListenerManager(this, this._devMode);
 
 		this._publicMethods = {};
-
-		this._dh = dh;
-		this._dhc = this;
-		this._emitter = dh._emitter;
-
-		this.devLog = _devMode ? dh.devLog.createLog(this._logName) : udFun;
-		this.errLog = dh.errLog.createLog(this._logName);
-		this.destroyedErrorLog = createDestroyedErrorLog(this._clazz, this._key);
-		
-		this._emitter.once(`$$destroy:${dh._clazz}:${dh._key}`, () => {
-			this.devLog && this.devLog(`${dh._clazz} destroyed => ${this._clazz} destroy .`);
-			this.destroy();
-		});
-
-		this._fetchManager = new FetchManager(this, refreshRate, _devMode);
-		this._runnerManager = new RunnerManager(this, _devMode);
-		this._listenerManager = new ListenerManager(this, _devMode);
+		this._watchSet = new Set();
+		this._refreshTime = 0;
+		this._willRefresh = false;
 
 		this._initPublicMethods();
 		this._initWatch();
+	}
 
-		this.devLog(`${this._logName} created.`);
+	beforeDestroy() {
+		clearTimeout(this.refreshTimeoutIndex);
+
+		this._fetchManager.destroy();
+		this._fetchManager = null;
+
+		this._runnerManager.destroy();
+		this._runnerManager = null;
+
+		this._listenerManager.destroy();
+		this._fetchManager = null;
+
+		this._watchSet = null;
+		this._publicMethods = null;
+		
+		this._willRefresh = false;
 	}
 
 	_isStatus(names, type = 'isLoading') {
-		if (this._destroyed) {
-			this.destroyedErrorLog(type);
-			return false;
-		}
-
 		if (isNvl(names)) {
 			return false;
 		}
@@ -82,18 +79,26 @@ export default class Controller {
 		return false;
 	}
 
+	@publicMethod
 	isLoading(names) {
 		return this._isStatus(names, 'isLoading');
 	}
 
+	@publicMethod
 	isLocked(names) {
 		return this._isStatus(names, 'isLocked');
+	}
+	
+	@publicMethod
+	isWillRefresh() {
+		return this._willRefresh;
 	}
 
 	_refresh() {
 		if (this._destroyed) {
 			return;
 		}
+		this._willRefresh = false;
 
 		this._refreshTime = Date.now();
 		for (let callback of this._watchSet) {
@@ -107,6 +112,7 @@ export default class Controller {
 				return;
 			}
 			clearTimeout(this.refreshTimeoutIndex);
+			this._willRefresh = true;
 
 			const time = Date.now() - this._refreshTime;
 			if (time > refreshRate * 2) {
@@ -131,9 +137,7 @@ export default class Controller {
 
 	}
 
-
 	_initPublicMethods() {
-
 		const allPublicMethods = {
 			_dh: DataStore.publicMethods,
 			_fetchManager: FetchManager.publicMethods,
@@ -151,7 +155,7 @@ export default class Controller {
 					}
 
 					if (instanceName === 'controller') {
-						return this[instanceName][methodName](...args);
+						return this[methodName](...args);
 					}
 
 					return this[instanceName][methodName](...args);
@@ -161,12 +165,8 @@ export default class Controller {
 
 	}
 
+	@publicMethod
 	watch(callback = udFun) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('watch');
-			return udFun;
-		}
-
 		const off = () => {
 			if (this._destroyed) {
 				return;
@@ -184,66 +184,23 @@ export default class Controller {
 		return off;
 	}
 
+	@publicMethod
 	fetch(...args) {
-		if (this._destroyed) {
-			this.destroyedErrorLog('fetch');
-			return udFun;
-		}
 		return this._fetchManager.fetch(...args);
 	}
 
+	@publicMethod
 	createController() {
-		if (this._destroyed) {
-			this.destroyedErrorLog('createController');
-			return udFun;
-		}
-
 		return new Controller(this._dh, this._devMode).getPublicMethods();
 	}
 
+	@publicMethod
 	getPublicMethods() {
-		if (this._destroyed) {
-			this.destroyedErrorLog('getPublicMethods');
-			return {};
-		}
-
 		return {
 			...this._publicMethods
 		};
 	}
 
-	destroy() {
-		if (this._destroyed) {
-			return;
-		}
-
-		this.devLog(`${this._logName} destroyed.`);
-
-		clearTimeout(this.refreshTimeoutIndex);
-
-		this._fetchManager.destroy();
-		this._fetchManager = null;
-
-		this._runnerManager.destroy();
-		this._runnerManager = null;
-
-		this._listenerManager.destroy();
-		this._fetchManager = null;
-
-		this._emitter.emit(`$$destroy:${this._clazz}`, this._key);
-		this._emitter.emit(`$$destroy:${this._clazz}=${this._key}`);
-
-		this._watchSet = null;
-
-		this._dh = null;
-		this._dhc = null;
-		this._emitter = null;
-
-		this.devLog = null;
-		this.errLog = null;
-
-		this._key = null;
-	}
 }
 
 Controller.publicMethods = publicMethods
