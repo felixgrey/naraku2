@@ -1,7 +1,11 @@
 import {
 	createLog,
 	isBlank,
+	isNvl,
 	udFun,
+	sameFun,
+	toCamel,
+	toUnderline,
 } from './../Utils';
 
 import LifeCycle from './../Common/LifeCycle';
@@ -15,25 +19,46 @@ const {
 
 export default class ViewModel extends LifeCycle {
 
-	_initialization(config = {}, dhOrCfg = {}) {
-		this._showLog = false;
-		this._config = config;
+	_initialization(viewKey = null, props = {}) {
+		this._viewKey = viewKey;
+		this._props = props;
 		this._parentKey = null;
 		this._viewContext = null;
 		this._changeHandle = udFun;
 		this._moment = null;
+		this._unmoment = udFun;
 
-		this._withStore = config.withStore || null;
+		this._name = isNvl(props.MyName) ? null : props.MyName;
 
-		if (dhOrCfg instanceof DataHub) {
-			this._dh = dhOrCfg;
-		} else {
-			this._dh = new DataHub(dhOrCfg, this.devLog, this.errLog, this._devMode);
-		}
+		this._withStore = props.withStore || null;
 
+		this._gdhc = DataHub.createController();
 		this._gdhc.watch(() => {
 			this._changeHandle();
 		});
+	}
+
+	@publicMethod
+	getContextDataHub() {
+		return this._viewContext;
+	}
+
+	@publicMethod
+	setMyDataHub(cfgOrDh) {
+		if (isNvl(cfgOrDh)) {
+			return;
+		}
+
+		if (this._dh) {
+			this.errLog(`dh existed.`);
+			return;
+		}
+
+		if (cfgOrDh instanceof DataHub) {
+			this._dh = cfgOrDh;
+		} else {
+			this._dh = new DataHub(cfgOrDh, this.devLog, this.errLog, this._devMode)
+		}
 
 		this._dh.getController().watch(() => {
 			if (this._gdhc.isWillRefresh()) {
@@ -47,10 +72,14 @@ export default class ViewModel extends LifeCycle {
 			this._changeHandle();
 		});
 	}
-
+	
 	@publicMethod
-	getContextDataHub() {
-		return this._viewContext;
+	getParentChain() {
+		if (!this._viewContext) {
+			return [];
+		}
+		
+		return this._viewContext._tree.getParentChain(this._viewKey);
 	}
 
 	@publicMethod
@@ -59,88 +88,95 @@ export default class ViewModel extends LifeCycle {
 	}
 
 	@publicMethod
-	showDevLog(flag) {
-		this._showLog = flag;
+	turnOn(storeName) {
+		if (!this._viewContext) {
+			return;
+		}
+
+		this._viewContext.getController().turnOn(storeName);
+	}
+
+	@publicMethod
+	turnOff(storeName) {
+		if (!this._viewContext) {
+			return;
+		}
+
+		this._viewContext.getController().turnOff(storeName);
 	}
 
 	_momentMethods = [
 		'getContextDataHub',
 		'getMyDataHub',
-		'showDevLog',
+		'destroyHandle',
+		'fromParent',
+		'onChange',
+		'turnOn',
+		'turnOff',
 	];
 
 	@publicMethod
-	getLifeCycleMethods() {
-		return {
-			viewKey: this._key,
-			createHandle: (moment) => {
-				if (this._destroyed) {
-					return;
-				}
-
-				this._momentMethods.forEach(method => {
-					moment[method] = (...args) => this[method](...args);
-				});
-
-				moment.viewModel = this;
-				this._moment = moment;
-			},
-			destroyHandler: () => {
-				if (this._destroyed) {
-					return;
-				}
-
-				this._viewContext && this._viewContext.removeNode(this._viewKey);
-				this.destroy();
-			},
-			onChange: (callback = udFun) => {
-				if (this._destroyed) {
-					return;
-				}
-
-				this._changeHandle = callback;
-			},
-			getMyDhController: () => {
-				if (this._destroyed) {
-					return udFun;
-				}
-
-				return this._dh.getController();
-			},
-			getModelInfo: () => {
-				if (this._destroyed || !this._withStore || !this._viewContext) {
-					return {};
-				}
-
-				const {
-					get,
-					getStatus
-				} = this._viewContext.getController();
-
-				return {
-					data: get(this._withStore),
-					status: getStatus(this._withStore),
-				};
-			},
-			fromParent: (key, viewContext) => {
-				if (this._destroyed) {
-					return;
-				}
-
-				this._parentKey = key;
-				this._viewContext = viewContext;
-
-				viewContext.createNode(this._viewKey, this);
-
-				viewContext.watch(() => {
-					if (DataHub.isWillRefresh()) {
-						return;
-					}
-
-					this._changeHandle();
-				});
-			}
+	createHandle(moment, preText = '') {
+		if (this._destroyed) {
+			return;
 		}
+
+		let format = sameFun;
+		if (preText.charAt(preText.length - 1) === '_') {
+			format = (method) => toUnderline(preText + method);
+		} else if (preText.length) {
+			format = (method) => toCamel(preText + '_' + method);
+		}
+
+		this._momentMethods.forEach(method => {
+			moment[format(method)] = (...args) => this[method](...args);
+		});
+		moment[format('viewModel')] = this;
+		this._moment = moment;
+
+		this._unmoment = () => {
+			this._momentMethods.forEach(method => {
+				moment[format(method)] = null;
+			});
+			moment[format('viewModel')] = null;
+			this._moment = null;
+		}
+	}
+
+	destroyHandle() {
+		if (this._destroyed) {
+			return;
+		}
+
+		this._viewContext && this._viewContext.removeNode(this._viewKey);
+		this.destroy();
+	}
+
+	onChange(callback = udFun) {
+		if (this._destroyed) {
+			return;
+		}
+
+		this._changeHandle = callback;
+	}
+
+	fromParent(key, viewContext) {
+		if (this._destroyed || isNvl(key) || isNvl(viewContext)) {
+			return;
+		}
+
+		this._parentKey = key;
+		this._viewContext = viewContext;
+
+		viewContext.createNode(this._viewKey, this);
+
+		viewContext.watch(() => {
+			if (DataHub.isWillRefresh()) {
+				return;
+			}
+
+			this._changeHandle();
+		});
 	}
 
 	_destruction() {
@@ -153,18 +189,11 @@ export default class ViewModel extends LifeCycle {
 		this._viewContext = null;
 		this._view = null;
 
-		if (this._moment) {
-			this._momentMethods.forEach(method => {
-				moment[method] = null;
-			});
-			this._moment.viewModel = null;
-			this._moment = null;
-		}
+		this._unmoment();
+
+		this._props = null;
 	}
 
 }
 
 ViewModel.$loggerByParam = true;
-
-ViewModel.createMainView = udFun;
-ViewModel.createSubView = udFun;

@@ -15,8 +15,8 @@ const testName = 'Tree';
 const Component = require(`../../lib/ViewModel/${testName}.js`).default;
 // ----------------------------------------------------------- //
 
-const devLog = Utils.createLog('Emitter','log');
-const errLog = Utils.createLog('Emitter','error');
+const devLog = Utils.createLog(testName,'log');
+const errLog = Utils.createLog(testName,'error');
 
 console.log(`\n--------- test ${testName} start ---------\n`);
 

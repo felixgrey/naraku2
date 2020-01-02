@@ -2,6 +2,7 @@ import {
 	isNvl,
 	getDeepValue,
 	snapshot,
+	udFun
 } from './../Utils';
 
 import Component from './Component';

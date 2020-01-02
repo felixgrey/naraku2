@@ -1,101 +1,101 @@
 import {
-	createUid,
-	createLog,
-	snapshot,
-	udFun,
-	sameFun,
-	isNvl
-} from './../Utils';
+  createUid,
+  createLog,
+  snapshot,
+  udFun,
+  sameFun,
+  isNvl,
+} from '../Utils';
 
-let fetchMap = {};
-let stopKeyMap = {};
-let fetchingMap = {};
+const fetchMap = {};
+const stopKeyMap = {};
+const fetchingMap = {};
 
-let errLog = createLog('Fetcher', 'error');
-let devLog = createLog('Fetcher', 'log');
+const errLog = createLog('Fetcher', 'error');
+const devLog = createLog('Fetcher', 'log');
 
 let fetcher = null;
 let devMode = false;
 
 function setDevMode(flag) {
-	devMode = flag;
+  devMode = flag;
 }
 
 function clearStatus(name, stopKey, _callName) {
-	if (!isNvl(name) && fetchingMap[name] > 0) {
-		fetchingMap[name]--;
-	}
+  if (!isNvl(name) && fetchingMap[name] > 0) {
+    fetchingMap[name]--;
+  }
 
-	devMode && devLog('clearStatus: ' + _callName, name, stopKey, JSON.stringify(stopKeyMap));
+  devMode && devLog(`clearStatus: ${_callName}`, name, stopKey, JSON.stringify(stopKeyMap));
 
-	if (!isNvl(stopKey)) {
-		stopKeyMap[stopKey] = null;
-	}
+  if (!isNvl(stopKey)) {
+    stopKeyMap[stopKey] = null;
+  }
 }
 
 function addFetcher(name, url, method = 'get', extend = {}) {
-	if (fetchMap[name]) {
-		errLog(`${name} existed.`);
-		return;
-	}
+  if (fetchMap[name]) {
+    errLog(`${name} existed.`);
+    return;
+  }
 
-	devMode && devLog('addFetcher: ', name, url, method, extend);
+  devMode && devLog('addFetcher: ', name, url, method, extend);
 
-	fetchMap[name] = {
-		url,
-		method,
-		extend,
-	};
+  fetchMap[name] = {
+    url,
+    method,
+    extend,
+  };
 }
 
 function removeFetcher(name) {
-	if (fetchingMap[name]) {
-		errLog(`${name} is fetching, can't be remove .`);
-		return;
-	}
+  if (fetchingMap[name]) {
+    errLog(`${name} is fetching, can't be remove .`);
+    return;
+  }
 
-	devMode && devLog('removeFetcher: ', name);
+  devMode && devLog('removeFetcher: ', name);
 
-	delete fetchMap[name];
+  delete fetchMap[name];
 }
 
 function getFetcher(name) {
-	return snapshot(fetchMap[name]);
+  return snapshot(fetchMap[name]);
 }
 
 function initFetcher(callback, force = false) {
-	if (fetcher) {
-		if (!force) {
-			errLog(`fetcher has initialized.`);
-			return;
-		}
+  if (fetcher) {
+    if (!force) {
+      errLog('fetcher has initialized.');
+      return;
+    }
 
-		devMode && devLog('initialize fetch again.');
-	}
+    devMode && devLog('initialize fetch again.');
+  }
 
-	devMode && devLog('run initFetcher.');
+  devMode && devLog('run initFetcher.');
 
-	fetcher = callback || udFun;
+  fetcher = callback || udFun;
 }
 
 function hasInitFetcher() {
-	return !!fetcher;
+  return !!fetcher;
 }
 
 function stopFetchData(stopKey) {
-	if (!stopKeyMap[stopKey]) {
-		devMode && devLog(`stopKey ${stopKey} not existed.`);
-		return;
-	}
+  if (!stopKeyMap[stopKey]) {
+    devMode && devLog(`stopKey ${stopKey} not existed.`);
+    return;
+  }
 
-	const {
-		name,
-		callback
-	} = stopKeyMap[stopKey];
+  const {
+    name,
+    callback,
+  } = stopKeyMap[stopKey];
 
-	devMode && devLog(`stopFetchData`, name, stopKey);
+  devMode && devLog('stopFetchData', name, stopKey);
 
-	callback();
+  callback();
 }
 
 const NOT_INIT_FETCHER = createUid('NOT_INIT_FETCHER_');
@@ -105,159 +105,160 @@ const NO_URL = createUid('NO_URL_');
 const ABORT_REQUEST = createUid('ABORT_REQUEST_');
 
 function fetchData(name, data = null, dataInfo = {}, stopKey = null) {
-	if (!fetcher) {
-		errLog(`must run 'initFetcher' first.`);
-		return Promise.reject(NOT_INIT_FETCHER);
-	}
+  if (!fetcher) {
+    errLog('must run \'initFetcher\' first.');
+    return Promise.reject(NOT_INIT_FETCHER);
+  }
 
-	let fetch;
-	let url;
-	if (typeof name === 'object') {
-		fetch = name;
-		url = fetch.url;
-		name = url;
-	} else {
-		fetch = fetchMap[name];
-	}
+  let fetch;
+  let url;
+  if (typeof name === 'object') {
+    fetch = name;
+    url = fetch.url;
+    name = url;
+  } else {
+    fetch = fetchMap[name];
+  }
 
-	if (!fetch) {
-		errLog(`fetch '${name}' not existed.`);
-		return Promise.reject(NOT_ADD_FETCH);
-	}
+  if (!fetch) {
+    errLog(`fetch '${name}' not existed.`);
+    return Promise.reject(NOT_ADD_FETCH);
+  }
 
-	url = fetch.url;
+  url = fetch.url;
 
-	const {
-		method = 'get',
-			extend = {},
-	} = fetch;
+  const {
+    method = 'get',
+    extend = {},
+  } = fetch;
 
-	if (!url) {
-		errLog(`no url.`);
-		return Promise.reject(NO_URL);
-	}
+  if (!url) {
+    errLog('no url.');
+    return Promise.reject(NO_URL);
+  }
 
-	const _extend = Object.assign({
-		dataType: 'json',
-		beforeSend: sameFun,
-		afterResponse: sameFun,
-	}, extend);
+  const _extend = {
+    dataType: 'json',
+    beforeSend: sameFun,
+    afterResponse: sameFun,
+    ...extend,
+  };
 
-	let beforeFetch = _extend.beforeFetch || sameFun;
-	let afterFetch = _extend.afterFetch || sameFun;
+  const beforeFetch = _extend.beforeFetch || sameFun;
+  const afterFetch = _extend.afterFetch || sameFun;
 
-	delete _extend.beforeFetch;
-	delete _extend.afterFetch;
+  delete _extend.beforeFetch;
+  delete _extend.afterFetch;
 
-	let setResult;
-	let setError;
-	let onStop = udFun;
+  let setResult;
+  let setError;
+  let onStop = udFun;
 
-	fetchingMap[name] = fetchingMap[name] || 0;
-	fetchingMap[name]++;
+  fetchingMap[name] = fetchingMap[name] || 0;
+  fetchingMap[name]++;
 
-	const fetchPromise = new Promise(function(resolve, reject) {
-		setResult = (data) => {
-			devMode && devLog(`fetch success and run setResult`, data);
-			resolve(afterFetch(data));
-		}
+  const fetchPromise = new Promise((resolve, reject) => {
+    setResult = (data) => {
+      devMode && devLog('fetch success and run setResult', data);
+      resolve(afterFetch(data));
+    };
 
-		if (!isNvl(stopKey)) {
-			if (stopKeyMap[stopKey]) {
-				errLog(`stopKey ${stopKey} has existed stop will be invalid.`);
-				stopKey = null;
-			} else {
-				// 如果没有执行onStop，中断时直接reject
-				stopKeyMap[stopKey] = {
-					name,
-					callback: () => {
-						devMode && devLog(`stop and reject whthout onStop.`);
-						reject(ABORT_REQUEST);
-					}
-				};
+    if (!isNvl(stopKey)) {
+      if (stopKeyMap[stopKey]) {
+        errLog(`stopKey ${stopKey} has existed stop will be invalid.`);
+        stopKey = null;
+      } else {
+        // 如果没有执行onStop，中断时直接reject
+        stopKeyMap[stopKey] = {
+          name,
+          callback: () => {
+            devMode && devLog('stop and reject whthout onStop.');
+            reject(ABORT_REQUEST);
+          },
+        };
 
-				// 执行onStop后，先执行回调，再reject
-				onStop = (callback = udFun) => {
-					stopKeyMap[stopKey] = {
-						name,
-						callback: () => {
-							devMode && devLog(`run onStop callback and reject.`);
-							callback();
-							reject(ABORT_REQUEST);
-						}
-					};
-				}
-			}
-		}
+        // 执行onStop后，先执行回调，再reject
+        onStop = (callback = udFun) => {
+          stopKeyMap[stopKey] = {
+            name,
+            callback: () => {
+              devMode && devLog('run onStop callback and reject.');
+              callback();
+              reject(ABORT_REQUEST);
+            },
+          };
+        };
+      }
+    }
 
-		setError = (err) => {
-			devMode && devLog(`setError and reject.`, err);
-			reject(err);
-		}
-	});
+    setError = (err) => {
+      devMode && devLog('setError and reject.', err);
+      reject(err);
+    };
+  });
 
-	data = beforeFetch(data);
-	dataInfo = snapshot(dataInfo);
+  data = beforeFetch(data);
+  dataInfo = snapshot(dataInfo);
 
-	fetcher({
-		url,
-		method,
-		data,
-		dataInfo,
-		setResult,
-		setError,
-		onStop,
-		stopKey,
-		extend: _extend,
-	});
+  fetcher({
+    url,
+    method,
+    data,
+    dataInfo,
+    setResult,
+    setError,
+    onStop,
+    stopKey,
+    extend: _extend,
+  });
 
-	return fetchPromise.finally(() => {
-		devMode && devLog(`fetch finally.`);
-		clearStatus(name, stopKey, 'finally');
-	});
+  return fetchPromise.finally(() => {
+    devMode && devLog('fetch finally.');
+    clearStatus(name, stopKey, 'finally');
+  });
 }
 
 /*
  当前URL
  */
 const localBaseUrl = (() => {
-	let {
-		protocol = '', hostname = '', port = ''
-	} = global.location || {};
-	return `${protocol}//${hostname}${port ? (':' + port) : ''}`;
+  const {
+    protocol = '', hostname = '', port = '',
+  } = global.location || {};
+  return `${protocol}//${hostname}${port ? (`:${port}`) : ''}`;
 })();
 
 /*
-  参数到query 
+  参数到query
 */
 function paramToQuery(url = '', param = {}) {
-	url = url.split('#');
-	let query = [];
-	for (let q in param) {
-		let v = param[q];
-		if (!isNvl(v)) {
-			query.push(`${q}=${encodeURIComponent(v)}`);
-		}
-	}
-	query = (url[0].indexOf('?') === -1 ? '?' : '&') + query.join('&') + (url.length > 1 ? '#' : '');
-	url.splice(1, 0, query);
-	return url.join('');
+  url = url.split('#');
+  let query = [];
+  for (const q in param) {
+    const v = param[q];
+    if (!isNvl(v)) {
+      query.push(`${q}=${encodeURIComponent(v)}`);
+    }
+  }
+  query = (url[0].indexOf('?') === -1 ? '?' : '&') + query.join('&') + (url.length > 1 ? '#' : '');
+  url.splice(1, 0, query);
+  return url.join('');
 }
 
 export {
-	NOT_INIT_FETCHER,
-	NOT_ADD_FETCH,
-	FETCHING,
-	NO_URL,
-	ABORT_REQUEST,
-	localBaseUrl,
-	addFetcher,
-	removeFetcher,
-	getFetcher,
-	initFetcher,
-	stopFetchData,
-	fetchData,
-	paramToQuery,
-	hasInitFetcher,
-	setDevMode
-}
+  NOT_INIT_FETCHER,
+  NOT_ADD_FETCH,
+  FETCHING,
+  NO_URL,
+  ABORT_REQUEST,
+  localBaseUrl,
+  addFetcher,
+  removeFetcher,
+  getFetcher,
+  initFetcher,
+  stopFetchData,
+  fetchData,
+  paramToQuery,
+  hasInitFetcher,
+  setDevMode,
+};

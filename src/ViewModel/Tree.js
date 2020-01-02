@@ -35,11 +35,11 @@ export default class Tree extends LifeCycle {
 
 		const node = this._keyMap[key];
 
-		node.children.forEach((_key, index) => {
-			this.removeNode(_key, false);
+		node.children.forEach((node, index) => {
+			this.removeNode(node.key, false);
 		});
-
-		const pChildren = this._keyMap[node.parentKey].children;
+		
+		const pChildren = (this._keyMap[node.parentKey] || {}).children || [];
 
 		for (let i = 0; i < pChildren.length; i++) {
 			if (pChildren[i].key === key) {
@@ -60,7 +60,7 @@ export default class Tree extends LifeCycle {
 	@publicMethod
 	getNode(key) {
 		if (isBlank(key)) {
-			this.errLog(` node not existed.`);
+			this.methodErrLog('getNode', [key], 'blankKey');
 			return;
 		}
 
@@ -70,7 +70,7 @@ export default class Tree extends LifeCycle {
 	@publicMethod
 	getParentChain(key) {
 		if (isBlank(key) || !this._keyMap[key]) {
-			this.errLog(` node not existed.`);
+			this.methodErrLog('getParentChain', [key], 'blankKey');
 			return;
 		}
 
@@ -125,7 +125,7 @@ export default class Tree extends LifeCycle {
 	@publicMethod
 	setParent(key) {
 		if (isBlank(key) || !this._keyMap[key]) {
-			this.errLog(` node not existed.`);
+			this.methodErrLog(`setParent`, [key], `blankKey`);
 			return;
 		}
 		this._parent = this._keyMap[key];

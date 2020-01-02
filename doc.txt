@@ -28,105 +28,71 @@ naraku2-codeTemplate
 
 --------------------------------------------
 naraku2-viewModel
-
 ViewModel
-
-	gDh
-	cDh
-	dh
-	
-	_key
-	_name
-	_type
-	_destroyed
-	rendered
-	
-	afterCreate()
-	beforeRender()
-	afterRender()
-	beforeDestruct()
-	
-	view
-		showDevLog()
-		
-		log()
-		
-	
-		
-		getValue()
-		setValue()
-		assignFirst()
-		getFirst()
-		when()
-		run()
-		
-		getPrivateValue()
-		setPrivateValue()
-		assignPrivateFirst()
-		getPrivateFirst()
-		whenPrivate()
-
-		getGlobalValue()
-		setGlobalValue()
-		assignGlobalFirst()
-		getGlobalFirst()
-		whenGlobal()
-
-@createView($name/dhCfg)
-
-@publicMethod
-
-NodeModel
-	_root: {}
-	_parent
-	_last
-	_nameMap
-	_keyMap
-	
-	getRoot()
-	getPath()
-	getParent()
-	getLast()
-	
-	findByName()
-	findByKey()
-	
-	asRoot()
-	asParent()
-	
-	addMe(key, name, type, attr)
-	
-	parentNode
-		{
-			key:
-			name:
-			type:
-			attr:
-			children:
-			parent:
-		}
-
-ContextViewModel
-
-		contextModel		
-			cDh
-			nodeModel
-			
-
-	view
-		contextView = true
-
-ViewModel.createView
-
-
---------------------------------------------
-naraku2-forVue2x
---------------------------------------------
-naraku2-forReact
---------------------------------------------
-naraku2-forVue3x
+ViewContext
 
 ===================================================
+
+menuConfig
+	{
+		theme
+		icon "iconType:"
+		path
+		name
+		label
+		dynamic
+		isTemplate
+		isDetail
+		hidden
+		routes[]
+	}
+	
+authority
+	[
+		'app.path*.page'
+	]
+
+MenuModel
+
+	createMenuData(config,  {
+		_theme = [],
+		_name = [app],
+		_dynamic = false,
+	});
+	
+	{
+		theme = []
+		icon "iconType:"
+		path
+		name = []
+		label
+		dynamic = false
+		isTemplate
+		isDetail
+		hidden
+		routes[]
+	}
+	
+	!nvl theme 
+	
+	extend {
+		
+	}
+	
+	
+		
+	
+  
+
+
+
+
+
+
+
+
+
+
 
 
 @showLoading

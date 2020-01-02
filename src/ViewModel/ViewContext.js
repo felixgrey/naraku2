@@ -36,6 +36,11 @@ export default class ViewContext extends LifeCycle {
 	}
 
 	@publicMethod
+	getDataHub() {
+		return this._dh;
+	}
+
+	@publicMethod
 	createNode(...args) {
 		this._tree.createNode(...args);
 	}
@@ -52,7 +57,7 @@ export default class ViewContext extends LifeCycle {
 
 	@publicMethod
 	removeNode(...args) {
-		this._tree.createNode(...args);
+		this._tree.removeNode(...args);
 	}
 
 	@publicMethod
