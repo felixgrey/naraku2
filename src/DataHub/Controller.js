@@ -155,38 +155,12 @@ export default class Controller extends Component {
   }
 
   _initPublicMethods() {
-    // const allPublicMethods = {
-    //   _dh: DataStore.publicMethods.concat(RelationManager.publicMethods),
-    //   _fetchManager: FetchManager.publicMethods,
-    //   _runnerManager: RunnerManager.publicMethods,
-    //   _listenerManager: ListenerManager.publicMethods,
-    //   'controller': publicMethods
-    // };
-
     this.publicMethods(DataStore.publicMethods, '_dh', this._publicMethods);
     this.publicMethods(RelationManager.publicMethods, '_dh', this._publicMethods);
     this.publicMethods(FetchManager.publicMethods, '_fetchManager', this._publicMethods);
     this.publicMethods(RunnerManager.publicMethods, '_runnerManager', this._publicMethods);
     this.publicMethods(ListenerManager.publicMethods, '_listenerManager', this._publicMethods);
     this.publicMethods(publicMethods, '_that', this._publicMethods);
-
-    // for (let instanceName in allPublicMethods) {
-    //   for (let methodName of allPublicMethods[instanceName]) {
-    //     this._publicMethods[methodName] = (...args) => {
-    //       if (this._destroyed) {
-    //         this.destroyedErrorLog(methodName);
-    //         return udFun;
-    //       }
-
-    //       if (instanceName === 'controller') {
-    //         return this[methodName](...args);
-    //       }
-
-    //       return this[instanceName][methodName](...args);
-    //     }
-    //   }
-    // }
-
   }
 
   @publicMethod

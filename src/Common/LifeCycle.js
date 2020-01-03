@@ -108,7 +108,7 @@ export default class LifeCycle {
 
     this.publicMethods = (_publicMethods = [], target = '_that', instance = this) => {
       _publicMethods.forEach((name) => {
-        instance[name] = publicMethod(instance, name, null, target)
+        instance[name] = publicMethod(this, name, null, target).bind(this);
       })
     }
 
