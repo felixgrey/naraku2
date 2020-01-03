@@ -6,6 +6,7 @@ import Emitter from './Emitter';
 import DataStore from './DataStore';
 import Controller from './Controller';
 import Component from './Component';
+import RelationManager from './RelationManager';
 
 const {
 	publicMethod
@@ -29,6 +30,7 @@ export default class DataHub extends Component {
 
 		this._dataCenter = {};
 		this._extendConfig = {};
+    this._runner = {};
 
 		this._initDsPublicMethods();
 		this._init();
@@ -40,6 +42,8 @@ export default class DataHub extends Component {
 
 		this._dhc.destroy();
 		this._dhc = null;
+
+    this._runner = null;
 	}
 
 	destroy() {
@@ -59,7 +63,9 @@ export default class DataHub extends Component {
 	}
 
 	_initDsPublicMethods() {
-		DataStore.publicMethods.forEach(methodName => {
+
+    RelationManager.publicMethods.concat(DataStore.publicMethods)
+		.forEach(methodName => {
 			this[methodName] = (name, ...args) => {
 				if (this._destroyed) {
 					this.destroyedErrorLog(methodName);
@@ -98,3 +104,6 @@ Object.keys(globalMethods).forEach(method => {
 	DataHub[method] = (...args) => globalMethods[method](...args);
 });
 
+export {
+  DataHub
+}

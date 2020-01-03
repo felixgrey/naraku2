@@ -33,6 +33,7 @@ exports.Container = class Container {
 		this.destroyedErrorLog = this.errLog = createLog('Container','error');
 		this._store = this._dh = this._dhc = this;
 		this._emitter =  new Emitter(this.devLog, this.errLog, true);
+		this._runner = {}
 	}
 	
 	destroy() {

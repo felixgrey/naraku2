@@ -1,6 +1,7 @@
 import {
 	createLog,
 	isBlank,
+  udFun,
 } from './../Utils';
 
 import LifeCycle from './../Common/LifeCycle';
@@ -8,6 +9,16 @@ import LifeCycle from './../Common/LifeCycle';
 const {
 	publicMethod
 } = LifeCycle;
+
+const publicMethods = [
+  'removeNode',
+  'getNode',
+  'getParent',
+  'getParentChain',
+  'createNode',
+  'getRoot',
+  'setParent'
+];
 
 export default class Tree extends LifeCycle {
 
@@ -38,7 +49,7 @@ export default class Tree extends LifeCycle {
 		node.children.forEach((node, index) => {
 			this.removeNode(node.key, false);
 		});
-		
+
 		const pChildren = (this._keyMap[node.parentKey] || {}).children || [];
 
 		for (let i = 0; i < pChildren.length; i++) {
@@ -60,18 +71,36 @@ export default class Tree extends LifeCycle {
 	@publicMethod
 	getNode(key) {
 		if (isBlank(key)) {
-			this.methodErrLog('getNode', [key], 'blankKey');
-			return;
+			return null;
 		}
 
-		return this._keyMap[key];
+		return this._keyMap[key] || null;
 	}
+
+  @publicMethod
+  getParent(key) {
+		if (isBlank(key)) {
+			return null;
+		}
+		
+    if (!this._keyMap[key]) {
+    	this.methodErrLog('getParent', [key], 'notExist');
+    	return null;
+    }
+
+    let parentKey = this._keyMap[key].parentKey;
+    return this._keyMap[parentKey] || null;
+  }
 
 	@publicMethod
 	getParentChain(key) {
-		if (isBlank(key) || !this._keyMap[key]) {
-			this.methodErrLog('getParentChain', [key], 'blankKey');
-			return;
+		if (isBlank(key)) {
+			return [];
+		}
+		
+		if (!this._keyMap[key]) {
+			this.methodErrLog('getParentChain', [key], 'notExist');
+			return [];
 		}
 
 		let nodes = [];
@@ -134,3 +163,4 @@ export default class Tree extends LifeCycle {
 }
 
 Tree.$loggerByParam = true;
+Tree.publicMethods = publicMethods;

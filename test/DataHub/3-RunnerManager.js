@@ -15,7 +15,7 @@ const testName = 'RunnerManager';
 const Component = require(`../../lib/DataHub/${testName}.js`).default;
 // ----------------------------------------------------------- //
 
-let container = new Container();;
+let container = new Container();
 
 console.log(`\n--------- test ${testName} start ---------\n`);
 

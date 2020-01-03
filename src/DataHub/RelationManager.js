@@ -7,7 +7,9 @@ import Component from './Component';
 
 const publicMethods = [
 	'turnOn',
-	'turnOff'
+	'turnOff',
+  'isAuto',
+	'checkReady',
 ];
 
 const {
@@ -19,11 +21,7 @@ export default class RelationManager extends Component {
 		this._name = store._name;
 		this._checkReady = udFun;
 		this._defaultData = null;
-
-		this._switchStatus = {
-			off: false,
-			willFetch: false,
-		};
+		this._auto = true;
 	}
 
 	beforeDestroy() {
@@ -32,22 +30,34 @@ export default class RelationManager extends Component {
 
 		this._checkReady = null;
 		this._defaultData = null;
-		this._switchStatus = null;
 	}
 
 	@publicMethod
-	turnOn() {
-		this._switchStatus.off = false;
-		if (this._switchStatus.willFetch) {
-			this._switchStatus.willFetch = false;
-			this._checkReady && this._checkReady();
+	checkReady() {
+		if (this._auto) {
+			this.errLog(`can't checkReady when auto check.`);
+			return;
+		}
+		this._checkReady(true);
+	}
+
+	@publicMethod
+	turnOn(flag = false) {
+		this._auto = true;
+		if (flag) {
+			this._checkReady(true);
 		}
 	}
 
 	@publicMethod
 	turnOff() {
-		this._switchStatus.off = true;
+		this._auto = false;
 	}
+  
+  @publicMethod
+  isAuto() {
+    return this._auto;
+  }
 
 	_configPolicy = {
 		default: (value, cfg) => {
@@ -112,7 +122,7 @@ export default class RelationManager extends Component {
 			let {
 				dependence = [],
 					filter = [],
-					off = false,
+					auto = true,
 					force = false,
 			} = cfg;
 
@@ -130,14 +140,18 @@ export default class RelationManager extends Component {
 			}
 
 			this._store._eternal = true;
-			this._switchStatus.off = off;
+			this._auto = auto;
 
 			dependence = [].concat(dependence);
 			filter = [].concat(filter);
 
 			const whenThem = [].concat(dependence).concat(filter);
 
-			const checkReady = () => {
+			const checkReady = (flag = false) => {
+				if (!this._auto && !flag) {
+					return;
+				}
+				
 				this.devLog(`dependence checkReady`);
 				const submitData = {};
 
@@ -157,11 +171,6 @@ export default class RelationManager extends Component {
 						return;
 					}
 					Object.assign(submitData, depStore.first());
-				}
-
-				if (this._switchStatus.off) {
-					this._switchStatus.willFetch = true;
-					return;
 				}
 
 				for (let ft of filter) {

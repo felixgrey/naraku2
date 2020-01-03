@@ -23,7 +23,10 @@ export default class RunnerManager extends Component {
 	}
 
 	beforeDestroy() {
-		this._runner = null;
+    Object.keys(this._runner).forEach(name => {
+      delete this._dh._runner[name];
+    });
+    this._runner = null;
 	}
 
 	@publicMethod
@@ -32,7 +35,7 @@ export default class RunnerManager extends Component {
 			return false;
 		}
 
-		return !!this._runner[name];
+		return !!this._dh._runner[name];
 	}
 
 	@publicMethod
@@ -41,7 +44,12 @@ export default class RunnerManager extends Component {
 			return;
 		}
 
+    if (!this._runner) {
+      return;
+    }
+
 		delete this._runner[name];
+    delete this._dh._runner[name];
 	}
 
 	@publicMethod
@@ -50,12 +58,13 @@ export default class RunnerManager extends Component {
 			return;
 		}
 
-		if (this._runner[name]) {
+		if (this._dh._runner[name]) {
 			this.errLog(`runner ${name} has existed.`);
 			return;
 		}
 
-		this._runner[name] = callback;
+    this._runner[name] = true;
+		this._dh._runner[name] = callback;
 	}
 
 	@publicMethod
@@ -80,7 +89,7 @@ export default class RunnerManager extends Component {
 			args
 		});
 
-		return this._runner[name](...args);
+		return this._dh._runner[name](...args);
 	}
 }
 

@@ -12,6 +12,7 @@ import LifeCycle from './../Common/LifeCycle';
 import DataHub from './../DataHub/DataHub';
 import Controller from './../DataHub/Controller';
 import ViewContext from './ViewContext';
+import Tree from './Tree.js';
 
 const {
 	publicMethod
@@ -27,8 +28,9 @@ export default class ViewModel extends LifeCycle {
 		this._changeHandle = udFun;
 		this._moment = null;
 		this._unmoment = udFun;
+    this._viewModelProps = {};
 
-		this._name = isNvl(props.MyName) ? null : props.MyName;
+		this._name = isNvl(props.myName) ? null : props.myName;
 
 		this._withStore = props.withStore || null;
 
@@ -36,12 +38,12 @@ export default class ViewModel extends LifeCycle {
 		this._gdhc.watch(() => {
 			this._changeHandle();
 		});
+    
+    this.publicMethods(Controller.publicMethods, '_cc');
+		this.publicMethods(Tree.publicMethods, '_viewContext');
+
 	}
 
-	@publicMethod
-	getContextDataHub() {
-		return this._viewContext;
-	}
 
 	@publicMethod
 	setMyDataHub(cfgOrDh) {
@@ -72,47 +74,32 @@ export default class ViewModel extends LifeCycle {
 			this._changeHandle();
 		});
 	}
-	
-	@publicMethod
-	getParentChain() {
-		if (!this._viewContext) {
-			return [];
-		}
-		
-		return this._viewContext._tree.getParentChain(this._viewKey);
-	}
+
 
 	@publicMethod
 	getMyDataHub() {
 		return this._dh;
 	}
 
-	@publicMethod
-	turnOn(storeName) {
-		if (!this._viewContext) {
-			return;
-		}
+  @publicMethod
+  setViewProps(value) {
+    Object.assign(this._viewModelProps, value);
+  }
 
-		this._viewContext.getController().turnOn(storeName);
-	}
-
-	@publicMethod
-	turnOff(storeName) {
-		if (!this._viewContext) {
-			return;
-		}
-
-		this._viewContext.getController().turnOff(storeName);
-	}
+  @publicMethod
+  getViewProps() {
+    return {
+      ...this._viewModelProps
+    };
+  }
 
 	_momentMethods = [
-		'getContextDataHub',
-		'getMyDataHub',
 		'destroyHandle',
 		'fromParent',
 		'onChange',
 		'turnOn',
 		'turnOff',
+    'run',
 	];
 
 	@publicMethod
@@ -132,17 +119,32 @@ export default class ViewModel extends LifeCycle {
 			moment[format(method)] = (...args) => this[method](...args);
 		});
 		moment[format('viewModel')] = this;
+    moment._cc = udFun;
+
 		this._moment = moment;
 
 		this._unmoment = () => {
 			this._momentMethods.forEach(method => {
-				moment[format(method)] = null;
+				this._moment[format(method)] = null;
 			});
-			moment[format('viewModel')] = null;
+			this._moment[format('viewModel')] = null;
+      this._moment._cc = null;
+
 			this._moment = null;
 		}
 	}
 
+  @publicMethod
+  run(...args) {
+    if (!this._viewContext) {
+      this.methodErrLog('run', args, 'noViewContext');
+    	return;
+    }
+
+    return this._cc.run(...args);
+  }
+
+  @publicMethod
 	destroyHandle() {
 		if (this._destroyed) {
 			return;
@@ -165,8 +167,16 @@ export default class ViewModel extends LifeCycle {
 			return;
 		}
 
+    if (!this._moment) {
+      this.methodErrLog('fromParent', [], 'noMonent');
+      return;
+    }
+
 		this._parentKey = key;
 		this._viewContext = viewContext;
+
+    this._cc = this._viewContext.getController().createController();
+    this._moment._cc = this._cc;
 
 		viewContext.createNode(this._viewKey, this);
 
@@ -191,7 +201,11 @@ export default class ViewModel extends LifeCycle {
 
 		this._unmoment();
 
+    this._viewModelProps = null;
 		this._props = null;
+
+    this._cc && this._cc.destroy();
+    this._cc = null;
 	}
 
 }

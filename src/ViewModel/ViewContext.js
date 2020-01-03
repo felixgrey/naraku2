@@ -1,75 +1,40 @@
 import {
-	createLog,
-	isBlank,
-} from './../Utils';
+  createLog,
+  isBlank,
+  udFun
+} from '../Utils'
 
-import Tree from './Tree.js';
-import DataHub from './../DataHub/DataHub';
+import Tree from './Tree.js'
+import DataHub from '../DataHub/DataHub'
+import Controller from '../DataHub/Controller'
 
-import LifeCycle from './../Common/LifeCycle';
+import LifeCycle from '../Common/LifeCycle'
 
 const {
-	publicMethod
-} = LifeCycle;
+  publicMethod
+} = LifeCycle
 
 export default class ViewContext extends LifeCycle {
+  afterCreate (dhConfig = {}) {
+    this._tree = new Tree(this.devLog, this.errLog, this._devMode)
+    this._dh = new DataHub(dhConfig, this.devLog, this.errLog, this._devMode)
+    this._dhc = this._dh.getController()
+    this.extendData = {}
 
-	afterCreate(dhConfig = {}) {
-		this._tree = new Tree(this.devLog, this.errLog, this._devMode);
-		this._dh = new DataHub(dhConfig, this.devLog, this.errLog, this._devMode);
-		this.extendData = {};
-	}
+    this.publicMethods(Tree.publicMethods, '_tree')
+    this.publicMethods(Controller.publicMethods, '_dhc')
+  }
 
-	beforeDestroy() {
-		this._tree.destroy();
-		this._tree = null;
+  beforeDestroy () {
+    this._tree.destroy()
+    this._tree = null
 
-		this._dh.destroy();
-		this._dh = null;
+    this._dh.destroy()
+    this._dh = null
+    this._dhc = null
 
-		this.extendData = null;
-	}
-
-	@publicMethod
-	getController() {
-		return this._dh.getController();
-	}
-
-	@publicMethod
-	getDataHub() {
-		return this._dh;
-	}
-
-	@publicMethod
-	createNode(...args) {
-		this._tree.createNode(...args);
-	}
-
-	@publicMethod
-	isWillRefresh() {
-		return this._dh.getController().isWillRefresh();
-	}
-
-	@publicMethod
-	watch(callback) {
-		this._dh.getController().watch(callback);
-	}
-
-	@publicMethod
-	removeNode(...args) {
-		this._tree.removeNode(...args);
-	}
-
-	@publicMethod
-	getRoot(...args) {
-		return this._tree.getRoot(...args);
-	}
-
-	@publicMethod
-	setParent(...args) {
-		this._tree.setParent(...args);
-	}
-
+    this.extendData = null
+  }
 }
 
-ViewContext.$loggerByParam = true;
+ViewContext.$loggerByParam = true

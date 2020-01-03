@@ -10,7 +10,8 @@
     "build": "babel src --out-dir lib",
     "pretestb": "npm run build",
     "testb": "node ./test/index.js",
-    "test": "node ./test/index.js"
+    "test": "node ./test/index.js",
+		"eslint":"npx eslint src --fix"
   },
   "devDependencies": {
     "@babel/cli": "^7.7.7",

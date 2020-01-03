@@ -56,18 +56,11 @@ export default class DataStore extends Component {
 		this._errMsg = null;
 		this._name = name;
 
-		RelationManager.publicMethods.forEach(method => {
-			this[method] = (...args) => {
-				if (this._destroyed) {
-					return udFun;
-				}
+    this._pagination = new PaginationManager(this, this._devMode);
+    this._relationManager = new RelationManager(this, this._devMode);
 
-				return this._relationManager[method](...args);
-			}
-		});
+    this.publicMethods(RelationManager.publicMethods, '_relationManager');
 
-		this._pagination = new PaginationManager(this, this._devMode);
-		this._relationManager = new RelationManager(this, this._devMode);
 	}
 
 	beforeDestroy() {
