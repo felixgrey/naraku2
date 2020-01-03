@@ -20,8 +20,9 @@ const {
 
 export default class ViewModel extends LifeCycle {
 
-	_initialization(viewKey = null, props = {}) {
+	_initialization(viewKey = null, viewType,props = {}) {
 		this._viewKey = viewKey;
+    this._viewType = viewType;
 		this._props = props;
 		this._parentKey = null;
 		this._viewContext = null;
@@ -38,12 +39,61 @@ export default class ViewModel extends LifeCycle {
 		this._gdhc.watch(() => {
 			this._changeHandle();
 		});
-    
-    this.publicMethods(Controller.publicMethods, '_cc');
-		this.publicMethods(Tree.publicMethods, '_viewContext');
 
 	}
 
+  @publicMethod
+  getParent() {
+    if (!this._viewContext) {
+    	return null;
+    }
+    const parentNode = this._viewContext.getParent(this._viewKey);
+    if (!parentNode) {
+      return null;
+    }
+    
+    return parentNode.payload;
+  }
+
+  @publicMethod
+  getParentChain() {
+    // this.devLog('getParentChain', this._viewKey);
+    if (!this._viewContext) {
+      this.devLog('getParentChain no viewContext');
+    	return [];
+    }
+    return this._viewContext.getParentChain(this._viewKey).map(node => node.payload);
+  }
+
+  fromParent(key, viewContext) {
+    // this.devLog('fromParent', this._viewKey);
+  	if (this._destroyed || isNvl(key) || isNvl(viewContext)) {
+  		return;
+  	}
+
+    if (!this._moment) {
+      this.methodErrLog('fromParent', [], 'noMonent');
+      return;
+    }
+
+  	this._parentKey = key;
+  	this._viewContext = viewContext;
+
+    this._cc = this._viewContext.getController().createController();
+    this._moment._cc = this._cc;
+
+  	viewContext.createNode(this._viewKey, this._viewType, this);
+
+    this.publicMethods(Controller.publicMethods, '_cc');
+
+  	viewContext.watch(() => {
+  		if (DataHub.isWillRefresh()) {
+  			return;
+  		}
+
+  		this._changeHandle();
+  	});
+  }
 
 	@publicMethod
 	setMyDataHub(cfgOrDh) {
@@ -160,33 +210,6 @@ export default class ViewModel extends LifeCycle {
 		}
 
 		this._changeHandle = callback;
-	}
-
-	fromParent(key, viewContext) {
-		if (this._destroyed || isNvl(key) || isNvl(viewContext)) {
-			return;
-		}
-
-    if (!this._moment) {
-      this.methodErrLog('fromParent', [], 'noMonent');
-      return;
-    }
-
-		this._parentKey = key;
-		this._viewContext = viewContext;
-
-    this._cc = this._viewContext.getController().createController();
-    this._moment._cc = this._cc;
-
-		viewContext.createNode(this._viewKey, this);
-
-		viewContext.watch(() => {
-			if (DataHub.isWillRefresh()) {
-				return;
-			}
-
-			this._changeHandle();
-		});
 	}
 
 	_destruction() {

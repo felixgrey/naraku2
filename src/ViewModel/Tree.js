@@ -82,7 +82,7 @@ export default class Tree extends LifeCycle {
 		if (isBlank(key)) {
 			return null;
 		}
-		
+
     if (!this._keyMap[key]) {
     	this.methodErrLog('getParent', [key], 'notExist');
     	return null;
@@ -95,9 +95,10 @@ export default class Tree extends LifeCycle {
 	@publicMethod
 	getParentChain(key) {
 		if (isBlank(key)) {
+      this.devLog('getParentChain blankKey')
 			return [];
 		}
-		
+
 		if (!this._keyMap[key]) {
 			this.methodErrLog('getParentChain', [key], 'notExist');
 			return [];
@@ -116,7 +117,7 @@ export default class Tree extends LifeCycle {
 	}
 
 	@publicMethod
-	createNode(key, payload = null) {
+	createNode(key, type = null,payload = null) {
 		if (isBlank(key)) {
 			this.methodErrLog(`createNode`, [key], `blankKey`);
 			return;
@@ -129,6 +130,7 @@ export default class Tree extends LifeCycle {
 
 		const node = {
 			key,
+      type,
 			parentKey: null,
 			payload,
 			children: []

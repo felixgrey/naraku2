@@ -30,6 +30,7 @@ export function createView (dhConfig = {}, _main = false) {
         super(props, context)
 
         this._key = props.key
+				this._viewType = Component.name;
         this._viewMethods = Component.prototype._viewMethods || []
 
         this._clazz = Component.name || 'ReactView'
@@ -57,10 +58,11 @@ export function createView (dhConfig = {}, _main = false) {
             this._devMode = context.viewContext._devMode || this._devMode
           }
         }
-
+        
+        this.errLog = createLog(this._logName, 'error')
         this.devLog = this._devMode ? createLog(this._logName, 'log') : udFun
 
-        this._viewModel = new ViewModel(this._viewKey, {
+        this._viewModel = new ViewModel(this._viewKey, this._viewType,{
           ...props
         }, this.devLog, this.errLog, this._devMode)
 
