@@ -18,44 +18,48 @@ const {
 } = Component;
 
 export default class ListenerManager extends Component {
-	afterCreate(dhc) {
-		this._offSet = new Set();
+	
+	initialization(...args){
+		super.initialization(...args);
+		this.offSet = new Set();
+	}
+	
+	destruction() {
+		super.destruction();
+		
+		Array.from(this.offSet.values()).forEach(fun => fun());
+		this.offSet = null;
 	}
 
-	beforeDestroy() {
-		Array.from(this._offSet.values()).forEach(fun => fun());
-		this._offSet = null;
-	}
-
-	_onAndOnce(name, callback, once) {
-		let _off = this._emitter[once ? 'once' : 'on'](name, callback);
+	onAndOnce(name, callback, once) {
+		let emitterOff = this.emitter[once ? 'once' : 'on'](name, callback);
 
 		const off = () => {
-			if (!this._offSet.has(off)) {
+			if (!this.offSet.has(off)) {
 				return;
 			}
-			this._offSet.delete(off);
+			this.offSet.delete(off);
 
-			_off();
+			emitterOff();
 		};
-		this._offSet.add(off);
+		this.offSet.add(off);
 
 		return off;
 	}
 
 	@publicMethod
 	on(name, callback) {
-		return this._onAndOnce(name, callback, false);
+		return this.onAndOnce(name, callback, false);
 	}
 
 	@publicMethod
 	once(name, callback) {
-		return this._onAndOnce(name, callback, true);
+		return this.onAndOnce(name, callback, true);
 	}
 
 	@publicMethod
 	emit(name, ...args) {
-		return this._emitter.emit(name, ...args);
+		return this.emitter.emit(name, ...args);
 	}
 
 	@publicMethod
@@ -71,33 +75,33 @@ export default class ListenerManager extends Component {
 
 		const checkReady = () => {
 			this.devLog(`when checkReady`);
-			if (this._destroyed) {
+			if (this.destroyed) {
 				return;
 			}
 
 			const dataList = [];
 
-			for (let _name of names) {
-				if (isNvl(_name)) {
+			for (let name of names) {
+				if (isNvl(name)) {
 					dataList.push([]);
 					continue;
 				}
 
-				this.devLog(`when `, _name, this._dh.getDataStore(_name).hasData());
+				this.devLog(`when `, name, this.dataHub.getDataStore(name).hasSet());
 
-				if (!this._dh.getDataStore(_name).hasData()) {
+				if (!this.dataHub.getDataStore(name).hasSet()) {
 					return;
 				} else {
-					dataList.push(this._dh.getDataStore(_name).get());
+					dataList.push(this.dataHub.getDataStore(name).get());
 				}
 			}
 
 			callback(...dataList);
 		};
 
-		names.forEach(_name => {
-			let _off = this._emitter.on('$$data:' + _name, checkReady);
-			offList.push(_off);
+		names.forEach(name => {
+			let off = this.emitter.on('$$data:' + name, checkReady);
+			offList.push(off);
 		});
 
 		this.devLog(`when param : `, names);
@@ -105,16 +109,16 @@ export default class ListenerManager extends Component {
 		checkReady();
 
 		const off = () => {
-			if (!this._offSet.has(off)) {
+			if (!this.offSet.has(off)) {
 				return;
 			}
-			this._offSet.delete(off);
+			this.offSet.delete(off);
 
 			offList.forEach(fun => fun());
 			offList = null;
 		};
 
-		this._offSet.add(off);
+		this.offSet.add(off);
 
 		return off;
 	}
@@ -136,13 +140,13 @@ export default class ListenerManager extends Component {
 			return () => {
 				readyCount++
 				if (readyCount === names.length) {
-					readyCallback(...names.map(_name => this._dh.getDataStore(_name).get()));
+					readyCallback(...names.map(name => this.dataHub.getDataStore(name).get()));
 				}
 			}
 		};
 
 		let watchReady = () => {
-			if (this._destroyed || this._dh._destroyed) {
+			if (this.destroyed || this.dataHub.destroyed) {
 				return;
 			}
 
@@ -152,33 +156,33 @@ export default class ListenerManager extends Component {
 				watchReady();
 			});
 
-			for (let _name of names) {
-				let _off = this._emitter.once('$$data:' + _name, checkReady);
-				offList.push(_off);
+			for (let name of names) {
+				let off = this.emitter.once('$$data:' + name, checkReady);
+				offList.push(off);
 			}
 		}
 
 		watchReady();
 
-		if (names.filter(_name => this._dh.getDataStore(_name).hasData()).length === names.length) {
-			callback(...names.map(_name => this._dh.getDataStore(_name).get()));
+		if (names.filter(name => this.dataHub.getDataStore(name).hasSet()).length === names.length) {
+			callback(...names.map(name => this.dataHub.getDataStore(name).get()));
 		}
 
 		const off = () => {
-			if (this._destroyed) {
+			if (this.destroyed) {
 				return;
 			}
 
-			if (!this._offSet.has(off)) {
+			if (!this.offSet.has(off)) {
 				return;
 			}
-			this._offSet.delete(off);
+			this.offSet.delete(off);
 
 			offList.forEach(off => off());
 			offList = null;
 		}
 
-		this._offSet.add(off);
+		this.offSet.add(off);
 
 		return off;
 	}

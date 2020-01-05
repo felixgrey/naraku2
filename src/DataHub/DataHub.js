@@ -3,89 +3,97 @@ import {
 } from './../Utils';
 
 import Emitter from './Emitter';
+import Container from './Container';
 import DataStore from './DataStore';
-import Controller from './Controller';
-import LifeCycle from '../Common/LifeCycle';
-import RelationManager from './RelationManager';
+
+// import Controller from './Controller';
+// import RelationManager from './RelationManager';
 
 const {
 	publicMethod
-} = LifeCycle;
+} = Container;
 
-export default class DataHub extends LifeCycle {
+export default class DataHub extends Container {
 
-	afterCreate(dh, cfg) {
-		this._cfg = cfg || {};
-		this._dh = this;
+	initialization(...args) {
+		super.initialization(...args);
 
-		this._emitter = new Emitter(this.devLog, this.errLog, this._devMode);
-		this._dhc = new Controller(this, this.devLog, this.errLog, this._devMode);
+		const [cfg] = args;
 
-		this._dataCenter = {};
-		this._extendConfig = {};
-    this._runner = {};
+		this.cfg = cfg || {};
+		this.dataHub = this;
 
-		this._initDsPublicMethods();
-		this._init();
+		this.emitter = new Emitter(this.union);
+
+		// this.dataHubController = new Controller(this, this.union);
+
+		this.dataCenter = {};
+
+		this.initDsPublicMethods();
+		this.init();
+
 	}
 
-	beforeDestroy() {
-		Object.values(this._dataCenter).forEach(ds => ds.destroy());
-		this._dataCenter = null;
+	destruction() {
+		super.destruction();
+		
+		Object.values(this.dataCenter).forEach(ds => ds.destroy());
+		this.dataCenter = null;
 
-		this._dhc.destroy();
-		this._dhc = null;
+		this.dataHubController && this.dataHubController.destroy();
+		this.dataHubController = null;
 
-    this._runner = null;
 	}
 
 	destroy() {
-		const _emitter = this._emitter;
+		const emitter = this.emitter;
 		super.destroy();
-		_emitter.destroy();
+		emitter.destroy();
 	}
 
-	_init() {
-		for (let name in this._cfg) {
+	init() {
+		for (let name in this.cfg) {
 			if (/\_|\$/g.test(name.charAt(0))) {
-				this._extendConfig[name] = this._cfg[name];
+				this.setData(name, this.cfg[name]);
 				continue;
 			}
-			this.getDataStore(name).setConfig(this._cfg[name]);
+			this.getDataStore(name).setConfig(this.cfg[name]);
 		}
 	}
 
-	_initDsPublicMethods() {
+	initDsPublicMethods() {
 
-    RelationManager.publicMethods.concat(DataStore.publicMethods)
-		.forEach(methodName => {
-			this[methodName] = (name, ...args) => {
-				if (this._destroyed) {
-					this.destroyedErrorLog(methodName);
-					return udFun;
+		[]
+		// .concat(RelationManager.publicMethods)
+		.concat(DataStore.publicMethods)
+			.forEach(methodName => {
+				this[methodName] = (name, ...args) => {
+					if (this.destroyed) {
+						this.destroyedErrorLog(methodName);
+						return udFun;
+					}
+
+					return this.getDataStore(name)[methodName](...args);
 				}
-
-				return this.getDataStore(name)[methodName](...args);
-			}
-		});
+			});
 	}
 
 	@publicMethod
 	getDataStore(name) {
-		if (!this._dataCenter[name]) {
-			this._dataCenter[name] = new DataStore(this, name, this.devLog, this.errLog, this._devMode);
+		this.devLog('getDataStore', name);
+		if (!this.dataCenter[name]) {
+			this.dataCenter[name] = new DataStore(this, name, this.union);
 		}
-		return this._dataCenter[name];
+		return this.dataCenter[name];
 	}
 
 	@publicMethod
 	getController() {
-		if (this._destroyed) {
-			this.destroyedErrorLog('getController');
+		if (!this.dataHubController) {
 			return udFun;
 		}
 
-		return this._dhc.getPublicMethods();
+		return this.dataHubController.getPublicMethods();
 	}
 }
 
@@ -98,5 +106,5 @@ Object.keys(globalMethods).forEach(method => {
 });
 
 export {
-  DataHub
+	DataHub
 }

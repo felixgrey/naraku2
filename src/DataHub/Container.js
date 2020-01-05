@@ -17,6 +17,17 @@ export default class Container extends LifeCycle {
 		this.data = {};
 		this.runner = {};
 	}
+	
+	bindUnion(instance, logName) {
+		this.union.bindUnion(instance, logName);
+		this.bindContainer(instance);
+	}
+	
+	bindContainer(instance) {
+		instance.dataHub = this;
+		instance.dataHubController = this;
+		instance.dataStore = this;
+	};
 
 	destruction() {
 		this.runner = null;
@@ -83,17 +94,6 @@ export default class Container extends LifeCycle {
 		}
 		return this.runner[name](...args);
 	}
-
-	bindUnion(instance, logName) {
-		this.union.bindUnion(instance, logName);
-		this.bindContainer(instance);
-	}
-
-	bindContainer(instance) {
-		instance.dataHub = this;
-		instance.dataHubController = this;
-		instance.dataStore = this;
-	};
 
 }
 

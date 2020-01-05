@@ -1,7 +1,7 @@
 const Utils = require('../lib/Utils/index.js');
 const Fetcher = require('../lib/DataHub/Fetcher.js');
 
-const MockServer = require('./Mock-Server.js');
+const MockServer = require('./Mock/Mock-Server.js');
 
 const {
 	NOT_INIT_FETCHER,

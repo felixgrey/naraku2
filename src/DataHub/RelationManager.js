@@ -17,105 +17,112 @@ const {
 } = Component;
 
 export default class RelationManager extends Component {
-	afterCreate(store) {
-		this._name = store._name;
-		this._checkReady = udFun;
-		this._defaultData = null;
-		this._auto = true;
+	initialization(...args){
+		super.initialization(...args);
+		
+		const [dataStore] = args;
+		
+		this.name = dataStore.name;
+		this.checkReady = udFun;
+		this.defaultData = null;
+		this.auto = true;
+		
 	}
 
-	beforeDestroy() {
-		this._offFetcher && this._offFetcher();
-		this._offFetcher = null;
+	destruction() {
+		super.destruction();
+		
+		this.offFetcher && this.offFetcher();
+		this.offFetcher = null;
 
-		this._checkReady = null;
-		this._defaultData = null;
+		this.checkReady = null;
+		this.defaultData = null;
 	}
 
 	@publicMethod
 	checkReady() {
-		if (this._auto) {
+		if (this.auto) {
 			this.errLog(`can't checkReady when auto check.`);
 			return;
 		}
-		this._checkReady(true);
+		this.checkReady(true);
 	}
 
 	@publicMethod
 	turnOn(flag = false) {
-		this._auto = true;
+		this.auto = true;
 		if (flag) {
-			this._checkReady(true);
+			this.checkReady(true);
 		}
 	}
 
 	@publicMethod
 	turnOff() {
-		this._auto = false;
+		this.auto = false;
 	}
   
   @publicMethod
   isAuto() {
-    return this._auto;
+    return this.auto;
   }
 
-	_configPolicy = {
+	configPolicy = {
 		default: (value, cfg) => {
 			if (value === undefined) {
 				value = [];
 			}
 			value = [].concat(value);
 
-			this._defaultData = value;
-			this._store.set(snapshot(value));
+			this.defaultData = value;
+			this.dataStore.set(snapshot(value));
 		},
 		clear: (value, cfg) => {
-			if (!this._dhc._listenerManager) {
+			if (!this.dataHubController.listenerManager) {
 				this.devLog(`config clear err: no listenerManager`);
 				return;
 			}
 
-			this._dhc._listenerManager.when(value, () => {
-				this._store.clear();
+			this.dataHubController.listenerManager.when(value, () => {
+				this.dataStore.clear();
 			});
 		},
 		reset: (value, cfg) => {
-			if (!this._dhc._listenerManager) {
+			if (!this.dataHubController.listenerManager) {
 				this.devLog(`config reset err: no listenerManager`);
 				return;
 			}
 
-			if (!this._defaultData) {
-				this._dhc._listenerManager.when(value, () => {
-					this._store.clear();
+			if (!this.defaultData) {
+				this.dataHubController.listenerManager.when(value, () => {
+					this.dataStore.clear();
 				});
 			} else {
-				this._dhc._listenerManager.when(value, () => {
-					this._store.set(snapshot(this._defaultData));
+				this.dataHubController.listenerManager.when(value, () => {
+					this.dataStore.set(snapshot(this.defaultData));
 				});
 			}
 		},
 		snapshot: (value, cfg) => {
-			if (!this._dhc._listenerManager) {
+			if (!this.dataHubController.listenerManager) {
 				this.devLog(`config snapshot err: no listenerManager`);
 				return;
 			}
 
-			this._dhc._listenerManager.when(value, (data) => {
-				this._store.set(snapshot(data));
+			this.dataHubController.listenerManager.when(value, (data) => {
+				this.dataStore.set(snapshot(data));
 			});
 		},
 		stop: (value, cfg) => {
-			if (!this._dhc._listenerManager || !this._dhc._fetchManager) {
+			if (!this.dataHubController.listenerManager || !this.dataHubController.fetchManager) {
 				this.devLog(`config stop err: no listenerManager/fetchManager`,
-					!!this._dhc._fetchManager,
-					!!this._dhc._listenerManager
+					!!this.dataHubController.fetchManager,
+					!!this.dataHubController.listenerManager
 				);
 				return;
 			}
 
-			this._dhc._listenerManager.when(value, (data) => {
-				this._fetchManager.stopFetch(this._name);
+			this.dataHubController.listenerManager.when(value, (data) => {
+				this.fetchManager.stopFetch(this.name);
 			});
 		},
 		fetcher: (value, cfg) => {
@@ -126,21 +133,21 @@ export default class RelationManager extends Component {
 					force = false,
 			} = cfg;
 
-			let ableFlag = this._dh.getDataStore;
-			ableFlag = ableFlag && this._dhc._fetchManager;
-			ableFlag = ableFlag && this._dhc._listenerManager;
+			let ableFlag = this.dataHub.getDataStore;
+			ableFlag = ableFlag && this.dataHubController.fetchManager;
+			ableFlag = ableFlag && this.dataHubController.listenerManager;
 
 			if (!ableFlag) {
 				this.devLog(`not able`,
-					!!this._dh.getDataStore,
-					!!this._dhc._fetchManager,
-					!!this._dhc._listenerManager
+					!!this.dataHub.getDataStore,
+					!!this.dataHubController.fetchManager,
+					!!this.dataHubController.listenerManager
 				);
 				return;
 			}
 
-			this._store._eternal = true;
-			this._auto = auto;
+			this.dataStore.eternal = true;
+			this.auto = auto;
 
 			dependence = [].concat(dependence);
 			filter = [].concat(filter);
@@ -148,7 +155,7 @@ export default class RelationManager extends Component {
 			const whenThem = [].concat(dependence).concat(filter);
 
 			const checkReady = (flag = false) => {
-				if (!this._auto && !flag) {
+				if (!this.auto && !flag) {
 					return;
 				}
 				
@@ -156,17 +163,17 @@ export default class RelationManager extends Component {
 				const submitData = {};
 
 				for (let dep of dependence) {
-					const depStore = this._dh.getDataStore(dep);
+					const depStore = this.dataHub.getDataStore(dep);
 
 					if (!depStore.hasData()) {
-						if (this._store.hasData()) {
+						if (this.dataStore.hasData()) {
 							const param = {
-								name: this._name,
+								name: this.name,
 								clear: true,
 								force,
 							};
 
-							this._dhc._fetchManager.fetchStoreData(param);
+							this.dataHubController.fetchManager.fetchStoreData(param);
 						}
 						return;
 					}
@@ -174,50 +181,50 @@ export default class RelationManager extends Component {
 				}
 
 				for (let ft of filter) {
-					Object.assign(submitData, this._dh.getDataStore(ft).first());
+					Object.assign(submitData, this.dataHub.getDataStore(ft).first());
 				}
 
 				const param = {
-					name: this._name,
+					name: this.name,
 					data: submitData,
 					clear: false,
 					force,
 					before: () => {
 						whenThem.forEach(storeName => {
-							this._dh.getDataStore(storeName).lock();
+							this.dataHub.getDataStore(storeName).lock();
 						});
 					},
 					after: () => {
 						whenThem.forEach(storeName => {
-							this._dh.getDataStore(storeName).unLock();
+							this.dataHub.getDataStore(storeName).unLock();
 						});
 					},
 				};
 
 				this.devLog(`fetch Data`, param);
-				this._dhc._fetchManager.fetchStoreData(param);
+				this.dataHubController.fetchManager.fetchStoreData(param);
 			};
 
 			this.devLog(`whenThem :`, whenThem);
-			this._offFetcher = this._dhc._listenerManager.when(...whenThem, checkReady);
-			this._checkReady = checkReady;
+			this.offFetcher = this.dataHubController.listenerManager.when(...whenThem, checkReady);
+			this.checkReady = checkReady;
 			checkReady();
 		}
 	}
 
 	@publicMethod
 	init(cfg = {}) {
-		this._configNames.forEach(cfgName => {
+		this.configNames.forEach(cfgName => {
 			const has1 = cfg.hasOwnProperty(cfgName);
-			const has2 = this._configPolicy[cfgName];
+			const has2 = this.configPolicy[cfgName];
 
 			if (has1 && has2) {
-				this._configPolicy[cfgName](cfg[cfgName], cfg);
+				this.configPolicy[cfgName](cfg[cfgName], cfg);
 			}
 		});
 	}
 
-	_configNames = ['default', 'clear', 'fetcher', 'reset', 'snapshot', 'stop'];
+	configNames = ['default', 'clear', 'fetcher', 'reset', 'snapshot', 'stop'];
 }
 
 RelationManager.publicMethods = publicMethods;

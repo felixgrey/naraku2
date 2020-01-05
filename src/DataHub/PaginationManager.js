@@ -5,7 +5,7 @@ import {
 } from './../Utils';
 
 import {
-	NOT_INIT_FETCHER,
+	NOT_INITfetcher,
 	NOT_ADD_FETCH,
 	ABORT_REQUEST,
 	FETCHING,
@@ -32,26 +32,29 @@ export function setDefaultPageInfo(v) {
 
 export default class PaginationManager extends Component {
 
-	afterCreate(store) {
-		this._name = store._name;
-		this._fetcher = null;
-		this._stringData = '';
-		this._force = defaultPageInfo.force;
-		this._pageSize = defaultPageInfo.size;
-		this._pageNumber = defaultPageInfo.page;
-		this._startPage = defaultPageInfo.start;
-		this._stopKey = null;
-		this._noPage = false;
-		this._count = 0;
+	initialization(...args){
+		super.initialization(...args);
+		
+		const [dataStore] = args;
+		
+		this.name = dataStore.name;
+		this.fetcher = null;
+		this.stringData = '';
+		this.force = defaultPageInfo.force;
+		this.pageSize = defaultPageInfo.size;
+		this.pageNumber = defaultPageInfo.page;
+		this.startPage = defaultPageInfo.start;
+		this.stopKey = null;
+		this.noPage = false;
+		this.count = 0;
 	}
 
-	beforeDestroy() {}
 
 	@publicMethod
 	init(param) {
 		if (isNvl(param) || param === false) {
-			this._inited = true;
-			this._noPage = true;
+			this.inited = true;
+			this.noPage = true;
 			return;
 		}
 
@@ -66,38 +69,38 @@ export default class PaginationManager extends Component {
 				pageSize = defaultPageInfo.size
 		} = param;
 
-		this._inited = true;
+		this.inited = true;
 
-		this._fetcher = fetcher;
-		this._force = force;
-		this._startPage = startPage;
-		this._pageSize = pageSize;
+		this.fetcher = fetcher;
+		this.force = force;
+		this.startPage = startPage;
+		this.pageSize = pageSize;
 	}
 
 	@publicMethod
 	setCount(v) {
-		this._count = v;
+		this.count = v;
 	}
 
 	@publicMethod
 	getCount() {
-		return this._count;
+		return this.count;
 	}
 
 	@publicMethod
 	stopFetch() {
-		if (this._stopKey) {
-			stopFetchData(this._stopKey);
-			this._stopKey = null;
+		if (this.stopKey) {
+			stopFetchData(this.stopKey);
+			this.stopKey = null;
 		}
 	}
 
 	@publicMethod
 	fetch(data = {}) {
-		if (this._fetcher === null) {
-			this._emitter.emit('$$data', {
-				name: `$$count:${this._name}`,
-				value: this._count
+		if (this.fetcher === null) {
+			this.emitter.emit('$$data', {
+				name: `$$count:${this.name}`,
+				value: this.count
 			});
 			return Promise.resolve();
 		}
@@ -110,25 +113,25 @@ export default class PaginationManager extends Component {
 
 		let stringData = uniStringify(data);
 
-		if (!isNvl(stringData) && stringData === this._stringData) {
+		if (!isNvl(stringData) && stringData === this.stringData) {
 			this.devLog(`same data`, stringData);
-			if (!this._force) {
+			if (!this.force) {
 				return;
 			}
 			this.devLog(`same data but force fetch`);
 		}
 
-		this._stringData = stringData;
+		this.stringData = stringData;
 		this.setPageInfo(1);
 
-		const stopKey = this._stopKey = createUid('pageStopKey-');
+		const stopKey = this.stopKey = createUid('pageStopKey-');
 
 		// name, data = null, dataInfo = {}, stopKey = null
-		return fetchData(this._fetcher, data, {
-			name: this._name,
+		return fetchData(this.fetcher, data, {
+			name: this.name,
 			pagination: true,
 		}, stopKey).then(result => {
-			if (this._destroyed) {
+			if (this.destroyed) {
 				return;
 			}
 
@@ -139,22 +142,22 @@ export default class PaginationManager extends Component {
 				result = 0;
 			}
 
-			this._count = +result;
+			this.count = +result;
 
-			this.devLog(`'${this._name}' count is ${this._count}`);
+			this.devLog(`'${this.name}' count is ${this.count}`);
 
-			this._emitter.emit('$$data', {
-				name: `$$count:${this._name}`,
+			this.emitter.emit('$$data', {
+				name: `$$count:${this.name}`,
 				value: result
 			});
 		}).catch((err) => {
-			if (err === NOT_INIT_FETCHER) {
+			if (err === NOT_INITfetcher) {
 				this.devLog && this.devLog('must init fetcher first');
 				return;
 			}
 
 			if (err === NOT_ADD_FETCH) {
-				this.devLog && this.devLog(`must add fetcher '${this._fetcher}' first`);
+				this.devLog && this.devLog(`must add fetcher '${this.fetcher}' first`);
 				return;
 			}
 
@@ -170,19 +173,19 @@ export default class PaginationManager extends Component {
 	setPageInfo(pageNumber, pageSize) {
 		let changed = false;
 
-		if (!isNvl(pageNumber) && pageNumber !== this._pageNumber) {
-			this._pageNumber = pageNumber;
+		if (!isNvl(pageNumber) && pageNumber !== this.pageNumber) {
+			this.pageNumber = pageNumber;
 			changed = true;
 		}
 
-		if (!isNvl(pageSize) && pageSize !== this._pageSize) {
-			this._pageSize = pageSize;
+		if (!isNvl(pageSize) && pageSize !== this.pageSize) {
+			this.pageSize = pageSize;
 			changed = true;
 		}
 
 		if (changed) {
-			this._emitter.emit('$$data', {
-				name: `$$page:${this._name}`
+			this.emitter.emit('$$data', {
+				name: `$$page:${this.name}`
 			});
 		}
 
@@ -190,7 +193,7 @@ export default class PaginationManager extends Component {
 
 	@publicMethod
 	getPageInfo() {
-		if (this._noPage) {
+		if (this.noPage) {
 			return {
 				hasPagiNation: false
 			};
@@ -198,10 +201,10 @@ export default class PaginationManager extends Component {
 
 		return {
 			hasPagiNation: true,
-			count: this._count,
-			page: this._pageNumber,
-			size: this._pageSize,
-			start: this._startPage,
+			count: this.count,
+			page: this.pageNumber,
+			size: this.pageSize,
+			start: this.startPage,
 		};
 	}
 }

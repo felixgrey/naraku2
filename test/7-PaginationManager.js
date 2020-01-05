@@ -1,29 +1,27 @@
 const Utils = require('./../lib/Utils/index.js');
 
 const {
-	equalAssert,
 	equalRunLog,
 	equalErrLog,
 	createAsyncEqualAssert,
 	IGNORE_TEST,
 	getUnion
 } = require('./TestTools.js');
-// require('./Init-Fetcher0.js');
+require('./Init-Fetcher0.js');
 
-const testName = ;
+const testName = 'PaginationManager';
 const Container = require(`../lib/DataHub/Container.js`).default;
 const Component = require(`../lib/DataHub/${testName}.js`).default;
-let container
-let component
+
 console.log(`\n=============== ${testName} start ===============\n`);
 
-container = new Container(getUnion());
-component = new Component(container, container.union);
+let container = new Container(getUnion());
+let component = new Component(container);
 console.log(`\n--------------  ${testName} destroy --------------`);
 component.destroy();
 
 console.log(`\n--------------  ${testName} Container => destroy --------------`);
-component = new Component(container, container.union);
+component = new Component(container);
 container.destroy();
 
 console.log(`\n--------------  ${testName} --------------`);
@@ -33,6 +31,16 @@ component = new Component(container);
 
 // ----------------------------------------------------------- //
 
+component.init();
 
+component.init({
+	fetcher: 'test.get'
+});
+
+// component.fetch();
+
+component.fetch({dataCount: true});
+
+// component.getCount();
 
 console.log(`\n=============== ${testName} end ===============\n`);

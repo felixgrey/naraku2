@@ -33,6 +33,10 @@ export default class Union {
 		this.devMode = devMode;
 	}
 	
+	clone() {
+		return new Union(this);
+	}
+	
 	bindUnion(instance, logName) {
 		if (this.devMode) {
 		  instance.devLog	= this.devLog.createLog(logName);

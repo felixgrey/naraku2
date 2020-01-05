@@ -8,11 +8,8 @@ import {
 import Container from './Container';
 import Component from './Component';
 
-
-/** /
 import PaginationManager from './PaginationManager.js';
 import RelationManager from './RelationManager.js';
-/**/
 
 const {
 	publicMethod
@@ -52,7 +49,7 @@ export default class DataStore extends Container {
 		super.initialization(...args);
 		
 		const [dataHub, name] = args;
-		
+
 		this.dataHub = dataHub;
 		this.store = this;
 		this.eternal = false;
@@ -62,16 +59,26 @@ export default class DataStore extends Container {
 		this.status = 'undefined';
 		this.lockStack = 0;
 		this.errMsg = null;
+		
+		if (isNvl(name)) {
+			this.errLog('DataStore must has name.');
+			return;
+		}
 		this.name = name;
 
-		/** /
-		this.paginationManager = new PaginationManager(this, this.devMode);
-		this.relationManager = new RelationManager(this, this.devMode);
+		this.paginationManager = new PaginationManager(this, this.union);
+		this.relationManager = new RelationManager(this, this.union);
 		this.publicMethods(RelationManager.publicMethods, 'relationManager');
-		/**/
 		
 		this.containerDestroyOff = Component.prototype.bindContainer.bind(this)(dataHub);
 
+	}
+	
+	bindContainer(instance) {
+		super.bindContainer(instance);
+		
+		instance.dataHub = this.dataHub;
+		instance.dataStore = this;
 	}
 
 	destruction() {
@@ -88,19 +95,6 @@ export default class DataStore extends Container {
 
 		this.value = null;
 		this.storeConfig = null;
-	}
-	
-	bindContainer(instance) {
-		super.bindContainer(instance);
-		instance.dataHub = this.dataHub;
-		instance.dataStore = this;
-	}
-
-	getPaginationManager() {
-		if (this.destroyed || !this.paginationManager) {
-			return udFun;
-		}
-		return this.paginationManager;
 	}
 
 	@publicMethod
@@ -239,7 +233,7 @@ export default class DataStore extends Container {
 	}
 
 	@publicMethod
-	hasInit() {
+	hasSet() {
 		return this.getStatus() !== 'undefined';
 	}
 

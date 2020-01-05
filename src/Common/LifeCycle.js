@@ -92,10 +92,17 @@ export default class LifeCycle {
 		this.destroyed = false;
 		this.ready = true;
 
+		// this.union = udFun;
+		// this.devLog = udFun;
+		// this.errLog = udFun;
+		// this.emitter = udFun;
+
 		let union = args[args.length - 1];
 		if (union instanceof Union) {
+			// console.log('------------------- bindUnion ', this.clazz)
 			union.bindUnion(this, this.logName);
 		} else {
+			// console.log('------------------- new Union ', this.clazz)
 			new Union().bindUnion(this, this.logName);
 		}
 
@@ -139,9 +146,11 @@ export default class LifeCycle {
 
 		this.devLog(`${this.logName} created.`);
 	}
-	
+
 	updateLogger() {
-		if(this.devMode) {
+		this.union = this.union.clone();
+		
+		if (this.devMode) {
 			this.union.devLog = this.devLog;
 		}
 		this.union.errLog = this.errLog;

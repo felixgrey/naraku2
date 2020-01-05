@@ -12,10 +12,12 @@ const {
 // ----------------------------------------------------------- //
 const testName = ?;
 const Component = require(`../../lib/ViewModel/${testName}.js`).default;
+const devLog
+const errLog
 // ----------------------------------------------------------- //
 
-const devLog = Utils.createLog('Emitter','log');
-const errLog = Utils.createLog('Emitter','error');
+devLog = Utils.createLog('Emitter','log');
+errLog = Utils.createLog('Emitter','error');
 
 console.log(`\n--------- test ${testName} start ---------\n`);
 

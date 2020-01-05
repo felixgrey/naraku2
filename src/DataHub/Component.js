@@ -9,6 +9,7 @@ import Emitter from '../Common/Emitter';
 import LifeCycle from '../Common/LifeCycle';
 
 export default class Component extends LifeCycle {
+	
 	initialization(container) {
 		this.containerDestroyOff = this.bindContainer(container);
 
