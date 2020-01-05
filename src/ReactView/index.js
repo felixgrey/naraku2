@@ -2,149 +2,162 @@ import ViewContext from '../ViewModel/ViewContext'
 import ViewModel from '../ViewModel/ViewModel'
 
 import {
-  createLog,
-  isNvl,
-  isBlank,
-  udFun
-} from '../Utils'
+	createLog,
+	isNvl,
+	isBlank,
+	udFun
+} from '../Utils';
+
+import Union from '../Common/Union';
+import Emitter from '../Common/Emitter';
 
 let PropTypes = {};
 
 export function setPropTypes(v) {
-  PropTypes = v
+	PropTypes = v;
 }
 
-export function viewMethod(_prototype, name, descriptor) {
-  if (!_prototype._viewMethods) {
-    _prototype._viewMethods = []
-  }
-  _prototype._viewMethods.push(name)
+export function viewMethod(prototype2, name, descriptor) {
+	if (!prototype2.viewMethods) {
+		prototype2.viewMethods = [];
+	}
+	prototype2.viewMethods.push(name);
 
-  return descriptor;
+	return descriptor;
 }
 
-export function createView(dhConfig = {}, ViewModelClass = ViewModel, _main = false) {
-  return function(Component) {
-    class ProxyComponent extends Component {
-      constructor(props = {}, context) {
-        super(props, context)
+export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = false) {
+	return function(Component) {
+		class ProxyComponent extends Component {
+			constructor(props = {}, context) {
+				super(props, context)
 
-        this._viewType = Component.name;
-        this._viewMethods = Component.prototype._viewMethods || [];
+				this.viewType = Component.name;
+				this.viewMethods = Component.prototype.viewMethods || [];
 
-        this._clazz = isBlank(Component.name) ? 'ReactView' : Component.name;
-        this._devMode = dhConfig.$devMode || false;
-        this._name = isNvl(props.myName) ? null : props.myName;
-        this._withStore = isNvl(props.withStore) ? null : props.withStore;
+				this.clazz = isBlank(Component.name) ? 'ReactView' : Component.name;
+				this.devMode = dhConfig.$devMode || false;
+				this.name = isNvl(props.myName) ? null : props.myName;
+				this.withStore = isNvl(props.withStore) ? null : props.withStore;
 
-        const __name = isNvl(this._name) ? '' : '@' + this._name;
-        this._logName = `${this._clazz}${__name}`;
+				const name2 = isNvl(this.name) ? '' : '@' + this.name;
+				this.logName = `${this.clazz}${name2}`;
 
-        this._parentKey = null;
-        this._viewContext = null;
-        this._rendered = false;
+				this.parentKey = null;
+				this.viewContext = null;
+				this.rendered = false;
 
-        if (_main) {
-          this.errLog = createLog(this._logName, 'error');
-          this.devLog = this._devMode ? createLog(this._logName, 'log') : udFun;
+				function createUnion() {
+					const union = new Union({
+						devMode: this.devMode,
+						devLog: createLog(this.logName, 'log'),
+						errLog: createLog(this.logName, 'error'),
+					});
 
-          this._viewContext = new ViewContext(dhConfig, this.devLog, this.errLog, this._devMode);
-        } else if (typeof context === 'object') {
-          this._parentKey = isNvl(context.parentKey) ? null : context.parentKey;
-          const viewContext = isNvl(context.viewContext) ? null : context.viewContext;
+					new Emitter(union);
+					return union;
+				}
 
-          if (viewContext) {
-            this._viewContext = viewContext;
-            this._devMode = viewContext._devMode;
+				if (main) {
+					const union = createUnion();
+					union.bindUnion(this);
+					this.viewContext = new ViewContext(dhConfig, union);
+				} else if (typeof context === 'object') {
+					this.parentKey = isNvl(context.parentKey) ? null : context.parentKey;
+					const viewContext = isNvl(context.viewContext) ? null : context.viewContext;
 
-            this.errLog = viewContext.errLog.createLog(this._logName, 'error');
-            this.devLog = this._devMode ? viewContext.devLog.createLog(this._logName, 'log') : udFun;
-          }
-        } else {
-          this.errLog = createLog(this._logName, 'error');
-          this.devLog = this._devMode ? createLog(this._logName, 'log') : udFun;
-        }
+					if (viewContext) {
+						this.viewContext = viewContext;
+						this.devMode = viewContext.devMode;
 
-        const viewProps = {
-          viewType: this._viewType,
-          viewMethods: this._viewMethods,
-          parentKey: this._parentKey,
-          myName: this._name,
-          withStore: this._withStore,
-        };
+						this.union = this.viewContext.clone();
+						this.union.devLog = this.union.devLog.createLog(this.logName);
+						this.union.errLog = this.union.errLog.createLog(this.logName);
+					}
+				} else {
+					const union = createUnion();
+					union.bindUnion(this);
+				}
 
-        this.viewModel = new ViewModel(viewProps,
-          _main ? null : dhConfig, this._viewContext, this.devLog, this.errLog, this._devMode);
+				const viewProps = {
+					viewType: this.viewType,
+					viewMethods: this.viewMethods,
+					parentKey: this.parentKey,
+					myName: this.name,
+					withStore: this.withStore,
+				};
 
-        this._viewKey = this.viewModel._key;
-        this.viewModel.onChange(() => {
-          if (!this._rendered) {
-            return;
-          }
-          this.forceUpdate();
-        })
+				this.viewModel = new ViewModel(viewProps, main ? null : dhConfig, this.viewContext, this.union);
 
-        const _getChildContext = this.getChildContext || function() {}
-        this.getChildContext = function(...args) {
-          if (this._viewContext) {
-            this._viewContext.setParent(this._viewKey)
-          }
+				this.viewKey = this.viewModel.key;
+				this.viewModel.onChange(() => {
+					if (!this.rendered) {
+						return;
+					}
+					this.forceUpdate();
+				})
 
-          return {
-            ..._getChildContext.bind(this)(...args),
-            viewContext: this._viewContext,
-            parentKey: this._viewKey
-          }
-        }
+				const getChildContext = this.getChildContext || function() {};
+				this.getChildContext = function(...args) {
+					if (this.viewContext) {
+						this.viewContext.setParent(this.viewKey);
+					}
 
-        const _componentDidMount = this.componentDidMount
-        this.componentDidMount = function(...args) {
-          _componentDidMount && _componentDidMount.bind(this)(...args)
-          this._rendered = true
-          this.devLog(`${this._logName} componentDidMount.`)
-        }
+					return {
+						...getChildContext.bind(this)(...args),
+						viewContext: this.viewContext,
+						parentKey: this.viewKey
+					};
+				}
 
-        const _componentDidUpdate = this.componentDidUpdate
-        this.componentDidUpdate = function(...args) {
-          _componentDidUpdate && _componentDidUpdate.bind(this)(...args)
-          this.devLog(`${this._logName} componentDidUpdate.`)
-        }
+				const componentDidMount = this.componentDidMount
+				this.componentDidMount = function(...args) {
+					componentDidMount && componentDidMount.bind(this)(...args);
+					this.rendered = true;
+					this.devLog(`${this.logName} componentDidMount.`);
+				}
 
-        const _componentWillUnMount = this.componentWillUnMount
-        this.componentWillUnMount = function(...args) {
-          _componentWillUnMount && _componentWillUnMount.bind(this)(...args)
+				const componentDidUpdate = this.componentDidUpdate
+				this.componentDidUpdate = function(...args) {
+					componentDidUpdate && componentDidUpdate.bind(this)(...args);
+					this.devLog(`${this.logName} componentDidUpdate.`);
+				}
 
-          this.viewModel.destroy();
-          if (_main) {
-            this._viewContext.destroy();
-          }
-          this._viewContext = null
-          this.devLog(`${this._logName} unmount.`)
-        }
+				const componentWillUnMount = this.componentWillUnMount
+				this.componentWillUnMount = function(...args) {
+					componentWillUnMount && componentWillUnMount.bind(this)(...args);
 
-        this.afterCreateView && this.afterCreateView(props, context);
-        this.devLog(`${this._logName} created.`);
-      }
-    }
+					this.viewModel.destroy();
+					if (main) {
+						this.viewContext.destroy();
+					}
+					this.viewContext = null;
+					this.devLog(`${this.logName} componentWillUnMount.`);
+				}
 
-    ProxyComponent.contextTypes = {
-      viewContext: PropTypes.any,
-      parentKey: PropTypes.any
-    }
+				this.afterCreateView && this.afterCreateView(props, context);
+				this.devLog(`${this.logName} created.`);
+			}
+		}
 
-    ProxyComponent.childContextTypes = {
-      viewContext: PropTypes.any,
-      parentKey: PropTypes.any
-    }
+		ProxyComponent.contextTypes = {
+			viewContext: PropTypes.any,
+			parentKey: PropTypes.any
+		};
 
-    return ProxyComponent
-  }
+		ProxyComponent.childContextTypes = {
+			viewContext: PropTypes.any,
+			parentKey: PropTypes.any
+		};
+
+		return ProxyComponent;
+	}
 }
 
 export function createMainView(dhConfig, ViewModelClass) {
-  return createView(dhConfig, ViewModelClass, true)
+	return createView(dhConfig, ViewModelClass, true)
 }
 
 export function createSubView(dhConfig, ViewModelClass) {
-  return createView(dhConfig, ViewModelClass, false)
+	return createView(dhConfig, ViewModelClass, false)
 }

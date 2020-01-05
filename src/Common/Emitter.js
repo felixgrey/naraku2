@@ -20,8 +20,12 @@ export default class Emitter extends LifeCycle {
 		this.core.setMaxListeners(Infinity);
 		this.emitter = this;
 		this.union.emitter = this;
-		
+
 		this.updateLogger();
+	}
+
+	destruction() {
+		this.union.emitter = udFun;
 	}
 
 	onAndOnce(name, callback, once) {
@@ -30,7 +34,7 @@ export default class Emitter extends LifeCycle {
 		}
 
 		let off = () => {
-			if (off.hasOff || this._destroyed) {
+			if (off.hasOff || this.destroyed) {
 				return;
 			}
 			off.hasOff = true;
@@ -67,11 +71,8 @@ export default class Emitter extends LifeCycle {
 	}
 
 	destroy() {
-		this.union.emitter = udFun;
 		super.destroy();
-		this.core.removeAllListeners();
+		this.core && this.core.removeAllListeners();
 		this.core = null;
 	}
 }
-
-Emitter.$loggerByParam = true;

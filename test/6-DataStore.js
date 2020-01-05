@@ -16,18 +16,18 @@ const Component = require(`../lib/DataHub/${testName}.js`).default;
 console.log(`\n=============== ${testName} start ===============\n`);
 
 let container = new Container(getUnion());
-let component = new Component(container);
+let component = new Component(container, container.union);
 console.log(`\n--------------  ${testName} destroy --------------`);
 component.destroy();
 
 console.log(`\n--------------  ${testName} Container => destroy --------------`);
-component = new Component(container);
+component = new Component(container, container.union);
 container.destroy();
 
 console.log(`\n--------------  ${testName} --------------`);
 
 container = new Container(getUnion());
-component = new Component(container);
+component = new Component(container, container.union);
 
 // ----------------------------------------------------------- //
 

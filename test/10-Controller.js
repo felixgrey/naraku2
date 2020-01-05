@@ -10,14 +10,14 @@ const {
 } = require('./TestTools.js');
 // require('./Init-Fetcher0.js');
 
-const testName = ;
+const testName = 'Controller';
 const Container = require(`../lib/DataHub/Container.js`).default;
 const Component = require(`../lib/DataHub/${testName}.js`).default;
 let container
 let component
 console.log(`\n=============== ${testName} start ===============\n`);
 
-container = new Container(getUnion());
+container = new Container({}, getUnion());
 component = new Component(container, container.union);
 console.log(`\n--------------  ${testName} destroy --------------`);
 component.destroy();
@@ -28,7 +28,7 @@ container.destroy();
 
 console.log(`\n--------------  ${testName} --------------`);
 
-container = new Container(getUnion());
+container = new Container({}, getUnion());
 component = new Component(container, container.union);
 
 // ----------------------------------------------------------- //

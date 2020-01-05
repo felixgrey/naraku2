@@ -27,8 +27,8 @@ emitter.destroy();
 
 emitter = new Emitter(union);
 
-equalRunLog(emitter.emit('event1'), ['event1']);
-equalRunLog(emitter.emit('event1', 1,2,3), ['event1', 1,2,3]);
+equalRunLog(emitter.emit('event1'));
+equalRunLog(emitter.emit('event1', 1,2,3));
 
 let off1 = emitter.on('event1', (arg1, arg2, arg3) => {
 	console.log('run event1 callback')
@@ -44,11 +44,11 @@ emitter.once('event1', (arg1, arg2, arg3) => {
 	equalAssert(arg3, 3);
 });
 
-equalRunLog(emitter.emit('event1', 1,2,3), ['event1', 1,2,3]);
-equalRunLog(emitter.emit('event1', 1,2,3), ['event1', 1,2,3]);
+equalRunLog(emitter.emit('event1', 1,2,3));
+equalRunLog(emitter.emit('event1', 1,2,3));
 
 off1();
 
-equalRunLog(emitter.emit('event1', 1,2,3), ['event1', 1,2,3]);
+equalRunLog(emitter.emit('event1', 1,2,3));
 
 off1();

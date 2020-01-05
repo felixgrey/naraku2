@@ -8,7 +8,13 @@ import FetchManager from './FetchManager.js';
 import RunnerManager from './RunnerManager.js';
 import ListenerManager from './ListenerManager.js';
 import RelationManager from './RelationManager.js';
-import LifeCycle from '../Common/LifeCycle';
+
+import Container from './Container';
+import Component from './Component';
+
+import {
+	getRefreshRate
+} from '../Common/Union';
 
 const publicMethods = [
   'createController',
@@ -21,63 +27,72 @@ const publicMethods = [
   'destroy',
 ];
 
-publicMethods.forEach(method => {
-  udFun[method] = udFun;
-});
-
-let refreshRate = 40;
-
 const {
   publicMethod
-} = LifeCycle;
+} = Container;
 
-export function setRefreshRate(v) {
-  refreshRate = v;
-}
+export default class Controller extends Container {
 
-export default class Controller extends LifeCycle {
+  initialization(...args) {
+		super.initialization(...args);
+		
+		const [dataHub] = args;
+		
+    this.dataHubController = this;
+		this.dataHub = dataHub;
 
-  afterCreate(dh) {
-    this._dhc = this;
+    this.fetchManager = new FetchManager(this, this.union);
+    this.runnerManager = new RunnerManager(this, this.union);
+    this.listenerManager = new ListenerManager(this, this.union);
 
-    this._fetchManager = new FetchManager(this, refreshRate, this._devMode);
-    this._runnerManager = new RunnerManager(this, this._devMode);
-    this._listenerManager = new ListenerManager(this, this._devMode);
+    this.controllerPublicMethods = {};
+    this.watchSet = new Set();
+    this.refreshTime = 0;
+    this.willRefresh = false;
+		
+		this.containerDestroyOff = Component.prototype.bindContainer.bind(this)(dataHub);
 
-    this._publicMethods = {};
-    this._watchSet = new Set();
-    this._refreshTime = 0;
-    this._willRefresh = false;
-
-    this._initPublicMethods();
-    this._initWatch();
+    this.initPublicMethods();
+    this.initWatch();
   }
+	
+	bindContainer(instance) {
+		super.bindContainer(instance);
+		
+		instance.dataHub = this.dataHub;
+		instance.dataHubController = this;
+	}
 
-  beforeDestroy() {
+  destruction() {
+		super.destruction();
+		
     clearTimeout(this.refreshTimeoutIndex);
 
-    this._fetchManager.destroy();
-    this._fetchManager = null;
+    this.fetchManager.destroy();
+    this.fetchManager = null;
 
-    this._runnerManager.destroy();
-    this._runnerManager = null;
+    this.runnerManager.destroy();
+    this.runnerManager = null;
 
-    this._listenerManager.destroy();
-    this._fetchManager = null;
+    this.listenerManager.destroy();
+    this.fetchManager = null;
+		
+		this.containerDestroyOff();
+		this.containerDestroyOff = null;
 
-    this._watchSet = null;
-    this._publicMethods = null;
+    this.watchSet = null;
+    this.controllerPublicMethods = null;
 
-    this._willRefresh = false;
+    this.willRefresh = false;
   }
 
-  _isStatus(names, type = 'isLoading') {
+  isStatus(names, type = 'isLoading') {
     if (isNvl(names)) {
       return false;
     }
 
-    for (let _name of names) {
-      if (this._dh.getDataStore(_name)[type]) {
+    for (let name of names) {
+      if (this.dataHub.getDataStore(name)[type]) {
         return true;
       }
     }
@@ -87,95 +102,97 @@ export default class Controller extends LifeCycle {
 
   @publicMethod
   getDataHub() {
-    return this._dh;
+    return this.dataHub;
   }
 
   @publicMethod
   getController() {
-    return this._dh.getController();
+    return this.dataHub.getController();
   }
 
   @publicMethod
   isLoading(names) {
-    return this._isStatus(names, 'isLoading');
+    return this.isStatus(names, 'isLoading');
   }
 
   @publicMethod
   isLocked(names) {
-    return this._isStatus(names, 'isLocked');
+    return this.isStatus(names, 'isLocked');
   }
 
   @publicMethod
   isWillRefresh() {
-    return this._willRefresh;
+    return this.willRefresh;
   }
 
-  _refresh() {
-    if (this._destroyed) {
+  refresh() {
+    if (this.destroyed) {
       return;
     }
-    this._willRefresh = false;
+    this.willRefresh = false;
 
-    this._refreshTime = Date.now();
-    for (let callback of this._watchSet) {
+    this.refreshTime = Date.now();
+    for (let callback of this.watchSet) {
       callback();
     }
   }
 
-  _initWatch() {
+  initWatch() {
     const lagRefresh = () => {
-      if (this._destroyed) {
+      if (this.destroyed) {
         return;
       }
       clearTimeout(this.refreshTimeoutIndex);
-      this._willRefresh = true;
+      this.willRefresh = true;
+			
+			const refreshRate = getRefreshRate();
 
-      const time = Date.now() - this._refreshTime;
+      const time = Date.now() - this.refreshTime;
       if (time > refreshRate * 2) {
         this.devLog('refresh now', time);
-        this._refresh();
+        this.refresh();
         return;
       }
 
       this.refreshTimeoutIndex = setTimeout(() => {
         this.devLog('refresh lag', time);
-        this._refresh();
+        this.refresh();
       }, refreshRate);
     };
 
-    const off1 = this._emitter.on('$$data', lagRefresh);
-    const off2 = this._emitter.on('$$status', lagRefresh);
+    const off1 = this.emitter.on('$$data', lagRefresh);
+    const off2 = this.emitter.on('$$status', lagRefresh);
 
-    this._emitter.once(`$$destroy:Controller:${this._key}`, () => {
+    this.emitter.once(`$$destroy:Controller:${this.key}`, () => {
       off1();
       off2();
     });
 
   }
 
-  _initPublicMethods() {
-    this.publicMethods(DataStore.publicMethods, '_dh', this._publicMethods);
-    this.publicMethods(RelationManager.publicMethods, '_dh', this._publicMethods);
-    this.publicMethods(FetchManager.publicMethods, '_fetchManager', this._publicMethods);
-    this.publicMethods(RunnerManager.publicMethods, '_runnerManager', this._publicMethods);
-    this.publicMethods(ListenerManager.publicMethods, '_listenerManager', this._publicMethods);
-    this.publicMethods(publicMethods, '_that', this._publicMethods);
+  initPublicMethods() {
+    this.publicMethods(DataStore.publicMethods, 'dataHub', this.controllerPublicMethods);
+    this.publicMethods(RelationManager.publicMethods, 'dataHub', this.controllerPublicMethods);
+    this.publicMethods(FetchManager.publicMethods, 'fetchManager', this.controllerPublicMethods);
+    this.publicMethods(RunnerManager.publicMethods, 'runnerManager', this.controllerPublicMethods);
+    this.publicMethods(ListenerManager.publicMethods, 'listenerManager', this.controllerPublicMethods);
+    this.publicMethods(publicMethods, 'that', this.controllerPublicMethods);
   }
 
   @publicMethod
   watch(callback = udFun) {
     const off = () => {
-      if (this._destroyed) {
+      if (this.destroyed) {
         return;
       }
 
-      if (!this._watchSet.has(callback)) {
+      if (!this.watchSet.has(callback)) {
         return;
       }
-      this._watchSet.delete(callback);
+      this.watchSet.delete(callback);
     };
 
-    this._watchSet.add(callback);
+    this.watchSet.add(callback);
     callback();
 
     return off;
@@ -183,18 +200,18 @@ export default class Controller extends LifeCycle {
 
   @publicMethod
   fetch(...args) {
-    return this._fetchManager.fetch(...args);
+    return this.fetchManager.fetch(...args);
   }
 
   @publicMethod
   createController() {
-    return new Controller(this._dh, this._devMode).getPublicMethods();
+    return new Controller(this.dataHub, this.union.clone()).getPublicMethods();
   }
 
   @publicMethod
   getPublicMethods() {
     return {
-      ...this._publicMethods
+      ...this.controllerPublicMethods
     };
   }
 

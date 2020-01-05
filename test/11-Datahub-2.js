@@ -10,10 +10,11 @@ const {
 } = require('./TestTools.js');
 require('./Init-Fetcher0.js');
 
-const testName = 'DataStore';
+const testName = 'DataHub';
 const DataHub = require(`../lib/DataHub/DataHub.js`).default;
 
 let dataHub;
+
 console.log(`\n=============== ${testName} start ===============\n`);
 dataHub = new DataHub({}, getUnion());
 
@@ -21,8 +22,10 @@ console.log(`\n--------------  ${testName} destroy --------------`);
 dataHub.destroy();
 
 console.log(`\n--------------  ${testName} --------------`);
+
+
 dataHub = new DataHub({
-	test1: [1,2,3],
+	// test1: [1,2,3],
 	test2: {
 		fetcher:'test.get',
 		dependence: 'test3'

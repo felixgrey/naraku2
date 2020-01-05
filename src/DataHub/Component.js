@@ -1,12 +1,5 @@
-import {
-	getUniIndex,
-	udFun,
-	createLog,
-	isNvl
-} from '../Utils'
-
-import Emitter from '../Common/Emitter';
 import LifeCycle from '../Common/LifeCycle';
+import Emitter from '../Common/Emitter';
 
 export default class Component extends LifeCycle {
 	

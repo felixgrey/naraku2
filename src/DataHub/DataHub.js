@@ -6,8 +6,8 @@ import Emitter from './Emitter';
 import Container from './Container';
 import DataStore from './DataStore';
 
-// import Controller from './Controller';
-// import RelationManager from './RelationManager';
+import Controller from './Controller';
+import RelationManager from './RelationManager';
 
 const {
 	publicMethod
@@ -23,9 +23,11 @@ export default class DataHub extends Container {
 		this.cfg = cfg || {};
 		this.dataHub = this;
 
-		this.emitter = new Emitter(this.union);
+		if (!this.emitter instanceof Emitter) {
+			this.emitter = new Emitter(this.union);
+		}
 
-		// this.dataHubController = new Controller(this, this.union);
+		this.dataHubController = new Controller(this, this.union);
 
 		this.dataCenter = {};
 
@@ -34,9 +36,15 @@ export default class DataHub extends Container {
 
 	}
 
+	bindContainer(instance) {
+		super.bindContainer(instance);
+
+		instance.dataHub = this;
+	}
+
 	destruction() {
 		super.destruction();
-		
+
 		Object.values(this.dataCenter).forEach(ds => ds.destroy());
 		this.dataCenter = null;
 
@@ -64,8 +72,8 @@ export default class DataHub extends Container {
 	initDsPublicMethods() {
 
 		[]
-		// .concat(RelationManager.publicMethods)
-		.concat(DataStore.publicMethods)
+		.concat(RelationManager.publicMethods)
+			.concat(DataStore.publicMethods)
 			.forEach(methodName => {
 				this[methodName] = (name, ...args) => {
 					if (this.destroyed) {

@@ -4,4 +4,5 @@ export default {
 	destroyed: 1,
 	notReady: 1,
 	duplicateDeclare: 1,
+	noViewContext: 1
 };

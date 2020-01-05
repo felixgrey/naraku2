@@ -108,7 +108,7 @@ export default class FetchManager extends Component {
 			}
 
 			const ds = this.dataHub.getDataStore(name);
-			const pagination = ds.getPaginationManager();
+			const pagination = ds.paginationManager;
 
 			const {
 				fetcher = null

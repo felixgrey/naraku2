@@ -51,6 +51,8 @@ export default class DataStore extends Container {
 		const [dataHub, name] = args;
 
 		this.dataHub = dataHub;
+		this.dataHubController = dataHub.dataHubController;
+		
 		this.store = this;
 		this.eternal = false;
 		this.value = [];
@@ -78,6 +80,7 @@ export default class DataStore extends Container {
 		super.bindContainer(instance);
 		
 		instance.dataHub = this.dataHub;
+		instance.dataHubController = this.dataHub.dataHubController;
 		instance.dataStore = this;
 	}
 

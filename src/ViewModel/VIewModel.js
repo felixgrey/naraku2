@@ -1,164 +1,159 @@
 import {
-  createLog,
-  isBlank,
-  isNvl,
-  udFun,
-  sameFun,
-  toCamel,
-  toUnderline,
+	createLog,
+	isBlank,
+	isNvl,
+	udFun,
+	sameFun,
+	toCamel,
+	toUnderline,
 } from './../Utils';
 
 import LifeCycle from './../Common/LifeCycle';
 import DataHub from './../DataHub/DataHub';
 import Controller from './../DataHub/Controller';
-import ViewContext from './ViewContext';
+import ErrorType from '../Common/ErrorType';
 
 const {
-  publicMethod
+	publicMethod
 } = LifeCycle;
 
 export default class ViewModel extends LifeCycle {
 
-  _initialization(viewProps = {}, dhConfig = null, viewContext = null) {
-    this._viewProps = viewProps;
-    this._viewStatus = {};
-    this._changeHandle = udFun;
+	initialization(viewProps = {}, dhConfig = null, viewContext = null) {
+		this.viewProps = viewProps;
+		this.changeHandle = udFun;
 
-    this._viewType = isNvl(viewProps.viewType) ? 'View' : viewProps.viewType;
-    this._viewMethods = isNvl(viewProps.viewMethods) ? {} : viewProps.viewMethods;
+		this.viewType = isNvl(viewProps.viewType) ? 'View' : viewProps.viewType;
+		this.viewMethods = isNvl(viewProps.viewMethods) ? {} : viewProps.viewMethods;
 
-    this._parentKey = isNvl(viewProps.parentKey) ? null : viewProps.parentKey;
-    this._name = isNvl(viewProps.myName) ? null : viewProps.myName;
-    this._withStore = isNvl(viewProps.withStore) ? null : viewProps.withStore;
+		this.parentKey = isNvl(viewProps.parentKey) ? null : viewProps.parentKey;
+		this.name = isNvl(viewProps.myName) ? null : viewProps.myName;
+		this.withStore = isNvl(viewProps.withStore) ? null : viewProps.withStore;
 
-    this._gdhc = DataHub.createController();
-    this._gdhc.watch(() => {
-      this._changeHandle();
-    });
+		this.globalDataHubController = DataHub.createController();
+		this.globalDataHubController.watch(() => {
+			this.changeHandle();
+		});
 
-    Controller.publicMethods.forEach(method => {
-      this[method] = udFun;
-    });
+		Controller.publicMethods.forEach(method => {
+			this[method] = udFun;
+		});
 
-    if (!viewContext instanceof ViewContext) {
-      this.errLog(`${this._logName} not has ViewContext.`);
-    } else {
-      viewContext.createNode(this._key, this._viewType, this);
-      this._viewContext = viewContext;
+		if (!viewContext instanceof ViewContext) {
+			this.errLog(`${this._logName} not has ViewContext.`);
+		} else {
+			viewContext.createNode(this.key, this.viewType, this);
+			this.viewContext = viewContext;
 
-      this._cc = viewContext.getController().createController();
-      this.publicMethods(Controller.publicMethods, '_cc');
-      this._cc.watch(() => {
-        if (DataHub.isWillRefresh()) {
-          return;
-        }
-        this._changeHandle();
-      });
+			this.contextController = viewContext.getController().createController();
+			this.publicMethods(Controller.publicMethods, 'contextController');
+			this.contextController.watch(() => {
+				if (DataHub.isWillRefresh()) {
+					return;
+				}
+				this.changeHandle();
+			});
 
-      if (!isNvl(this._name)) {
-        for (let method in this._viewMethods) {
-          this._cc.register(method, this._viewMethods[method]);
-        }
-      }
-    }
+			if (!isNvl(this.name)) {
+				for (let method in this.viewMethods) {
+					this.contextController.register(method, this.viewMethods[method]);
+				}
+			}
+		}
 
-    if (viewContext && isNvl(dhConfig)) {
-      this._dh = viewContext.getDataHub();
-    } else {
-      this._dh = new DataHub(dhConfig, this.devLog, this.errLog, this._devMode)
-    }
-  }
+		if (viewContext && isNvl(dhConfig)) {
+			this.dataHub = viewContext.getDataHub();
+		} else {
+			this.dataHub = new DataHub(dhConfig, this.union);
+		}
+	}
 
-  @publicMethod
-  getParent() {
-    if (!this._viewContext) {
-      // this.devLog('getParent: no viewContext');
-      return null;
-    }
+	destruction() {
+		this.dataHub && this.dataHub.destroy();
+		this.dataHub = null;
 
-    const parentNode = this._viewContext.getParent(this._viewKey);
-    if (!parentNode) {
-      return null;
-    }
+		this.globalDataHubController.destroy();
+		this.globalDataHubController = null;
 
-    return parentNode.payload;
-  }
+		this.viewContext && this.viewContext.removeNode(this.key);
+		this.viewContext = null;
 
-  @publicMethod
-  getParentChain() {
-    // this.devLog('getParentChain', this._viewKey);
-    if (!this._viewContext) {
-      // this.devLog('getParentChain: no viewContext');
-      return [];
-    }
-    return this._viewContext.getParentChain(this._viewKey).map(node => node.payload);
-  }
+		this.contextController && this.contextController.destroy();
+		this.contextController = null;
+	}
 
-  @publicMethod
-  getMyDataHub() {
-    return this._dh;
-  }
+	@publicMethod
+	getParent() {
+		if (!this.viewContext) {
+			// this.devLog('getParent: no viewContext');
+			return null;
+		}
 
-  @publicMethod
-  setViewStatus(value) {
-    Object.assign(this._viewStatus, value);
-    this._cc.emit('$$data', {
-      name: '$$viewStatus',
-      value
-    });
-  }
+		const parentNode = this.viewContext.getParent(this.viewKey);
+		if (!parentNode) {
+			return null;
+		}
 
-  @publicMethod
-  getViewStatus() {
-    return {
-      ...this._viewStatus
-    };
-  }
+		return parentNode.payload;
+	}
 
-  @publicMethod
-  run(...args) {
-    if (!this._viewContext) {
-      this.methodErrLog('run', args, 'noViewContext');
-      return;
-    }
+	@publicMethod
+	getParentChain() {
+		// this.devLog('getParentChain', this.viewKey);
+		if (!this.viewContext) {
+			// this.devLog('getParentChain: no viewContext');
+			return [];
+		}
+		return this.viewContext.getParentChain(this.viewKey).map(node => node.payload);
+	}
 
-    return this._cc.run(...args);
-  }
+	@publicMethod
+	getMyDataHub() {
+		return this.dataHub;
+	}
 
-  @publicMethod
-  destroyHandle() {
-    if (this._destroyed) {
-      return;
-    }
+	@publicMethod
+	setViewStatus(value) {
+		Object.assign(this.data, value);
+		this.contextController.emit('$$data', {
+			name: '$$viewStatus',
+			value
+		});
+	}
 
-    this._viewContext && this._viewContext.removeNode(this._key);
-    this.destroy();
-  }
+	@publicMethod
+	getViewStatus() {
+		return {
+			...this.data
+		};
+	}
 
-  onChange(callback = udFun) {
-    if (this._destroyed) {
-      return;
-    }
+	@publicMethod
+	run(...args) {
+		if (!this.viewContext) {
+			this.methodErrLog('run', args, ErrorType.noViewContext);
+			return;
+		}
 
-    this._changeHandle = callback;
-  }
+		return this.contextController.run(...args);
+	}
 
-  _destruction() {
-    this._dh && this._dh.destroy();
-    this._dh = null;
+	@publicMethod
+	destroyHandle() {
+		if (this.destroyed) {
+			return;
+		}
 
-    this._gdhc.destroy();
-    this._gdhc = null;
+		this.viewContext && this.viewContext.removeNode(this.key);
+		this.destroy();
+	}
 
-    this._viewContext && this._viewContext.removeNode(this._key);
-    this._viewContext = null;
+	onChange(callback = udFun) {
+		if (this.destroyed) {
+			return;
+		}
 
-    this._viewStatus = null;
-
-    this._cc && this._cc.destroy();
-    this._cc = null;
-  }
+		this.changeHandle = callback;
+	}
 
 }
-
-ViewModel.$loggerByParam = true;

@@ -165,8 +165,8 @@ export default class RelationManager extends Component {
 				for (let dep of dependence) {
 					const depStore = this.dataHub.getDataStore(dep);
 
-					if (!depStore.hasData()) {
-						if (this.dataStore.hasData()) {
+					if (!depStore.hasSet()) {
+						if (this.dataStore.hasSet()) {
 							const param = {
 								name: this.name,
 								clear: true,

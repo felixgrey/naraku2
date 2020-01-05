@@ -22,35 +22,35 @@ const publicMethods = [
 
 export default class Tree extends LifeCycle {
 
-	afterCreate() {
-		this._root = null;
-		this._parent = null;
-		this._last = null;
-		this._nameMap = {};
-		this._keyMap = {};
+	initialization() {
+		this.root = null;
+		this.parent = null;
+		this.last = null;
+		this.nameMap = {};
+		this.keyMap = {};
 	}
 
-	beforeDestroy() {
-		this._root = null;
-		this._parent = null;
-		this._last = null;
-		this._nameMap = null;
-		this._keyMap = null;
+	destruction() {
+		this.root = null;
+		this.parent = null;
+		this.last = null;
+		this.nameMap = null;
+		this.keyMap = null;
 	}
 
 	@publicMethod
-	removeNode(key, _delete = true) {
-		if (isBlank(key) || !this._keyMap[key]) {
+	removeNode(key, deleteChild = true) {
+		if (isBlank(key) || !this.keyMap[key]) {
 			return;
 		}
 
-		const node = this._keyMap[key];
+		const node = this.keyMap[key];
 
 		node.children.forEach((node, index) => {
 			this.removeNode(node.key, false);
 		});
 
-		const pChildren = (this._keyMap[node.parentKey] || {}).children || [];
+		const pChildren = (this.keyMap[node.parentKey] || {}).children || [];
 
 		for (let i = 0; i < pChildren.length; i++) {
 			if (pChildren[i].key === key) {
@@ -59,11 +59,11 @@ export default class Tree extends LifeCycle {
 			}
 		}
 
-		delete this._keyMap[key];
+		delete this.keyMap[key];
 
-		if (_delete) {
-			Object.values(this._keyMap).forEach(_node => {
-				_node.children = _node.children.filter(__node => __node !== null);
+		if (deleteChild) {
+			Object.values(this.keyMap).forEach(node1 => {
+				node1.children = node1.children.filter(node2 => node2 !== null);
 			});
 		}
 	}
@@ -74,7 +74,7 @@ export default class Tree extends LifeCycle {
 			return null;
 		}
 
-		return this._keyMap[key] || null;
+		return this.keyMap[key] || null;
 	}
 
   @publicMethod
@@ -83,13 +83,13 @@ export default class Tree extends LifeCycle {
 			return null;
 		}
 
-    if (!this._keyMap[key]) {
+    if (!this.keyMap[key]) {
     	this.methodErrLog('getParent', [key], 'notExist');
     	return null;
     }
 
-    let parentKey = this._keyMap[key].parentKey;
-    return this._keyMap[parentKey] || null;
+    let parentKey = this.keyMap[key].parentKey;
+    return this.keyMap[parentKey] || null;
   }
 
 	@publicMethod
@@ -99,16 +99,16 @@ export default class Tree extends LifeCycle {
 			return [];
 		}
 
-		if (!this._keyMap[key]) {
+		if (!this.keyMap[key]) {
 			this.methodErrLog('getParentChain', [key], 'notExist');
 			return [];
 		}
 
 		let nodes = [];
 
-		let parentKey = this._keyMap[key].parentKey;
+		let parentKey = this.keyMap[key].parentKey;
 		while (parentKey) {
-			let parentNode = this._keyMap[parentKey];
+			let parentNode = this.keyMap[parentKey];
 			nodes.push(parentNode);
 			parentKey = parentNode.parentKey;
 		}
@@ -123,7 +123,7 @@ export default class Tree extends LifeCycle {
 			return;
 		}
 
-		if (this._keyMap[key]) {
+		if (this.keyMap[key]) {
 			this.methodErrLog(`createNode`, [key], `duplicateKey`);
 			return;
 		}
@@ -136,33 +136,32 @@ export default class Tree extends LifeCycle {
 			children: []
 		};
 
-		this._last = node;
-		this._keyMap[key] = node;
+		this.last = node;
+		this.keyMap[key] = node;
 
-		if (this._root === null) {
-			this._root = node;
-			this._parent = node;
+		if (this.root === null) {
+			this.root = node;
+			this.parent = node;
 		} else {
-			node.parentKey = this._parent.key;
-			this._parent.children.push(node);
+			node.parentKey = this.parent.key;
+			this.parent.children.push(node);
 		}
 	}
 
 	@publicMethod
 	getRoot() {
-		return this._root;
+		return this.root;
 	}
 
 	@publicMethod
 	setParent(key) {
-		if (isBlank(key) || !this._keyMap[key]) {
+		if (isBlank(key) || !this.keyMap[key]) {
 			this.methodErrLog(`setParent`, [key], `blankKey`);
 			return;
 		}
-		this._parent = this._keyMap[key];
+		this.parent = this.keyMap[key];
 	}
 
 }
 
-Tree.$loggerByParam = true;
 Tree.publicMethods = publicMethods;
