@@ -8,8 +8,7 @@ import FetchManager from './FetchManager.js';
 import RunnerManager from './RunnerManager.js';
 import ListenerManager from './ListenerManager.js';
 import RelationManager from './RelationManager.js';
-
-import Component from './Component';
+import LifeCycle from '../Common/LifeCycle';
 
 const publicMethods = [
   'createController',
@@ -30,13 +29,13 @@ let refreshRate = 40;
 
 const {
   publicMethod
-} = Component;
+} = LifeCycle;
 
 export function setRefreshRate(v) {
   refreshRate = v;
 }
 
-export default class Controller extends Component {
+export default class Controller extends LifeCycle {
 
   afterCreate(dh) {
     this._dhc = this;

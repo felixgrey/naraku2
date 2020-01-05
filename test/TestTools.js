@@ -1,10 +1,9 @@
-var assert = require("assert");
+const assert = require("assert");
 
 const Utils = require('../lib/Utils/index.js');
-
-// console.log(assert)
-
-const Emitter = require('../lib/DataHub/Emitter.js').default;
+const Union = require(`../lib/Common/Union.js`).default;
+const Container = require(`../lib/DataHub/Container.js`).default;
+const Emitter = require('../lib/Common/Emitter.js').default;
 
 const {
 	createLog,
@@ -14,37 +13,29 @@ const {
 	setLogHandle,
 	createUid,
 	setPreLog,
-	getUniIndex
 } = Utils;
-
-const Component = require('../lib/DataHub/Component.js').default;
 
 setPreLog('test-');
 
-exports.Container = class Container {
-	constructor() {
-		this._key = getUniIndex();
-		this._clazz = this.constructor.name;
-		this._logName = `${this._clazz}=${this._key}`;
-		this._devMode = true;
-		this._destroyed = false;
-		this._name = null;
-		this.devLog = createLog('Container','log');
-		this.destroyedErrorLog = this.errLog = createLog('Container','error');
-		this._store = this._dh = this._dhc = this;
-		this._emitter =  new Emitter(this.devLog, this.errLog, true);
-		this._runner = {}
-	}
+
+let lastEmitter
+exports.getUnion = function() {
+	lastEmitter && lastEmitter.destroy();
 	
-	destroy() {
-		this._emitter.emit(`$$destroy:${this._logName}`);
-	}
-} 
+	const union = new Union({
+		devMode: true,
+		devLog: Utils.createLog('Tester', 'log'),
+		errLog: Utils.createLog('Tester', 'error'),
+	});
+	lastEmitter = new Emitter(union);
+	
+	return union;
+}
 
 const IGNORE_TEST = exports.IGNORE_TEST = createUid('IGNORE_TEST-');
 
-let lastRun = [];
-let lastRunErr = [];
+let lastRun = null;
+let lastRunErr = null;
 setLogHandle((logArray) => {
 	// console.log('logArray', logArray);
 	if ((logArray[1] || '').indexOf(`#run:`) === 0) {
@@ -53,18 +44,15 @@ setLogHandle((logArray) => {
 	
 	if ((logArray[1] || '').indexOf(`#runErr:`) === 0) {
 		lastRunErr = logArray
+		lastRun = null
 	}
 })
 
-var equalRunLog = exports.equalRunLog = function(result, args, trueResult) {
-	// console.log('lastRun', lastRun)
-	assert.deepStrictEqual(lastRun[2], args);
-	assert.deepStrictEqual(result, trueResult);
+var equalRunLog = exports.equalRunLog = function(result, trueResult) {
+	assert.deepStrictEqual(lastRun[3], trueResult);
 }
 
-var equalErrLog = exports.equalErrLog = function(result, args, desc) {
-	// console.log('lastRun', lastRun)
-	assert.deepStrictEqual(lastRunErr[2], args);
+var equalErrLog = exports.equalErrLog = function(result,  desc) {
 	assert.deepStrictEqual(lastRunErr[3], desc);
 }
 

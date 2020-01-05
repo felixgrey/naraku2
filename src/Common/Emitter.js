@@ -3,12 +3,11 @@ import {
 } from 'events';
 
 import {
-	getUniIndex,
-	udFun,
 	isNvl,
+	udFun
 } from './../Utils';
 
-import LifeCycle from './../Common/LifeCycle';
+import LifeCycle from './LifeCycle';
 
 const {
 	publicMethod
@@ -16,16 +15,16 @@ const {
 
 export default class Emitter extends LifeCycle {
 
-	afterCreate() {
-		this._core = new EventEmitter();
-		this._core.setMaxListeners(Infinity);
+	initialization() {
+		this.core = new EventEmitter();
+		this.core.setMaxListeners(Infinity);
+		this.emitter = this;
+		this.union.emitter = this;
+		
+		this.updateLogger();
 	}
 
-	beforeDestroy() {
-
-	}
-
-	_onAndOnce(name, callback, once) {
+	onAndOnce(name, callback, once) {
 		if (isNvl(name)) {
 			return udFun;
 		}
@@ -36,22 +35,22 @@ export default class Emitter extends LifeCycle {
 			}
 			off.hasOff = true;
 			this.devLog(`removeListener '${name}'`);
-			this._core.removeListener(name, callback);
+			this.core.removeListener(name, callback);
 		};
 
-		this._core[once ? 'once' : 'on'](name, callback);
+		this.core[once ? 'once' : 'on'](name, callback);
 
 		return off;
 	}
 
 	@publicMethod
 	on(name, callback) {
-		return this._onAndOnce(name, callback, false);
+		return this.onAndOnce(name, callback, false);
 	}
 
 	@publicMethod
 	once(name, callback) {
-		return this._onAndOnce(name, callback, true);
+		return this.onAndOnce(name, callback, true);
 	}
 
 	@publicMethod
@@ -59,19 +58,19 @@ export default class Emitter extends LifeCycle {
 		if (isNvl(name)) {
 			return;
 		}
-
-		this._core.emit(name, ...args);
+		this.core.emit(name, ...args);
 	}
 
 	@publicMethod
 	clear() {
-		this._core.removeAllListeners();
+		this.core.removeAllListeners();
 	}
 
 	destroy() {
+		this.union.emitter = udFun;
 		super.destroy();
-		this._core.removeAllListeners();
-		this._core = null;
+		this.core.removeAllListeners();
+		this.core = null;
 	}
 }
 

@@ -5,28 +5,21 @@ import {
 import Emitter from './Emitter';
 import DataStore from './DataStore';
 import Controller from './Controller';
-import Component from './Component';
+import LifeCycle from '../Common/LifeCycle';
 import RelationManager from './RelationManager';
 
 const {
 	publicMethod
-} = Component;
+} = LifeCycle;
 
-export default class DataHub extends Component {
-
-	constructor(cfg, devLog = udFun, errLog = udFun, _devMode = false) {
-		super({
-			devLog,
-			errLog
-		}, cfg, _devMode);
-	}
+export default class DataHub extends LifeCycle {
 
 	afterCreate(dh, cfg) {
 		this._cfg = cfg || {};
 		this._dh = this;
 
 		this._emitter = new Emitter(this.devLog, this.errLog, this._devMode);
-		this._dhc = new Controller(this, this._devMode);
+		this._dhc = new Controller(this, this.devLog, this.errLog, this._devMode);
 
 		this._dataCenter = {};
 		this._extendConfig = {};

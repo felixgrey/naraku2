@@ -1,7 +1,7 @@
 var assert = require("assert");
 
-const Utils = require('../../lib/Utils/index.js');
-const Fetcher = require('../../lib/DataHub/Fetcher.js');
+const Utils = require('../lib/Utils/index.js');
+const Fetcher = require('../lib/DataHub/Fetcher.js');
 
 
 console.log('--------- test Fetcher start ---------');

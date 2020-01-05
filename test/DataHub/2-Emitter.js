@@ -19,6 +19,13 @@ const Component = require(`../../lib/DataHub/${testName}.js`).default;
 const devLog = Utils.createLog('Emitter','log');
 const errLog = Utils.createLog('Emitter','error');
 
+const logger = {
+	isLogger,
+	devLog,
+	errLog,
+	devMode: true,
+}
+
 let component = new Component(devLog, errLog, true);
 
 console.log(`\n--------- test ${testName} start ---------\n`);

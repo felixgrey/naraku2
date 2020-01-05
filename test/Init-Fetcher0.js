@@ -1,5 +1,5 @@
-const Utils = require('../../lib/Utils/index.js');
-const Fetcher = require('../../lib/DataHub/Fetcher.js');
+const Utils = require('../lib/Utils/index.js');
+const Fetcher = require('../lib/DataHub/Fetcher.js');
 
 const MockServer = require('./Mock-Server.js');
 

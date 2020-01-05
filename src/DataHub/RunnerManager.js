@@ -3,6 +3,7 @@ import {
 	udFun
 } from './../Utils';
 
+import ErrorType from '../Common/ErrorType';
 import Component from './Component';
 
 const publicMethods = [
@@ -18,15 +19,19 @@ const {
 
 export default class RunnerManager extends Component {
 
-	afterCreate() {
-		this._runner = {};
+	initialization(...args) {
+		super.initialization(...args);
+		
+		this.registerRunner = {};
 	}
 
-	beforeDestroy() {
-    Object.keys(this._runner).forEach(name => {
-      delete this._dh._runner[name];
+	destruction() {
+		super.destruction();
+		
+    Object.keys(this.registerRunner).forEach(name => {
+      this.dataHub.unRegister(name);
     });
-    this._runner = null;
+    this.registerRunner = null;
 	}
 
 	@publicMethod
@@ -35,36 +40,38 @@ export default class RunnerManager extends Component {
 			return false;
 		}
 
-		return !!this._dh._runner[name];
+		return this.dataHub.hasRunner(name);
 	}
 
 	@publicMethod
 	unRegister(name) {
 		if (isNvl(name)) {
-			return;
+			return false;
 		}
 
-    if (!this._runner) {
-      return;
+    if (!this.registerRunner[name]) {
+      return false;
     }
 
-		delete this._runner[name];
-    delete this._dh._runner[name];
+		delete this.registerRunner[name];
+    this.dataHub.removeRunner(name);
+		return true;
 	}
 
 	@publicMethod
 	register(name, callback) {
 		if (isNvl(name)) {
-			return;
+			return false;
 		}
 
-		if (this._dh._runner[name]) {
-			this.errLog(`runner ${name} has existed.`);
-			return;
+		if (this.hasRunner(name)) {
+			this.methodErrLog('register', [name], ErrorType.duplicateDeclare);
+			return false;
 		}
 
-    this._runner[name] = true;
-		this._dh._runner[name] = callback;
+    this.registerRunner[name] = true;
+		this.dataHub.addRunner(name, callback);
+		return true;
 	}
 
 	@publicMethod
@@ -73,23 +80,23 @@ export default class RunnerManager extends Component {
 			return udFun;
 		}
 
-		if (!this._runner[name]) {
-			this.errLog(`runner ${name} not existed.`);
+		if (!this.registerRunner[name]) {
+			this.methodErrLog('run', [name, ...args], ErrorType.notExist);
 			return udFun;
 		}
 
-		this._emitter.emit('$$run', {
-			controller: this._dhc._key,
+		this.emitter.emit('$$run', {
+			controller: this.dataHubController.key,
 			name,
 			args
 		});
 
-		this._emitter.emit(`$$run:${name}`, {
-			controller: this._dhc._key,
+		this.emitter.emit(`$$run:${name}`, {
+			controller: this.dataHubController.key,
 			args
 		});
 
-		return this._dh._runner[name](...args);
+		return this.dataHub.run(name, ...args);
 	}
 }
 

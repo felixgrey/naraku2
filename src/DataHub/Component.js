@@ -1,44 +1,39 @@
 import {
-  getUniIndex,
-  udFun,
-  createLog,
-  isNvl
+	getUniIndex,
+	udFun,
+	createLog,
+	isNvl
 } from '../Utils'
 
-import Emitter from './Emitter'
-import LifeCycle from '../Common/LifeCycle'
+import Emitter from '../Common/Emitter';
+import LifeCycle from '../Common/LifeCycle';
 
 export default class Component extends LifeCycle {
-  _initialization (container) {
-    if (typeof container !== 'object') {
-      container = {
-        _key: '???',
-        _clazz: '???'
-      }
-    }
+	initialization(container) {
+		this.containerDestroyOff = this.bindContainer(container);
 
-    this._dhc = container._dhc || null
-    this._dh = container._dh || null
-    this._store = container._store || null
-    this._emitter = container._emitter || udFun
-    this.devLog = container.devLog || udFun
-    this.errLog = container.errLog || udFun
+		if (this.constructor.$showPublicMethods) {
+			this.devLog(`publicMethods of ${this.clazz}`, this.constructor.prototype.$$publicMethods);
+		}
+	}
+	
+	bindContainer(container) {
+		container.bindUnion(this, this.logName);
+		
+		return this.emitter.once(`$$destroy:${container.clazz}=${container.key}`, () => {
+			this.devLog(`${container.clazz}=${container.key} destroyed => ${this.logName} destroyed .`);
+			this.destroy();
+		});
+	}
 
-    this._emitter.once(`$$destroy:${container._clazz}=${container._key}`, () => {
-      this.devLog(`${container._clazz}=${container._key} destroyed => ${this._logName} destroyed .`)
-      this.destroy()
-    })
-
-    if (createLog.showPublicMethods) {
-      this.devLog(`publicMethods of ${this._clazz}`, this.constructor.prototype._publicMethods)
-    }
-  }
-
-  _destruction () {
-    this._dh = null
-    this._dhc = null
-    this._store = null
-  }
+	destruction() {
+		this.containerDestroyOff();
+		this.containerDestroyOff = null;
+		
+		this.dataHub = null;
+		this.dataHubController = null;
+		this.dataStore = null;
+	}
 }
 
 Component.publicMethod = LifeCycle.publicMethod

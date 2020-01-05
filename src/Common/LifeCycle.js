@@ -1,185 +1,182 @@
 import {
-  getUniIndex,
-  udFun,
-  createLog,
-  isNvl
-} from '../Utils'
+	getUniIndex,
+	udFun,
+	isNvl
+} from '../Utils';
 
-// afterCreate beforeDestroy
+import ErrorType from './ErrorType';
+import Union from './Union';
 
-udFun.destroy = udFun
+Object.keys(ErrorType).forEach(name => {
+	ErrorType[name] = name;
+});
 
-function publicMethod (prototypeOrInstance, name, descriptor = null, target = '_that') {
-  let old
-  if (descriptor) {
-    old = prototypeOrInstance[name]
-    udFun[name] = udFun
+udFun.destroy = udFun;
 
-    if (!prototypeOrInstance._publicMethods) {
-      prototypeOrInstance._publicMethods = []
-    }
-    prototypeOrInstance._publicMethods.push(name)
-  } else {
-    old = function (...args) {
-      if (typeof this[name] !== 'function') {
-        this.methodErrLog && this.methodErrLog(`this.${name}`, args, 'notMethod')
-        return
-      }
-      return this[name](...args)
-    }
-  }
+function publicMethod(prototypeOrInstance, name, descriptor = null, target = 'that') {
+	let old
+	if (descriptor) {
+		old = prototypeOrInstance[name];
+		udFun[name] = udFun;
 
-  const newMethod = function (...args) {
-    if (this._destroyed) {
-      this.destroyedErrorLog && this.destroyedErrorLog(name, args)
-      return udFun
-    }
+		if (!prototypeOrInstance.$$publicMethods) {
+			prototypeOrInstance.$$publicMethods = [];
+		}
 
-    if (!this._ready) {
-      this.notReadyErrorLog && this.notReadyErrorLog(name, args)
-      return udFun
-    }
+		prototypeOrInstance.$$publicMethods.push(name);
+	} else {
+		old = function(...args) {
+			if (typeof this[name] !== 'function') {
+				this.methodErrLog(`this.${name}`, args, ErrorType.notMethod);
+				return;
+			}
+			return this[name](...args);
+		}
+	}
 
-    if (!this[target]) {
-      this.methodErrLog && this.methodErrLog(`this.${target}`, args, 'notExist')
-      return udFun
-    }
+	const newMethod = function(...args) {
+		if (this.destroyed) {
+			this.destroyedErrorLog(name, args);
+			return udFun;
+		}
 
-    const result = old.bind(this[target])(...args)
+		if (!this.ready) {
+			this.notReadyErrorLog(name, args);
+			return udFun;
+		}
 
-    let _result = result
-    if (result instanceof LifeCycle) {
-      _result = `#LifeCycleInstance:${result._logName}`
-    } else if (typeof result === 'function') {
-      _result = `#function:${result.name}`
-    }
+		if (!this[target]) {
+			this.methodErrLog(`this.${target}`, args, ErrorType.notExist);
+			return udFun;
+		}
 
-    const _args = args.map((arg) => {
-      if (arg instanceof LifeCycle) {
-        return `#LifeCycleInstance:${arg._logName}`
-      } if (typeof arg === 'function') {
-        return `#function:${arg.name}`
-      }
-      return arg
-    })
+		const result = old.bind(this[target])(...args);
 
-    this.devLog && this.devLog(`#run:${name}`, _args, _result)
+		let logResult = result
+		if (result instanceof LifeCycle) {
+			logResult = `#LifeCycleInstance:${result.logName}`;
+		} else if (typeof result === 'function') {
+			logResult = `#function:${result.name}`;
+		}
 
-    return result
-  }
+		const logArgs = args.map((arg) => {
+			if (arg instanceof LifeCycle) {
+				return `#LifeCycleInstance:${arg.logName}`;
+			}
+			if (typeof arg === 'function') {
+				return `#function:${arg.name}`;
+			}
+			return arg;
+		})
 
-  if (descriptor) {
-    descriptor.value = newMethod
-    return descriptor
-  }
+		this.devLog(`#run:${name}`, logArgs, logResult);
 
-  return newMethod
+		return result;
+	}
+
+	if (descriptor) {
+		descriptor.value = newMethod;
+		return descriptor;
+	}
+
+	return newMethod;
 }
 
 export default class LifeCycle {
-  constructor (...args) {
-    const _constructor = this.constructor
+	constructor(...args) {
 
-    this._that = this
-    this._key = getUniIndex()
-    this._clazz = _constructor.name
-    this._logName = `${this._clazz}=${this._key}`
-    this._destroyed = false
-    this._ready = true
+		this.that = this;
+		this.key = getUniIndex();
+		this.clazz = this.constructor.name;
+		this.logName = `${this.clazz}=${this.key}`;
+		this.destroyed = false;
+		this.ready = true;
 
-    this._devMode = !!args[args.length - 1]
+		let union = args[args.length - 1];
+		if (union instanceof Union) {
+			union.bindUnion(this, this.logName);
+		} else {
+			new Union().bindUnion(this, this.logName);
+		}
 
-    this.errLog = udFun
-    this.devLog = udFun
+		this.publicMethods = (publicMethods = [], target = 'that', instance = this) => {
+			publicMethods.forEach((name) => {
+				instance[name] = publicMethod(this, name, null, target).bind(this);
+			});
+		}
 
-    this._emitter = udFun
+		this.methodErrLog = (name = '?', args = '', errType = null, msg = errType) => {
+			if (this.devMode) {
+				this.devLog(`#runErr:${name}`, args, ErrorType[errType])
+			} else {
+				this.errLog(msg);
+			}
+		}
 
-    if (_constructor.$loggerByParam) {
-      const arg_2 = args[args.length - 2]
-      if (!isNvl(arg_2) && typeof arg_2.createLog === 'function') {
-        this.errLog = arg_2.createLog(this._logName)
-      }
+		const notAbleErr = (name, args = [], errType) => {
+			if (this.devMode) {
+				this.devLog(`#runErr:${name}`, args, ErrorType[errType])
+			} else {
+				this.errLog(`can't run '${this.clazz}.${name}(${args.join(',')})' when ${type}.`)
+			}
+		};
 
-      const arg_3 = args[args.length - 3]
-      if (!isNvl(arg_3) && typeof arg_3.createLog === 'function') {
-        this.devLog = arg_3.createLog(this._logName)
-      }
-    }
+		this.destroyedErrorLog = (name, args = []) => {
+			notAbleErr(name, args = [], ErrorType.destroyed);
+		};
 
-    this.publicMethods = (_publicMethods = [], target = '_that', instance = this) => {
-      _publicMethods.forEach((name) => {
-        instance[name] = publicMethod(this, name, null, target).bind(this);
-      })
-    }
+		this.notReadyErrorLog = (name, args = []) => {
+			notAbleErr(name, args = [], ErrorType.notReady);
+		};
 
-    this.methodErrLog = (name = '?', args = '', desc = 'err', msg = desc) => {
-      if (this._devMode) {
-        this.devLog(`#runErr:${name}`, args, desc)
-      } else {
-        this.errLog(msg)
-      }
-    }
+		if (this.initialization) {
+			this.initialization(...args)
+		}
 
-    const notAbleErr = (name, args = [], type) => {
-      if (this._devMode) {
-        this.devLog(`#runErr:${name}`, args, type)
-      } else {
-        this.errLog(`can't run '${this._clazz}.${name}(${args.join(',')})' when ${type}.`)
-      }
-    }
+		if (this.afterCreate) {
+			this.afterCreate(...args)
+		}
 
-    this.destroyedErrorLog = (name, args = []) => {
-      notAbleErr(name, args = [], 'destroyed')
-    }
+		this.devLog(`${this.logName} created.`);
+	}
+	
+	updateLogger() {
+		if(this.devMode) {
+			this.union.devLog = this.devLog;
+		}
+		this.union.errLog = this.errLog;
+	}
 
-    this.notReadyErrorLog = (name, args = []) => {
-      notAbleErr(name, args = [], 'notReady')
-    }
+	destroy() {
+		if (this.destroyed) {
+			return;
+		}
 
-    if (this._initialization) {
-      this._initialization(...args)
-    }
+		this.emitter.emit(`$$destroy:${this.clazz}`, this._key, this.name);
+		this.emitter.emit(`$$destroy:${this.clazz}=${this.key}`, this.name);
 
-    if (this.afterCreate) {
-      this.afterCreate(...args)
-    }
+		if (!isNvl(this.name)) {
+			this.emitter.emit(`$$destroy:${this.clazz}@${this.name}`, this.key);
+			this.emitter.emit(`$$destroy:${this.clazz}@${this.name}=${this.key}`);
+		}
 
-    this.devLog(`${this._logName} created.`)
-  }
+		if (this.beforeDestroy) {
+			this.beforeDestroy();
+		}
 
-  afterCreate () {}
+		if (this.destruction) {
+			this.destruction();
+		}
 
-  beforeDestroy () {}
+		this.destroyed = true;
+		this.ready = false;
+		this.union = null;
 
-  destroy () {
-    if (this._destroyed) {
-      return
-    }
+		this.name = null;
+		this.key = null;
 
-    this._emitter.emit(`$$destroy:${this._clazz}`, this._key, this._name)
-    this._emitter.emit(`$$destroy:${this._clazz}=${this._key}`, this._name)
-
-    if (!isNvl(this._name)) {
-      this._emitter.emit(`$$destroy:${this._clazz}@${this._name}`, this._key)
-      this._emitter.emit(`$$destroy:${this._clazz}@${this._name}=${this._key}`)
-    }
-
-    if (this.beforeDestroy) {
-      this.beforeDestroy()
-    }
-
-    if (this._destruction) {
-      this._destruction()
-    }
-
-    this._destroyed = true
-    this._ready = false
-    this._emitter = udFun
-    this._name = null
-    this._key = null
-
-    this.devLog(`${this._logName} destroyed.`)
-  }
+		this.devLog(`${this.logName} destroyed.`);
+	}
 }
 
-LifeCycle.publicMethod = publicMethod
+LifeCycle.publicMethod = publicMethod;

@@ -9,6 +9,10 @@ import {
 	fetchData,
 } from './Fetcher';
 
+import {
+	getRefreshRate
+} from '../Common/Union';
+
 import Component from './Component';
 
 const publicMethods = [
@@ -21,43 +25,46 @@ const {
 
 export default class FetchManager extends Component {
 
-	afterCreate(dhc, refreshRate = 40, _devMode = false) {
-		this._fetchingDatastore = {};
-		this._stopKeys = {};
-		this._refreshRate = refreshRate;
+	initialization(...args) {
+		super.initialization(...args);
+
+		this.fetchingDatastore = {};
+		this.stopKeys = {};
 	}
 
-	beforeDestroy() {
-		Object.values(this._stopKeys).forEach(key => {
+	destruction() {
+		super.destruction();
+
+		Object.values(this.stopKeys).forEach(key => {
 			stopFetchData(key);
 		});
-		this._stopKeys = null;
+		this.stopKeys = null;
 
-		Object.values(this._fetchingDatastore).forEach(index => {
+		Object.values(this.fetchingDatastore).forEach(index => {
 			clearTimeout(index);
 		});
-		this._fetchingDatastore = null;
+		this.fetchingDatastore = null;
 	}
 
 	@publicMethod
 	fetch(fetcher, data, dataInfo = {}, stop = null) {
 		const stopKey = createUid('stopKey-');
-		this._stopKeys[stopKey] = stopKey;
+		this.stopKeys[stopKey] = stopKey;
 
 		let doStop = () => {
 			this.devLog(`stop fetch  `, fetcher, data, stopKey);
 			this.stopFetch(stopKey);
 		};
 
-		this._emitter.once(`$$destroy:FetchManager:${this._key}`, doStop);
+		this.emitter.once(`$$destroy:${this.clazz}=${this.key}`, doStop);
 		if (typeof stop === 'string') {
-			this._emitter.once(`$$data:${stop}`, doStop);
+			this.emitter.once(`$$data:${stop}`, doStop);
 		} else if (typeof stop === 'function') {
 			stop(doStop);
 		}
 
 		return fetchData(fetcher, data, dataInfo, stopKey).catch(err => {
-			if (this._destroyed) {
+			if (this.destroyed) {
 				return;
 			}
 
@@ -72,14 +79,14 @@ export default class FetchManager extends Component {
 
 	@publicMethod
 	stopFetch(name) {
-		if (this._stopKeys[name]) {
-			stopFetchData(this._stopKeys[name]);
-			this._stopKeys[name] = null;
+		if (this.stopKeys[name]) {
+			stopFetchData(this.stopKeys[name]);
+			this.stopKeys[name] = null;
 		}
 
-		if (this._fetchingDatastore[name]) {
-			clearTimeout(this._fetchingDatastore[name]);
-			this._fetchingDatastore[name] = null;
+		if (this.fetchingDatastore[name]) {
+			clearTimeout(this.fetchingDatastore[name]);
+			this.fetchingDatastore[name] = null;
 		}
 	}
 
@@ -94,13 +101,13 @@ export default class FetchManager extends Component {
 				after = udFun,
 		} = param;
 
-		clearTimeout(this._fetchingDatastore[name]);
-		this._fetchingDatastore[name] = setTimeout(() => {
-			if (this._destroyed) {
+		clearTimeout(this.fetchingDatastore[name]);
+		this.fetchingDatastore[name] = setTimeout(() => {
+			if (this.destroyed) {
 				return;
 			}
 
-			const ds = this._dh.getDataStore(name);
+			const ds = this.dataHub.getDataStore(name);
 			const pagination = ds.getPaginationManager();
 
 			const {
@@ -124,9 +131,9 @@ export default class FetchManager extends Component {
 
 			pagination.stopFetch();
 			ds.clearLoading();
-			this.stopFetch(this._stopKeys[name]);
+			this.stopFetch(this.stopKeys[name]);
 
-			const stopKey = this._stopKeys[name] = createUid('stopKey-');
+			const stopKey = this.stopKeys[name] = createUid('stopKey-');
 			if (clear) {
 				before();
 				ds.clear();
@@ -161,7 +168,7 @@ export default class FetchManager extends Component {
 			Promise
 				.all([dataPromise, pagePromise])
 				.finally(() => {
-					if (!this._destroyed) {
+					if (!this.destroyed) {
 						if (errorMsg !== null) {
 							ds.clearLoading();
 							if (errorMsg !== ABORT_REQUEST) {
@@ -174,7 +181,7 @@ export default class FetchManager extends Component {
 					after();
 				});
 
-		}, this._refreshRate);
+		}, getRefreshRate());
 	}
 }
 

@@ -5,14 +5,18 @@ import {
 	udFun
 } from './../Utils';
 
+import Container from './Container';
 import Component from './Component';
 
+
+/** /
 import PaginationManager from './PaginationManager.js';
 import RelationManager from './RelationManager.js';
+/**/
 
 const {
 	publicMethod
-} = Component;
+} = Container;
 
 const allStatus = [
 	'undefined',
@@ -42,54 +46,74 @@ const publicMethods = [
 	'loaded'
 ];
 
-export default class DataStore extends Component {
+export default class DataStore extends Container {
 
-	afterCreate(dh, name) {
-		this._store = this;
-		this._eternal = false;
-		this._value = [];
-		this._storeConfig = null;
-		this._extendConfig = {};
-		this._oldStatus = 'undefined';
-		this._status = 'undefined';
-		this._lockStack = 0;
-		this._errMsg = null;
-		this._name = name;
+	initialization(...args) {
+		super.initialization(...args);
+		
+		const [dataHub, name] = args;
+		
+		this.dataHub = dataHub;
+		this.store = this;
+		this.eternal = false;
+		this.value = [];
+		this.storeConfig = null;
+		this.oldStatus = 'undefined';
+		this.status = 'undefined';
+		this.lockStack = 0;
+		this.errMsg = null;
+		this.name = name;
 
-    this._pagination = new PaginationManager(this, this._devMode);
-    this._relationManager = new RelationManager(this, this._devMode);
-
-    this.publicMethods(RelationManager.publicMethods, '_relationManager');
+		/** /
+		this.paginationManager = new PaginationManager(this, this.devMode);
+		this.relationManager = new RelationManager(this, this.devMode);
+		this.publicMethods(RelationManager.publicMethods, 'relationManager');
+		/**/
+		
+		this.containerDestroyOff = Component.prototype.bindContainer.bind(this)(dataHub);
 
 	}
 
-	beforeDestroy() {
-		this._pagination.destroy();
-		this._pagination = null;
+	destruction() {
+		super.destruction();
 
-		this._relationManager.destroy();
-		this._relationManager = null;
+		this.paginationManager && this.paginationManager.destroy();
+		this.paginationManager = null;
 
-		this._value = null;
-		this._storeConfig = null;
-		this._extendConfig = null
+		this.relationManager && this.relationManager.destroy();
+		this.relationManager = null;
+		
+		this.containerDestroyOff();
+		this.containerDestroyOff = null;
+
+		this.value = null;
+		this.storeConfig = null;
+	}
+	
+	bindContainer(instance) {
+		super.bindContainer(instance);
+		instance.dataHub = this.dataHub;
+		instance.dataStore = this;
 	}
 
 	getPaginationManager() {
-		if (this._destroyed) {
+		if (this.destroyed || !this.paginationManager) {
 			return udFun;
 		}
-		return this._pagination;
+		return this.paginationManager;
 	}
 
 	@publicMethod
 	getPageInfo() {
-		return this._pagination.getPageInfo();
+		if (!this.paginationManager) {
+			return {};
+		}
+		return this.paginationManager.getPageInfo();
 	}
 
 	@publicMethod
 	setConfig(cfg) {
-		if (this._storeConfig) {
+		if (this.storeConfig) {
 			this.devLog(`run setConfig again`);
 			return;
 		}
@@ -115,64 +139,63 @@ export default class DataStore extends Component {
 		Object.keys(cfg).forEach(name => {
 			let value = cfg[name];
 			if (/\_|\$/g.test(name.charAt(0))) {
-				this._extendConfig[name] = value;
+				this.setData(name, value);
 				return;
 			}
 		});
 
-		this._relationManager.init(cfg);
-		this._pagination.init(cfg.pagination);
+		this.relationManager && this.relationManager.init(cfg);
+		this.paginationManager && this.paginationManager.init(cfg.pagination);
 
-		this._storeConfig = cfg;
+		this.storeConfig = cfg;
 	}
 
 	@publicMethod
 	getExtendConfig() {
 		return {
-			...
-			this._extendConfig
+			...this.data
 		};
 	}
 
 	@publicMethod
 	getStoreConfig() {
-		return { ...(this._storeConfig || {})
+		return { ...(this.storeConfig || {})
 		};
 	}
 
-	_setStatus(status) {
-		if (status === this._status) {
+	setStatus(status) {
+		if (status === this.status) {
 			return;
 		}
 
-		this.devLog(`changeStatus :${this._status} => ${status}`);
-		if (this._status !== 'locked' && this._status !== 'loading') {
-			this._oldStatus = this._status;
+		this.devLog(`changeStatus :${this.status} => ${status}`);
+		if (this.status !== 'locked' && this.status !== 'loading') {
+			this.oldStatus = this.status;
 		}
-		this._status = status;
+		this.status = status;
 
-		this._emitter.emit('$$status', {
-			name: this._name,
-			value: this._status
+		this.emitter.emit('$$status', {
+			name: this.name,
+			value: this.status
 		});
 
-		this._emitter.emit(`$$status:${this._name}@${this._status}`);
+		this.emitter.emit(`$$status:${this.name}=${this.status}`);
 	}
 
-	_emitDataChange() {
-		this._emitter.emit('$$data', {
-			name: this._name,
-			value: this._value
+	emitDataChange() {
+		this.emitter.emit('$$data', {
+			name: this.name,
+			value: this.value
 		});
 
-		this._emitter.emit(`$$data:${this._name}`, this._value);
+		this.emitter.emit(`$$data:${this.name}`, this.value);
 	}
 
 	@publicMethod
 	set(value) {
-		if (this._status === 'locked' || this._status === 'loading') {
+		if (this.status === 'locked' || this.status === 'loading') {
 			this.methodErrLog('set', value, 'locked/loading',
-				`can't set value when '${this._name}' is locked or loading.`);
+				`can't set value when '${this.name}' is locked or loading.`);
 			return;
 		}
 
@@ -181,18 +204,18 @@ export default class DataStore extends Component {
 		}
 
 		value = [].concat(value);
-		this._value = value;
-		this._errMsg = null;
+		this.value = value;
+		this.errMsg = null;
 
-		this._setStatus('ready');
-		this._emitDataChange();
+		this.setStatus('ready');
+		this.emitDataChange();
 	}
 
 	@publicMethod
 	merge0(data) {
-		if (this._status === 'locked' || this._status === 'loading') {
+		if (this.status === 'locked' || this.status === 'loading') {
 			this.methodErrLog('merge0', [data], 'locked/loading',
-				`can't set merge0 when '${this._name}' is locked or loading.`);
+				`can't set merge0 when '${this.name}' is locked or loading.`);
 			return;
 		}
 
@@ -200,8 +223,8 @@ export default class DataStore extends Component {
 		if (this.isEmpty()) {
 			this.set(value);
 		} else {
-			this._value[0] = value;
-			this.set(this._value);;
+			this.value[0] = value;
+			this.set(this.value);;
 		}
 	}
 
@@ -212,28 +235,28 @@ export default class DataStore extends Component {
 
 	@publicMethod
 	getValue(path, defaultValue) {
-		return getDeepValue(this._value, path, defaultValue);
+		return getDeepValue(this.value, path, defaultValue);
 	}
 
 	@publicMethod
-	hasData() {
+	hasInit() {
 		return this.getStatus() !== 'undefined';
 	}
 
 	@publicMethod
 	get() {
-		return this._value;
+		return this.value;
 	}
 
 	@publicMethod
 	clear() {
-		if (this._status === 'undefined') {
+		if (this.status === 'undefined') {
 			return;
 		}
 
-		if (this._status === 'locked' || this._status === 'loading') {
+		if (this.status === 'locked' || this.status === 'loading') {
 			this.methodErrLog('clear', [], 'locked/loading',
-				`can't clear when '${this._name}' is locked or loading.`);
+				`can't clear when '${this.name}' is locked or loading.`);
 			return;
 		}
 
@@ -247,122 +270,122 @@ export default class DataStore extends Component {
 
 	@publicMethod
 	getCount() {
-		return this._value.length;
+		return this.value.length;
 	}
 
 	@publicMethod
 	getStatus() {
-		return this._status;
+		return this.status;
 	}
 
 	@publicMethod
 	remove() {
-		if (this._eternal) {
+		if (this.eternal) {
 			this.methodErrLog('remove', [], 'eternal',
-				`can't remove eternal dataStore '${this._name}'.`);
+				`can't remove eternal dataStore '${this.name}'.`);
 			return;
 		}
 
-		if (this._status === 'locked' || this._status === 'loading') {
+		if (this.status === 'locked' || this.status === 'loading') {
 			this.methodErrLog('remove', [], 'locked/loading',
-				`can't remove when '${this._name}' is locked or loading.`);
+				`can't remove when '${this.name}' is locked or loading.`);
 			return;
 		}
 
-		this._value = [];
-		this._oldStatus = 'undefined';
+		this.value = [];
+		this.oldStatus = 'undefined';
 
-		this._setStatus('undefined');
-		this._emitDataChange();
+		this.setStatus('undefined');
+		this.emitDataChange();
 	}
 
 	@publicMethod
 	isLocked() {
-		return this._status === 'locked';
+		return this.status === 'locked';
 	}
 
 	@publicMethod
 	isLoading() {
-		return this._status === 'loading';
+		return this.status === 'loading';
 	}
 
 	@publicMethod
 	setErrorMsg(msg) {
 		if (isNvl(msg)) {
 			this.methodErrLog('setErrorMsg', [msg], 'null',
-				`can't set null error message to '${this._name}'.`);
+				`can't set null error message to '${this.name}'.`);
 			return;
 		}
 
-		this._errMsg = msg;
-		this._setStatus('error');
+		this.errMsg = msg;
+		this.setStatus('error');
 	}
 
 	@publicMethod
 	getErrorMsg() {
-		return this._errMsg;
+		return this.errMsg;
 	}
 
 	@publicMethod
 	lock() {
-		if (this._status === 'loading') {
+		if (this.status === 'loading') {
 			this.methodErrLog('lock', [], 'loading',
-				`can't lock  when '${this._name}' is loading.`);
+				`can't lock  when '${this.name}' is loading.`);
 			return;
 		}
 
-		this._lockStack++;
-		this._setStatus('locked');
+		this.lockStack++;
+		this.setStatus('locked');
 	}
 
 	@publicMethod
 	unLock() {
-		if (this._lockStack > 0) {
-			this._lockStack--;
+		if (this.lockStack > 0) {
+			this.lockStack--;
 		}
 
-		this.devLog(`unLock: lockStack=${this._lockStack}, oldStatus=${this._oldStatus}`);
-		if (this._lockStack === 0) {
-			this._setStatus(this._oldStatus);
+		this.devLog(`unLock: lockStack=${this.lockStack}, oldStatus=${this.oldStatus}`);
+		if (this.lockStack === 0) {
+			this.setStatus(this.oldStatus);
 		}
 	}
 
 	@publicMethod
 	unLockAll() {
-		this._lockStack = 0;
+		this.lockStack = 0;
 		this.unLock();
 	}
 
 	@publicMethod
 	loading() {
-		this.devLog(`loading: status=${this._status}`);
+		this.devLog(`loading: status=${this.status}`);
 
-		if (this._status === 'locked' || this._status === 'loading') {
+		if (this.status === 'locked' || this.status === 'loading') {
 			this.methodErrLog('loading', [], 'locked/loading',
-				`can't set status=loading when '${this._name}' is locked or loading.`);
+				`can't set status=loading when '${this.name}' is locked or loading.`);
 			return;
 		}
 
-		this._setStatus('loading');
+		this.setStatus('loading');
 	}
 
 	@publicMethod
 	clearLoading() {
-		if (this._status === 'loading') {
-			this._setStatus(this._oldStatus);
+		if (this.status === 'loading') {
+			this.setStatus(this.oldStatus);
 		}
 	}
 
 	@publicMethod
 	loaded(value) {
-		if (this._status !== 'loading') {
-			this.methodErrLog('loaded', [value], 'locked/loading', `'${this._name}' isn't loading.`);
+		if (this.status !== 'loading') {
+			this.methodErrLog('loaded', [value], 'locked/loading', `'${this.name}' isn't loading.`);
 			return;
 		}
 
-		if (this._status === 'locked') {
+		if (this.status === 'locked') {
 			this.methodErrLog('loaded', [value], 'locked/loading',
-				`can't set status=${this._oldStatus} when '${this._name}' is locked.`);
+				`can't set status=${this.oldStatus} when '${this.name}' is locked.`);
 			return;
 		}
 
