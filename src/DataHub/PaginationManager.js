@@ -20,6 +20,8 @@ let defaultPageInfo = {
 	page: 1,
 	size: 10,
 	start: 1,
+	pageNumberField: 'page',
+	pageSizeField: 'size',
 };
 
 const {
@@ -32,11 +34,11 @@ export function setDefaultPageInfo(v) {
 
 export default class PaginationManager extends Component {
 
-	initialization(...args){
+	initialization(...args) {
 		super.initialization(...args);
-		
+
 		const [dataStore] = args;
-		
+
 		this.name = dataStore.name;
 		this.fetcher = null;
 		this.stringData = '';
@@ -66,7 +68,9 @@ export default class PaginationManager extends Component {
 			fetcher = null,
 				force = defaultPageInfo.force,
 				startPage = defaultPageInfo.start,
-				pageSize = defaultPageInfo.size
+				pageSize = defaultPageInfo.size,
+				pageNumberField = defaultPageInfo.pageNumberField,
+				pageSizeField = defaultPageInfo.pageSizeField
 		} = param;
 
 		this.inited = true;
@@ -75,6 +79,8 @@ export default class PaginationManager extends Component {
 		this.force = force;
 		this.startPage = startPage;
 		this.pageSize = pageSize;
+		this.pageNumberField = pageNumberField;
+		this.pageSizeField = pageSizeField;
 	}
 
 	@publicMethod
@@ -205,6 +211,8 @@ export default class PaginationManager extends Component {
 			page: this.pageNumber,
 			size: this.pageSize,
 			start: this.startPage,
+			pageNumberField: this.pageNumberField,
+			pageSizeField: this.pageSizeField,
 		};
 	}
 }
