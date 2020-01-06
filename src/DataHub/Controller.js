@@ -24,7 +24,6 @@ const publicMethods = [
   'isWillRefresh',
   'getDataHub',
   'getController',
-  'destroy',
 ];
 
 const {
@@ -177,6 +176,7 @@ export default class Controller extends Container {
     this.publicMethods(RunnerManager.publicMethods, 'runnerManager', this.controllerPublicMethods);
     this.publicMethods(ListenerManager.publicMethods, 'listenerManager', this.controllerPublicMethods);
     this.publicMethods(publicMethods, 'that', this.controllerPublicMethods);
+		this.controllerPublicMethods.destroy = () => this.destroy();
   }
 
   @publicMethod
@@ -211,6 +211,7 @@ export default class Controller extends Container {
   @publicMethod
   getPublicMethods() {
     return {
+			key: this.key,
       ...this.controllerPublicMethods
     };
   }

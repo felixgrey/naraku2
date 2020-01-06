@@ -1,7 +1,5 @@
 import {
-	createLog,
 	isBlank,
-  udFun,
 } from './../Utils';
 
 import LifeCycle from './../Common/LifeCycle';
@@ -89,6 +87,7 @@ export default class Tree extends LifeCycle {
     }
 
     let parentKey = this.keyMap[key].parentKey;
+    this.devLog(`parentKey is ${parentKey}`);
     return this.keyMap[parentKey] || null;
   }
 
@@ -109,6 +108,7 @@ export default class Tree extends LifeCycle {
 		let parentKey = this.keyMap[key].parentKey;
 		while (parentKey) {
 			let parentNode = this.keyMap[parentKey];
+      this.devLog('getParentChain', parentKey, parentNode);
 			nodes.push(parentNode);
 			parentKey = parentNode.parentKey;
 		}

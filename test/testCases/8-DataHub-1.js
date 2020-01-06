@@ -1,4 +1,4 @@
-const Utils = require('./../lib/Utils/index.js');
+const Utils = require('./../../lib/Utils/index.js');
 
 const {
 	equalAssert,
@@ -7,11 +7,11 @@ const {
 	createAsyncEqualAssert,
 	IGNORE_TEST,
 	getUnion
-} = require('./TestTools.js');
-// require('./Init-Fetcher0.js');
+} = require('./../TestTools/TestTools.js');
+// require('./../TestTools/Init-Fetcher0.js');
 
 
-const DataHub = require(`../lib/DataHub/DataHub.js`).default;
+const DataHub = require(`../../lib/DataHub/DataHub.js`).default;
 let dataHub
 console.log(`\n=============== DataHub start ===============\n`);
 

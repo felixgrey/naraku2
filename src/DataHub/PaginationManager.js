@@ -8,7 +8,6 @@ import {
 	NOT_INITfetcher,
 	NOT_ADD_FETCH,
 	ABORT_REQUEST,
-	FETCHING,
 	stopFetchData,
 	fetchData,
 } from './Fetcher';
@@ -16,12 +15,13 @@ import {
 import Component from './Component';
 
 let defaultPageInfo = {
+	fetcher: null,
 	force: false,
-	page: 1,
 	size: 10,
 	start: 1,
 	pageNumberField: 'page',
 	pageSizeField: 'size',
+	merge: true,
 };
 
 const {
@@ -40,15 +40,21 @@ export default class PaginationManager extends Component {
 		const [dataStore] = args;
 
 		this.name = dataStore.name;
-		this.fetcher = null;
 		this.stringData = '';
-		this.force = defaultPageInfo.force;
-		this.pageSize = defaultPageInfo.size;
-		this.pageNumber = defaultPageInfo.page;
-		this.startPage = defaultPageInfo.start;
+		this.config = {};
+
 		this.stopKey = null;
 		this.noPage = false;
-		this.count = 0;
+
+		this.pageInfo = {};
+
+	}
+
+	destruction() {
+		super.destruction();
+
+		this.pageInfo = null;
+		this.config = null;
 	}
 
 
@@ -64,33 +70,26 @@ export default class PaginationManager extends Component {
 			param = {};
 		}
 
-		const {
-			fetcher = null,
-				force = defaultPageInfo.force,
-				startPage = defaultPageInfo.start,
-				pageSize = defaultPageInfo.size,
-				pageNumberField = defaultPageInfo.pageNumberField,
-				pageSizeField = defaultPageInfo.pageSizeField
-		} = param;
+		this.config = Object.assign({}, defaultPageInfo, param);
 
 		this.inited = true;
 
-		this.fetcher = fetcher;
-		this.force = force;
-		this.startPage = startPage;
-		this.pageSize = pageSize;
-		this.pageNumberField = pageNumberField;
-		this.pageSizeField = pageSizeField;
+		this.pageInfo = {
+			count: 0,
+			page: this.config.start,
+			size: this.config.size,
+		};
+
 	}
 
 	@publicMethod
 	setCount(v) {
-		this.count = v;
+		this.pageInfo.count = v;
 	}
 
 	@publicMethod
 	getCount() {
-		return this.count;
+		return this.pageInfo.count;
 	}
 
 	@publicMethod
@@ -103,10 +102,10 @@ export default class PaginationManager extends Component {
 
 	@publicMethod
 	fetch(data = {}) {
-		if (this.fetcher === null) {
+		if (this.config.fetcher === null) {
 			this.emitter.emit('$$data', {
 				name: `$$count:${this.name}`,
-				value: this.count
+				value: this.pageInfo.count
 			});
 			return Promise.resolve();
 		}
@@ -133,7 +132,7 @@ export default class PaginationManager extends Component {
 		const stopKey = this.stopKey = createUid('pageStopKey-');
 
 		// name, data = null, dataInfo = {}, stopKey = null
-		return fetchData(this.fetcher, data, {
+		return fetchData(this.config.fetcher, data, {
 			name: this.name,
 			pagination: true,
 		}, stopKey).then(result => {
@@ -148,7 +147,7 @@ export default class PaginationManager extends Component {
 				result = 0;
 			}
 
-			this.count = +result;
+			this.pageInfo.count = +result;
 
 			this.devLog(`'${this.name}' count is ${this.count}`);
 
@@ -179,13 +178,13 @@ export default class PaginationManager extends Component {
 	setPageInfo(pageNumber, pageSize) {
 		let changed = false;
 
-		if (!isNvl(pageNumber) && pageNumber !== this.pageNumber) {
-			this.pageNumber = pageNumber;
+		if (!isNvl(pageNumber) && pageNumber !== this.pageInfo.page) {
+			this.pageInfo.page = pageNumber;
 			changed = true;
 		}
 
-		if (!isNvl(pageSize) && pageSize !== this.pageSize) {
-			this.pageSize = pageSize;
+		if (!isNvl(pageSize) && pageSize !== this.pageInfo.size) {
+			this.pageInfo.size = pageSize;
 			changed = true;
 		}
 
@@ -207,12 +206,8 @@ export default class PaginationManager extends Component {
 
 		return {
 			hasPagiNation: true,
-			count: this.count,
-			page: this.pageNumber,
-			size: this.pageSize,
-			start: this.startPage,
-			pageNumberField: this.pageNumberField,
-			pageSizeField: this.pageSizeField,
+			...this.pageInfo,
+			...this.config,
 		};
 	}
 }

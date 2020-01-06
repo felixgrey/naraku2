@@ -1,4 +1,4 @@
-const Utils = require('./../lib/Utils/index.js');
+const Utils = require('./../../lib/Utils/index.js');
 
 const {
 	equalAssert,
@@ -7,12 +7,12 @@ const {
 	equalErrLog,
 	createAsyncEqualAssert,
 	IGNORE_TEST,
-} = require('./TestTools.js');
-// require('./Init-Fetcher0.js');
+} = require('./../TestTools/TestTools.js');
+// require('./../TestTools/Init-Fetcher0.js');
 
 // ----------------------------------------------------------- //
-const Union = require(`../lib/Common/Union.js`).default;
-const LifeCycle = require(`../lib/Common/LifeCycle.js`).default;
+const Union = require(`../../lib/Common/Union.js`).default;
+const LifeCycle = require(`../../lib/Common/LifeCycle.js`).default;
 // ----------------------------------------------------------- //
 
 const union = new Union({
@@ -36,4 +36,4 @@ new SubLifeCycle(1,2,3, union)
 
 
 
-lifeCycle =  new LifeCycle();
+lifeCycle =  new LifeCycle(union);

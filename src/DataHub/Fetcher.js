@@ -5,7 +5,9 @@ import {
   udFun,
   sameFun,
   isNvl
-} from '../Utils'
+} from '../Utils';
+
+import {getDevMode}  from '../Common/Union.js';
 
 const fetchMap = {}
 const stopKeyMap = {}
@@ -15,18 +17,13 @@ const errLog = createLog('Fetcher', 'error')
 const devLog = createLog('Fetcher', 'log')
 
 let fetcher = null
-let devMode = false
-
-function setDevMode (flag) {
-  devMode = flag
-}
 
 function clearStatus (name, stopKey, _callName) {
   if (!isNvl(name) && fetchingMap[name] > 0) {
     fetchingMap[name]--
   }
 
-  devMode && devLog(`clearStatus: ${_callName}`, name, stopKey, JSON.stringify(stopKeyMap))
+  getDevMode() && devLog(`clearStatus: ${_callName}`, name, stopKey, JSON.stringify(stopKeyMap))
 
   if (!isNvl(stopKey)) {
     stopKeyMap[stopKey] = null
@@ -39,7 +36,7 @@ function addFetcher (name, url, method = 'get', extend = {}) {
     return
   }
 
-  devMode && devLog('addFetcher: ', name, url, method, extend)
+  getDevMode() && devLog('addFetcher: ', name, url, method, extend)
 
   fetchMap[name] = {
     url,
@@ -54,7 +51,7 @@ function removeFetcher (name) {
     return
   }
 
-  devMode && devLog('removeFetcher: ', name)
+  getDevMode() && devLog('removeFetcher: ', name)
 
   delete fetchMap[name]
 }
@@ -70,10 +67,10 @@ function initFetcher (callback, force = false) {
       return
     }
 
-    devMode && devLog('initialize fetch again.')
+    getDevMode() && devLog('initialize fetch again.')
   }
 
-  devMode && devLog('run initFetcher.')
+  getDevMode() && devLog('run initFetcher.')
 
   fetcher = callback || udFun
 }
@@ -84,7 +81,7 @@ function hasInitFetcher () {
 
 function stopFetchData (stopKey) {
   if (!stopKeyMap[stopKey]) {
-    devMode && devLog(`stopKey ${stopKey} not existed.`)
+    getDevMode() && devLog(`stopKey ${stopKey} not existed.`)
     return
   }
 
@@ -93,7 +90,7 @@ function stopFetchData (stopKey) {
     callback
   } = stopKeyMap[stopKey]
 
-  devMode && devLog('stopFetchData', name, stopKey)
+  getDevMode() && devLog('stopFetchData', name, stopKey)
 
   callback()
 }
@@ -159,7 +156,7 @@ function fetchData (name, data = null, dataInfo = {}, stopKey = null) {
 
   const fetchPromise = new Promise((resolve, reject) => {
     setResult = (data) => {
-      devMode && devLog('fetch success and run setResult', data)
+      getDevMode() && devLog('fetch success and run setResult', data)
       resolve(afterFetch(data))
     }
 
@@ -172,7 +169,7 @@ function fetchData (name, data = null, dataInfo = {}, stopKey = null) {
         stopKeyMap[stopKey] = {
           name,
           callback: () => {
-            devMode && devLog('stop and reject whthout onStop.')
+            getDevMode() && devLog('stop and reject whthout onStop.')
             reject(ABORT_REQUEST)
           }
         }
@@ -182,7 +179,7 @@ function fetchData (name, data = null, dataInfo = {}, stopKey = null) {
           stopKeyMap[stopKey] = {
             name,
             callback: () => {
-              devMode && devLog('run onStop callback and reject.')
+              getDevMode() && devLog('run onStop callback and reject.')
               callback()
               reject(ABORT_REQUEST)
             }
@@ -192,7 +189,7 @@ function fetchData (name, data = null, dataInfo = {}, stopKey = null) {
     }
 
     setError = (err) => {
-      devMode && devLog('setError and reject.', err)
+      getDevMode() && devLog('setError and reject.', err)
       reject(err)
     }
   })
@@ -213,7 +210,7 @@ function fetchData (name, data = null, dataInfo = {}, stopKey = null) {
   })
 
   return fetchPromise.finally(() => {
-    devMode && devLog('fetch finally.')
+    getDevMode() && devLog('fetch finally.')
     clearStatus(name, stopKey, 'finally')
   })
 }
@@ -259,6 +256,5 @@ export {
   stopFetchData,
   fetchData,
   paramToQuery,
-  hasInitFetcher,
-  setDevMode
+  hasInitFetcher
 }

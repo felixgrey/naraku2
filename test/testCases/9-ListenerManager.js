@@ -1,4 +1,4 @@
-const Utils = require('./../lib/Utils/index.js');
+const Utils = require('./../../lib/Utils/index.js');
 
 const {
 	equalAssert,
@@ -7,12 +7,12 @@ const {
 	createAsyncEqualAssert,
 	IGNORE_TEST,
 	getUnion
-} = require('./TestTools.js');
-// require('./Init-Fetcher0.js');
+} = require('./../TestTools/TestTools.js');
+// require('./../TestTools/Init-Fetcher0.js');
 
 const testName = 'ListenerManager';
-const DataHub = require(`../lib/DataHub/DataHub.js`).default;
-const Component = require(`../lib/DataHub/${testName}.js`).default;
+const DataHub = require(`../../lib/DataHub/DataHub.js`).default;
+const Component = require(`../../lib/DataHub/${testName}.js`).default;
 let container
 let component
 console.log(`\n=============== ${testName} start ===============\n`);

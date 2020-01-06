@@ -13,8 +13,50 @@ Object.keys(ErrorType).forEach(name => {
 
 udFun.destroy = udFun;
 
+function formatLog(value, trace = new Set()) {
+	if (isNvl(value)) {
+		return value;
+	}
+
+	if (value instanceof LifeCycle) {
+		return `#LifeCycleInstance:${value.logName}`;
+	}
+	
+	if (typeof value === 'function') {
+		return `#function:${value.name}`;
+	}
+	
+	if (typeof value === 'object') {
+		if (trace.has(value)) {
+			return '#cycleValue';
+		}
+	}
+	
+	if (Array.isArray(value)) {
+		trace.add(value);
+		return value.map(item => {
+			return formatLog(item, trace);
+		});
+	}
+	
+	if (typeof value === 'object') {
+		const newValue = {};
+		trace.add(value);
+		Object.keys(value).forEach(key => {
+			newValue[key] = formatLog(value[key], trace);
+		});
+		return newValue;
+	}
+	
+	return value;
+}
+
 function publicMethod(prototypeOrInstance, name, descriptor = null, target = 'that') {
-	let old
+	if (/^constructor|^initialization$|^afterCreate$|^beforeDestroy$|^destruction|^destroy$/g.test(name)) {
+		throw new Error(`can't set life cycle method '${name}' as publicMethod.`);
+	}
+	
+	let old;
 	if (descriptor) {
 		old = prototypeOrInstance[name];
 		udFun[name] = udFun;
@@ -51,25 +93,7 @@ function publicMethod(prototypeOrInstance, name, descriptor = null, target = 'th
 		}
 
 		const result = old.bind(this[target])(...args);
-
-		let logResult = result
-		if (result instanceof LifeCycle) {
-			logResult = `#LifeCycleInstance:${result.logName}`;
-		} else if (typeof result === 'function') {
-			logResult = `#function:${result.name}`;
-		}
-
-		const logArgs = args.map((arg) => {
-			if (arg instanceof LifeCycle) {
-				return `#LifeCycleInstance:${arg.logName}`;
-			}
-			if (typeof arg === 'function') {
-				return `#function:${arg.name}`;
-			}
-			return arg;
-		})
-
-		this.devLog(`#run:${name}`, logArgs, logResult);
+		this.devMode && this.devLog(`#run:${name}`, formatLog(args), formatLog(result));
 
 		return result;
 	}
@@ -97,8 +121,7 @@ export default class LifeCycle {
 			// console.log('------------------- bindUnion ', this.clazz)
 			union.bindUnion(this, this.logName);
 		} else {
-			// console.log('------------------- new Union ', this.clazz)
-			new Union().bindUnion(this, this.logName);
+			throw new Error(`last argument of constructor must be a instance of Union`);
 		}
 
 		this.publicMethods = (publicMethods = [], target = 'that', instance = this) => {
@@ -119,7 +142,7 @@ export default class LifeCycle {
 			if (this.devMode) {
 				this.devLog(`#runErr:${name}`, args, ErrorType[errType])
 			} else {
-				this.errLog(`can't run '${this.clazz}.${name}(${args.join(',')})' when ${type}.`)
+				this.errLog(`can't run '${this.clazz}.${name}(${args.join(',')})' when ${ErrorType[errType]}.`)
 			}
 		};
 

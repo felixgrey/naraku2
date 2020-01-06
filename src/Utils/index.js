@@ -117,7 +117,7 @@ function setLogHandle (v) {
 if (isDev) {
   createLog = function (name = '', type = 'log') {
     if (typeof logPrinter[type] !== 'function') {
-      showLog && logPrinter.error('【createLog-error】：logPrinter.${type} not existed')
+      showLog && logPrinter.error(`【createLog-error】：logPrinter.${type} not existed.`)
       return udFun
     }
 
@@ -266,7 +266,7 @@ const NumberFormat = {
       return blank
     }
 
-    number = new Number(number * (decimal ? 100 : 1)).toFixed(fixed)
+    number = Number(number * (decimal ? 100 : 1)).toFixed(fixed)
     if (!forceFixed) {
       number = number.replace(/(\.\d*?)[0]*$/g, (a, b) => b.replace(/\.$/g, ''))
     }
@@ -304,13 +304,13 @@ const NumberFormat = {
       .replace(/,$/g, '')
 
     if (decimal) {
-      number2 += new Number(decimal).toFixed(fixed).replace('0.', '.')
+      number2 += Number(decimal).toFixed(fixed).replace('0.', '.')
     }
 
     if (!forceFixed) {
       number2 = number2.replace(/(\.\d*?)[0]*$/g, (a, b) => b.replace(/\.$/g, ''))
     } else if (!decimal) {
-      number2 = new Number(number).toFixed(fixed)
+      number2 = Number(number).toFixed(fixed)
     }
 
     if (noZero) {

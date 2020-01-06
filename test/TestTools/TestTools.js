@@ -1,9 +1,12 @@
 const assert = require("assert");
 
-const Utils = require('../lib/Utils/index.js');
-const Union = require(`../lib/Common/Union.js`).default;
-const Container = require(`../lib/DataHub/Container.js`).default;
-const Emitter = require('../lib/Common/Emitter.js').default;
+const UnionModule = require(`../../lib/Common/Union.js`);
+const Union = UnionModule.default;
+UnionModule.setDevMode(true);
+
+const Utils = require('../../lib/Utils/index.js');
+const Container = require(`../../lib/DataHub/Container.js`).default;
+const Emitter = require('../../lib/Common/Emitter.js').default;
 
 const {
 	createLog,
@@ -16,7 +19,6 @@ const {
 } = Utils;
 
 setPreLog('test-');
-
 
 let lastEmitter
 exports.getUnion = function() {

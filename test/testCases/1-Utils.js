@@ -1,6 +1,6 @@
 var assert = require("assert");
 
-const Utils = require('../lib/Utils/index.js');
+const Utils = require('../../lib/Utils/index.js');
 
 console.log('--------- test Utils start ---------');
 

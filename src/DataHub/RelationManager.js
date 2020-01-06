@@ -50,6 +50,10 @@ export default class RelationManager extends Component {
 
 	@publicMethod
 	turnOn(flag = false) {
+    if (this.auto === true) {
+      return;
+    }
+    
 		this.auto = true;
 		if (flag) {
 			this.checkReady(true);

@@ -1,7 +1,7 @@
-const Utils = require('../lib/Utils/index.js');
-const Fetcher = require('../lib/DataHub/Fetcher.js');
+const Utils = require('../../lib/Utils/index.js');
+const Fetcher = require('../../lib/DataHub/Fetcher.js');
 
-const MockServer = require('./Mock/Mock-Server.js');
+const MockServer = require('./Mock-Server.js');
 
 const {
 	NOT_INIT_FETCHER,
@@ -12,7 +12,6 @@ const {
 	initFetcher,
 	stopFetchData,
 	fetchData,
-	setDevMode,
 } = Fetcher;
 
 addFetcher('test.get', 'url://test.get', 'get');
@@ -20,8 +19,6 @@ addFetcher('test.post', 'url://test.post', 'post');
 
 addFetcher('test.get.extend', 'url://test.get.extend', 'get', {now: Date.now()});
 addFetcher('test.post.extend', 'url://test.post.extend', 'post', {now: Date.now()});
-
-setDevMode(true);
 
 initFetcher((arg) => {
 	const {

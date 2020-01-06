@@ -1,4 +1,4 @@
-const Utils = require('./../lib/Utils/index.js');
+const Utils = require('./../../lib/Utils/index.js');
 
 const {
 	equalRunLog,
@@ -6,12 +6,12 @@ const {
 	createAsyncEqualAssert,
 	IGNORE_TEST,
 	getUnion
-} = require('./TestTools.js');
-// require('./Init-Fetcher0.js');
+} = require('./../TestTools/TestTools.js');
+// require('./../TestTools/Init-Fetcher0.js');
 
 const testName = 'DataStore';
-const Container = require(`../lib/DataHub/Container.js`).default;
-const Component = require(`../lib/DataHub/${testName}.js`).default;
+const Container = require(`../../lib/DataHub/Container.js`).default;
+const Component = require(`../../lib/DataHub/${testName}.js`).default;
 
 console.log(`\n=============== ${testName} start ===============\n`);
 

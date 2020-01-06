@@ -157,8 +157,10 @@ export default class FetchManager extends Component {
 			let resultData = [];
 			let errorMsg = null;
 
-			data[pageInfo.pageNumberField] = pagination.page;
-			data[pageInfo.pageSizeField] = pagination.size;
+			if (pageInfo.merge) {
+				data[pageInfo.pageNumberField] = pagination.page;
+				data[pageInfo.pageSizeField] = pagination.size;
+			}
 
 			// fetcher, data = null, dataInfo = {}, stopKey = null
 			const dataPromise = fetchData(fetcher, data, dataInfo, stopKey)

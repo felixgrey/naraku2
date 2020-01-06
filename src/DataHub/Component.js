@@ -1,5 +1,4 @@
 import LifeCycle from '../Common/LifeCycle';
-import Emitter from '../Common/Emitter';
 
 export default class Component extends LifeCycle {
 	

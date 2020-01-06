@@ -1,8 +1,6 @@
 import {
 	isNvl,
 	getDeepValue,
-	snapshot,
-	udFun
 } from './../Utils';
 
 import Container from './Container';

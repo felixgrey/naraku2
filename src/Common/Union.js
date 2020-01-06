@@ -1,7 +1,5 @@
 import {
-	getUniIndex,
 	udFun,
-	createLog,
 	isNvl
 } from '../Utils';
 
@@ -17,14 +15,30 @@ export function getRefreshRate(v) {
 	return refreshRate;
 }
 
+let defaultDevMode = false;
+
+export function setDevMode (flag) {
+  defaultDevMode = flag
+}
+
+export function getDevMode (flag) {
+  return defaultDevMode;
+}
+
 export default class Union {
-	constructor(param = {}) {
-		const {
-			devMode = false,
+	constructor(...args) {		
+		const param = Object.assign({}, ...args);
+		
+		let {
+				devMode,
 				devLog = udFun,
 				errLog = udFun,
 				emitter = udFun,
 		} = param;
+
+		if (isNvl(devMode)) {
+			devMode = defaultDevMode;
+		}
 
 		this.devLog = devLog;
 		this.errLog = errLog;
@@ -33,13 +47,17 @@ export default class Union {
 		this.devMode = devMode;
 	}
 
-	clone() {
-		return new Union(this);
+	clone(...args) {
+		return new Union(this, ...args);
 	}
 
-	bindUnion(instance, logName) {
+	bindUnion(instance, logName = null) {
 		if (this.devMode) {
-			instance.devLog = this.devLog.createLog(logName);
+      if (!isNvl(logName)) {
+        instance.devLog = this.devLog.createLog(logName);
+      } else {
+        instance.devLog = this.devLog;
+      }		
 		} else {
 			instance.devLog = udFun;
 		}
@@ -50,3 +68,8 @@ export default class Union {
 		instance.union = this;
 	}
 }
+
+Union.setRefreshRate = setRefreshRate;
+Union.getRefreshRate = getRefreshRate;
+Union.setDevMode = setDevMode;
+Union.getDevMode = getDevMode;

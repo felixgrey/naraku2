@@ -1,8 +1,10 @@
 import {
 	udFun,
+	createLog,
 } from './../Utils';
 
-import Emitter from './Emitter';
+import Union from '../Common/Union.js';
+import Emitter from '../Common/Emitter.js';
 import Container from './Container';
 import DataStore from './DataStore';
 
@@ -22,9 +24,12 @@ export default class DataHub extends Container {
 
 		this.cfg = cfg || {};
 		this.dataHub = this;
+		this.newEmitter = false;
 
-		if (!this.emitter instanceof Emitter) {
+		if (!(this.emitter instanceof Emitter)) {
+			// this.devLog('new Emitter', this.emitter);
 			this.emitter = new Emitter(this.union);
+			this.newEmitter = true;
 		}
 
 		this.dataHubController = new Controller(this, this.union);
@@ -56,7 +61,7 @@ export default class DataHub extends Container {
 	destroy() {
 		const emitter = this.emitter;
 		super.destroy();
-		emitter.destroy();
+		this.newEmitter && emitter.destroy();
 	}
 
 	init() {
@@ -71,8 +76,7 @@ export default class DataHub extends Container {
 
 	initDsPublicMethods() {
 
-		[]
-		.concat(RelationManager.publicMethods)
+		[].concat(RelationManager.publicMethods)
 			.concat(DataStore.publicMethods)
 			.forEach(methodName => {
 				this[methodName] = (name, ...args) => {
@@ -105,13 +109,25 @@ export default class DataHub extends Container {
 	}
 }
 
-const globalDataHub = new DataHub({}, udFun, udFun, false);
+// console.log(Union.getDevMode());
+
+const union = new Union({
+	devLog: createLog('global', 'log'),
+	errLog: createLog('global', 'error'),
+});
+
+const globalDataHub = new DataHub({}, union);
 const globalMethods = globalDataHub.getController();
 
 DataHub.globalDataHub = globalDataHub;
 Object.keys(globalMethods).forEach(method => {
+	if (method === 'destroy') {
+		return;
+	}
 	DataHub[method] = (...args) => globalMethods[method](...args);
 });
+
+DataHub.getGlobalUnion =() => union.clone();
 
 export {
 	DataHub

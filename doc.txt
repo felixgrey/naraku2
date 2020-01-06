@@ -429,8 +429,13 @@ value 值
 initValue 初始值
 exceptValue 例外值
 disabledValue 不可用值
+initGroup 初始分组
 
 withStore 相关数据名称 Tabs Form
+
+
+@getValue
+@loading
 
 
 
