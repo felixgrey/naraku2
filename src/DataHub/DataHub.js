@@ -1,6 +1,7 @@
 import {
 	udFun,
 	createLog,
+  isNvl,
 } from './../Utils';
 
 import Union from '../Common/Union.js';
@@ -128,6 +129,18 @@ Object.keys(globalMethods).forEach(method => {
 });
 
 DataHub.getGlobalUnion =() => union.clone();
+
+DataHub.create = (cfg = {}) => {
+  
+  const logName = isNvl(cfg.$logName) ? 'DataHub' : cfg.$logName;
+  
+  const union = new Union({
+  	devLog: createLog(logName, 'log'),
+  	errLog: createLog(logName, 'error'),
+  });
+  
+  return new DataHub({}, union);
+}
 
 export {
 	DataHub

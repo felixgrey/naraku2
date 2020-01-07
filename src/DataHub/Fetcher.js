@@ -134,18 +134,18 @@ function fetchData (name, data = null, dataInfo = {}, stopKey = null) {
     return Promise.reject(NO_URL)
   }
 
-  const _extend = {
+  const extend2 = {
     dataType: 'json',
     beforeSend: sameFun,
     afterResponse: sameFun,
     ...extend
   }
 
-  const beforeFetch = _extend.beforeFetch || sameFun
-  const afterFetch = _extend.afterFetch || sameFun
+  const beforeFetch = extend2.beforeFetch || sameFun
+  const afterFetch = extend2.afterFetch || sameFun
 
-  delete _extend.beforeFetch
-  delete _extend.afterFetch
+  delete extend2.beforeFetch
+  delete extend2.afterFetch
 
   let setResult
   let setError
@@ -206,7 +206,7 @@ function fetchData (name, data = null, dataInfo = {}, stopKey = null) {
     setError,
     onStop,
     stopKey,
-    extend: _extend
+    extend: extend2
   })
 
   return fetchPromise.finally(() => {

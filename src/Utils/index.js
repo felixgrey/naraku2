@@ -37,7 +37,7 @@ const udFun = function () {
   return udFun
 }
 
-const nextPms = () => Promise.resolve()
+const nextPms = () => Promise.resolve();
 const fake = {
   // 数据
   $uniStringify: () => '{"$FAKE_RETURN": true}',

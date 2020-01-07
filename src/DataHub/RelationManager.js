@@ -19,19 +19,20 @@ const {
 export default class RelationManager extends Component {
 	initialization(...args){
 		super.initialization(...args);
-		
+
 		const [dataStore] = args;
-		
+
 		this.name = dataStore.name;
 		this.checkReady = udFun;
 		this.defaultData = null;
 		this.auto = true;
-		
+    this.willFetch = false;
+
 	}
 
 	destruction() {
 		super.destruction();
-		
+
 		this.offFetcher && this.offFetcher();
 		this.offFetcher = null;
 
@@ -45,7 +46,7 @@ export default class RelationManager extends Component {
 			this.errLog(`can't checkReady when auto check.`);
 			return;
 		}
-		this.checkReady(true);
+		this.checkReady();
 	}
 
 	@publicMethod
@@ -53,10 +54,10 @@ export default class RelationManager extends Component {
     if (this.auto === true) {
       return;
     }
-    
+
 		this.auto = true;
-		if (flag) {
-			this.checkReady(true);
+		if (this.willFetch && flag) {
+			this.checkReady();
 		}
 	}
 
@@ -64,7 +65,7 @@ export default class RelationManager extends Component {
 	turnOff() {
 		this.auto = false;
 	}
-  
+
   @publicMethod
   isAuto() {
     return this.auto;
@@ -158,12 +159,9 @@ export default class RelationManager extends Component {
 
 			const whenThem = [].concat(dependence).concat(filter);
 
-			const checkReady = (flag = false) => {
-				if (!this.auto && !flag) {
-					return;
-				}
-				
+			const checkReady = () => {
 				this.devLog(`dependence checkReady`);
+        
 				const submitData = {};
 
 				for (let dep of dependence) {
@@ -204,6 +202,12 @@ export default class RelationManager extends Component {
 						});
 					},
 				};
+        
+        if (!this.auto) {
+          this.willFetch = true;
+        	return;
+        }
+        this.willFetch = false;
 
 				this.devLog(`fetch Data`, param);
 				this.dataHubController.fetchManager.fetchStoreData(param);
