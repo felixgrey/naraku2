@@ -65,6 +65,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = fal
         this.parentKey = null;
         this.viewContext = null;
         this.rendered = false;
+        this.destroyed = false;
 
         const createUnion = () => {
           const union = new Union({
@@ -116,7 +117,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = fal
 
         this.viewModelKey = this.viewModel.key;
         this.viewModel.onChange(() => {
-          if (!this.rendered) {
+          if (!this.rendered || this.destroyed) {
             return;
           }
           this.forceUpdate();
@@ -133,8 +134,8 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = fal
 
         const componentDidMount = this.componentDidMount
         this.componentDidMount = function(...args) {
-          componentDidMount && componentDidMount.bind(this)(...args);
           this.rendered = true;
+          componentDidMount && componentDidMount.bind(this)(...args);
           this.devLog(`${this.logName} componentDidMount.`);
         }
 
@@ -146,6 +147,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = fal
 
         const componentWillUnMount = this.componentWillUnMount
         this.componentWillUnMount = function(...args) {
+          this.destroyed = true;
           componentWillUnMount && componentWillUnMount.bind(this)(...args);
 
           this.viewModel.destroy();
@@ -153,6 +155,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = fal
             this.viewContext.destroy();
           }
           this.viewContext = null;
+
           this.devLog(`${this.logName} componentWillUnMount.`);
         }
 

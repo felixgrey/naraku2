@@ -1,72 +1,72 @@
 import {
-	udFun,
-	isNvl
+  udFun,
+  isNvl
 } from '../Utils';
 
 udFun.emit = udFun;
 
-let refreshRate = 40;
+let refreshRate = 20;
 
 export function setRefreshRate(v) {
-	refreshRate = v;
+  refreshRate = v;
 }
 
 export function getRefreshRate(v) {
-	return refreshRate;
+  return refreshRate;
 }
 
 let defaultDevMode = false;
 
-export function setDevMode (flag) {
+export function setDevMode(flag) {
   defaultDevMode = flag
 }
 
-export function getDevMode (flag) {
+export function getDevMode(flag) {
   return defaultDevMode;
 }
 
 export default class Union {
-	constructor(...args) {		
-		const param = Object.assign({}, ...args);
-		
-		let {
-				devMode,
-				devLog = udFun,
-				errLog = udFun,
-				emitter = udFun,
-		} = param;
+  constructor(...args) {
+    const param = Object.assign({}, ...args);
 
-		if (isNvl(devMode)) {
-			devMode = defaultDevMode;
-		}
+    let {
+      devMode,
+      devLog = udFun,
+      errLog = udFun,
+      emitter = udFun,
+    } = param;
 
-		this.devLog = devLog;
-		this.errLog = errLog;
+    if (isNvl(devMode)) {
+      devMode = defaultDevMode;
+    }
 
-		this.emitter = emitter;
-		this.devMode = devMode;
-	}
+    this.devLog = devLog;
+    this.errLog = errLog;
 
-	clone(...args) {
-		return new Union(this, ...args);
-	}
+    this.emitter = emitter;
+    this.devMode = devMode;
+  }
 
-	bindUnion(instance, logName = null) {
-		if (this.devMode) {
+  clone(...args) {
+    return new Union(this, ...args);
+  }
+
+  bindUnion(instance, logName = null) {
+    if (this.devMode) {
       if (!isNvl(logName)) {
         instance.devLog = this.devLog.createLog(logName);
       } else {
         instance.devLog = this.devLog;
-      }		
-		} else {
-			instance.devLog = udFun;
-		}
+      }
+    } else {
+      instance.devLog = udFun;
+    }
 
-		instance.errLog = this.errLog.createLog(logName);
-		instance.emitter = this.emitter;
-		instance.devMode = this.devMode;
-		instance.union = this;
-	}
+    instance.errLog = this.errLog.createLog(logName);
+    instance.emitter = this.emitter;
+    instance.devMode = this.devMode;
+    instance.union = this;
+  }
 }
 
 Union.setRefreshRate = setRefreshRate;

@@ -1,191 +1,196 @@
 import {
-	udFun,
-	isNvl,
+  udFun,
+  isNvl,
 } from './../Utils';
 
 import Component from './Component';
 
 const publicMethods = [
-	'on',
-	'once',
-	'when',
-	'whenAll',
-	'emit'
+  'on',
+  'once',
+  'when',
+  'whenAll',
+  'emit',
 ];
 
 const {
-	publicMethod
+  publicMethod
 } = Component;
 
 export default class ListenerManager extends Component {
-	
-	initialization(...args){
-		super.initialization(...args);
-		this.offSet = new Set();
-	}
-	
-	destruction() {
-		super.destruction();
-		
-		Array.from(this.offSet.values()).forEach(fun => fun());
-		this.offSet = null;
-	}
 
-	onAndOnce(name, callback, once) {
-		let emitterOff = this.emitter[once ? 'once' : 'on'](name, callback);
+  initialization(...args) {
+    super.initialization(...args);
+    this.offSet = new Set();
+  }
 
-		const off = () => {
-			if (!this.offSet.has(off)) {
-				return;
-			}
-			this.offSet.delete(off);
+  destruction() {
+    super.destruction();
 
-			emitterOff();
-		};
-		this.offSet.add(off);
+    Array.from(this.offSet.values()).forEach(fun => fun());
+    this.offSet = null;
+  }
 
-		return off;
-	}
+  onAndOnce(name, callback, once) {
+    let emitterOff = this.emitter[once ? 'once' : 'on'](name, callback);
 
-	@publicMethod
-	on(name, callback) {
-		return this.onAndOnce(name, callback, false);
-	}
+    const off = () => {
+      if (!this.offSet.has(off)) {
+        return;
+      }
+      this.offSet.delete(off);
 
-	@publicMethod
-	once(name, callback) {
-		return this.onAndOnce(name, callback, true);
-	}
+      emitterOff();
+    };
+    this.offSet.add(off);
 
-	@publicMethod
-	emit(name, ...args) {
-		return this.emitter.emit(name, ...args);
-	}
+    return off;
+  }
 
-	@publicMethod
-	when(...args) {
-		let callback = args.pop();
-		let names = args;
+  @publicMethod
+  on(name, callback) {
+    return this.onAndOnce(name, callback, false);
+  }
 
-		if (!names.length) {
-			return udFun;
-		}
+  @publicMethod
+  once(name, callback) {
+    return this.onAndOnce(name, callback, true);
+  }
 
-		let offList = [];
+  @publicMethod
+  emit(name, ...args) {
+    return this.emitter.emit(name, ...args);
+  }
 
-		const checkReady = () => {
-			this.devLog(`when checkReady`);
-			if (this.destroyed) {
-				return;
-			}
+  @publicMethod
+  lagEmit(name, ...args) {
+    return this.emitter.lagEmit(name, ...args);
+  }
 
-			const dataList = [];
+  @publicMethod
+  when(...args) {
+    let callback = args.pop();
+    let names = args;
 
-			for (let name of names) {
-				if (isNvl(name)) {
-					dataList.push([]);
-					continue;
-				}
+    if (!names.length) {
+      return udFun;
+    }
 
-				this.devLog(`when `, name, this.dataHub.getDataStore(name).hasSet());
+    let offList = [];
 
-				if (!this.dataHub.getDataStore(name).hasSet()) {
-					return;
-				} else {
-					dataList.push(this.dataHub.getDataStore(name).get());
-				}
-			}
+    const checkReady = () => {
+      this.devLog(`when checkReady`);
+      if (this.destroyed) {
+        return;
+      }
 
-			callback(...dataList);
-		};
+      const dataList = [];
 
-		names.forEach(name => {
-			let off = this.emitter.on('$$data:' + name, checkReady);
-			offList.push(off);
-		});
+      for (let name of names) {
+        if (isNvl(name)) {
+          dataList.push([]);
+          continue;
+        }
 
-		this.devLog(`when param : `, names);
+        this.devLog(`when `, name, this.dataHub.getDataStore(name).hasSet());
 
-		checkReady();
+        if (!this.dataHub.getDataStore(name).hasSet()) {
+          return;
+        } else {
+          dataList.push(this.dataHub.getDataStore(name).get());
+        }
+      }
 
-		const off = () => {
-			if (!this.offSet.has(off)) {
-				return;
-			}
-			this.offSet.delete(off);
+      callback(...dataList);
+    };
 
-			offList.forEach(fun => fun());
-			offList = null;
-		};
+    names.forEach(name => {
+      let off = this.emitter.on('$$data:' + name, checkReady);
+      offList.push(off);
+    });
 
-		this.offSet.add(off);
+    this.devLog(`when param : `, names);
 
-		return off;
-	}
+    checkReady();
 
-	@publicMethod
-	whenAll(...args) {
-		let callback = args.pop();
-		let names = args;
+    const off = () => {
+      if (!this.offSet.has(off)) {
+        return;
+      }
+      this.offSet.delete(off);
 
-		if (!names.length) {
-			return udFun;
-		}
+      offList.forEach(fun => fun());
+      offList = null;
+    };
 
-		let offList;
+    this.offSet.add(off);
 
-		const createCheckReady = (readyCallback = udFun) => {
-			let readyCount = 0;
+    return off;
+  }
 
-			return () => {
-				readyCount++
-				if (readyCount === names.length) {
-					readyCallback(...names.map(name => this.dataHub.getDataStore(name).get()));
-				}
-			}
-		};
+  @publicMethod
+  whenAll(...args) {
+    let callback = args.pop();
+    let names = args;
 
-		let watchReady = () => {
-			if (this.destroyed || this.dataHub.destroyed) {
-				return;
-			}
+    if (!names.length) {
+      return udFun;
+    }
 
-			offList = [];
-			let checkReady = createCheckReady((...args) => {
-				callback(...args);
-				watchReady();
-			});
+    let offList;
 
-			for (let name of names) {
-				let off = this.emitter.once('$$data:' + name, checkReady);
-				offList.push(off);
-			}
-		}
+    const createCheckReady = (readyCallback = udFun) => {
+      let readyCount = 0;
 
-		watchReady();
+      return () => {
+        readyCount++
+        if (readyCount === names.length) {
+          readyCallback(...names.map(name => this.dataHub.getDataStore(name).get()));
+        }
+      }
+    };
 
-		if (names.filter(name => this.dataHub.getDataStore(name).hasSet()).length === names.length) {
-			callback(...names.map(name => this.dataHub.getDataStore(name).get()));
-		}
+    let watchReady = () => {
+      if (this.destroyed || this.dataHub.destroyed) {
+        return;
+      }
 
-		const off = () => {
-			if (this.destroyed) {
-				return;
-			}
+      offList = [];
+      let checkReady = createCheckReady((...args) => {
+        callback(...args);
+        watchReady();
+      });
 
-			if (!this.offSet.has(off)) {
-				return;
-			}
-			this.offSet.delete(off);
+      for (let name of names) {
+        let off = this.emitter.once('$$data:' + name, checkReady);
+        offList.push(off);
+      }
+    }
 
-			offList.forEach(off => off());
-			offList = null;
-		}
+    watchReady();
 
-		this.offSet.add(off);
+    if (names.filter(name => this.dataHub.getDataStore(name).hasSet()).length === names.length) {
+      callback(...names.map(name => this.dataHub.getDataStore(name).get()));
+    }
 
-		return off;
-	}
+    const off = () => {
+      if (this.destroyed) {
+        return;
+      }
+
+      if (!this.offSet.has(off)) {
+        return;
+      }
+      this.offSet.delete(off);
+
+      offList.forEach(off => off());
+      offList = null;
+    }
+
+    this.offSet.add(off);
+
+    return off;
+  }
 }
 
 ListenerManager.publicMethods = publicMethods;

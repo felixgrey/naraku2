@@ -104,7 +104,7 @@ export default class PaginationManager extends Component {
   fetch(data = {}) {
     const fakeResolve = Promise.resolve();
 
-    if (this.config.fetcher === null) {
+    if (isNvl(this.config.fetcher)) {
       this.emitter.emit('$$data', {
         name: `$$count:${this.name}`,
         value: this.pageInfo.count

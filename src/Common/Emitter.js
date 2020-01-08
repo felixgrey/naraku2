@@ -7,6 +7,10 @@ import {
 	udFun
 } from './../Utils';
 
+import {
+	getRefreshRate
+} from '../Common/Union';
+
 import LifeCycle from './LifeCycle';
 
 const {
@@ -18,6 +22,7 @@ export default class Emitter extends LifeCycle {
 	initialization() {
 		this.core = new EventEmitter();
 		this.core.setMaxListeners(Infinity);
+
 		this.emitter = this;
 		this.union.emitter = this;
 
