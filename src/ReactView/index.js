@@ -2,6 +2,7 @@ import ViewContext from '../ViewModel/ViewContext'
 import ViewModel from '../ViewModel/ViewModel'
 
 import {
+  uidSeed,
   createLog,
   isNvl,
   isBlank,
@@ -12,6 +13,9 @@ import Union from '../Common/Union';
 import Emitter from '../Common/Emitter';
 
 let PropTypes = {};
+
+const viewContextField = 'viewContext-' + uidSeed;
+const parentKeyField = 'parentKey-' + uidSeed;
 
 export function setPropTypes(v) {
   PropTypes = v;
@@ -26,7 +30,7 @@ export function viewMethod(prototype2, name, descriptor) {
   return descriptor;
 }
 
-function destructProps(props = {}) {
+export function destructProps(props = {}) {
   const newProps = {
     children: [],
     ...props
@@ -45,7 +49,7 @@ function destructProps(props = {}) {
   return newProps;
 }
 
-export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = false) {
+export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextView = false) {
 
   return function(Component) {
     class ProxyComponent extends Component {
@@ -78,13 +82,13 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = fal
           return union;
         }
 
-        if (main) {
+        if (contextView) {
           const union = createUnion();
           union.bindUnion(this);
           this.viewContext = new ViewContext(dhConfig, union);
         } else if (typeof context === 'object') {
-          this.parentKey = isNvl(context.parentKey) ? null : context.parentKey;
-          const viewContext = isNvl(context.viewContext) ? null : context.viewContext;
+          this.parentKey = isNvl(context[parentKeyField]) ? null : context[parentKeyField];
+          const viewContext = isNvl(context[viewContextField]) ? null : context[viewContextField];
 
           if (viewContext) {
             viewContext.setParent(this.parentKey);
@@ -113,7 +117,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = fal
           viewProps: true,
         };
 
-        this.viewModel = new ViewModelClass(viewProps, main ? null : dhConfig, this.viewContext, this.union);
+        this.viewModel = new ViewModelClass(viewProps, contextView ? null : dhConfig, this.viewContext, this.union);
 
         this.viewModelKey = this.viewModel.key;
         this.viewModel.onChange(() => {
@@ -127,8 +131,8 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = fal
         this.getChildContext = function(...args) {
           return {
             ...getChildContext.bind(this)(...args),
-            viewContext: this.viewContext,
-            parentKey: this.viewModelKey
+            [viewContextField]: this.viewContext,
+            [parentKeyField]: this.viewModelKey
           };
         }
 
@@ -151,7 +155,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = fal
           componentWillUnMount && componentWillUnMount.bind(this)(...args);
 
           this.viewModel.destroy();
-          if (main) {
+          if (contextView) {
             this.viewContext.destroy();
           }
           this.viewContext = null;
@@ -165,23 +169,18 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, main = fal
     }
 
     ProxyComponent.contextTypes = {
-      viewContext: PropTypes.any,
-      parentKey: PropTypes.any
+      ...Component.contextTypes,
+      [viewContextField]: PropTypes.any,
+      [parentKeyField]: PropTypes.any
     };
 
     ProxyComponent.childContextTypes = {
-      viewContext: PropTypes.any,
-      parentKey: PropTypes.any
+      ...Component.childContextTypes,
+      [viewContextField]: PropTypes.any,
+      [parentKeyField]: PropTypes.any
     };
 
     return ProxyComponent;
   }
 }
 
-export function createMainView(dhConfig, ViewModelClass) {
-  return createView(dhConfig, ViewModelClass, true)
-}
-
-export function createSubView(dhConfig, ViewModelClass) {
-  return createView(dhConfig, ViewModelClass, false)
-}

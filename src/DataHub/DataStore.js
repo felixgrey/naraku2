@@ -175,6 +175,13 @@ export default class DataStore extends Container {
 		});
 
 		this.emitter.emit(`$$status:${this.name}=${this.status}`);
+    
+    this.emitter.emit('$$model', {
+      src: this,
+      type: '$$status',
+    	name: this.name,
+    	value: this.value
+    });
 	}
 
 	emitDataChange() {
@@ -184,6 +191,13 @@ export default class DataStore extends Container {
 		});
 
 		this.emitter.emit(`$$data:${this.name}`, this.value);
+    
+    this.emitter.emit('$$model', {
+      src: this,
+      type: '$$data',
+    	name: this.name,
+    	value: this.value
+    });
 	}
 
 	@publicMethod

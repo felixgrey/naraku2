@@ -1,5 +1,5 @@
 import {
-	udFun,
+  udFun,
   createLog
 } from './../Utils';
 
@@ -9,7 +9,7 @@ import LifeCycle from '../Common/LifeCycle';
 import ErrorType from '../Common/ErrorType';
 
 const {
-	publicMethod
+  publicMethod
 } = LifeCycle;
 
 const {
@@ -37,7 +37,7 @@ export default class Timer extends LifeCycle {
     this.lastEmitTime = Date.now();
     Array.from(this.emitSet).forEach(name => this.emit(name));
     this.emitSet.clear();
-    
+
     Array.from(this.callBackSet).forEach(callback => callback());
     this.callBackSet.clear();
   }
@@ -53,7 +53,7 @@ export default class Timer extends LifeCycle {
   lagEmit(name, callback = udFun) {
     clearTimeout(this.lagEmitTimeoutIndex);
 
-    const now =  Date.now();
+    const now = Date.now();
 
     if (!this.emitSet.size) {
       this.lastEmitTime = now;
@@ -71,7 +71,7 @@ export default class Timer extends LifeCycle {
   }
 
   @publicMethod
-  onEmit(name, callback = udFun, lifeCycle){
+  onEmit(name, callback = udFun, lifeCycle) {
     const off = this.emitter.on(name, callback);
 
     if (lifeCycle instanceof LifeCycle) {
@@ -84,8 +84,8 @@ export default class Timer extends LifeCycle {
 }
 
 const union = new Union({
-	devLog: createLog('global.Timer', 'log'),
-	errLog: createLog('global.Timer', 'error'),
+  devLog: createLog('global.Timer', 'log'),
+  errLog: createLog('global.Timer', 'error'),
 });
 new Emitter(union);
 
@@ -97,7 +97,12 @@ Timer.lagEmit = (...args) => globalTimer.lagEmit(...args);
 Timer.onEmit = (...args) => globalTimer.onEmit(...args);
 
 Timer.refreshView = () => {
-  globalTimer.lagEmit('$$refreshView');
+  setTimeout(() => {
+    if (globalTimer.destroyed) {
+      return;
+    }
+    globalTimer.lagEmit('$$refreshView');
+  });
 }
 Timer.onRefreshView = (callback = udFun, lifeCycle) => {
   return globalTimer.onEmit('$$refreshView', callback, lifeCycle);

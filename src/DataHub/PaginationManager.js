@@ -75,6 +75,7 @@ export default class PaginationManager extends Component {
     this.inited = true;
 
     this.pageInfo = {
+      pageCount: 0,
       count: 0,
       page: this.config.start,
       size: this.config.size,
@@ -84,13 +85,19 @@ export default class PaginationManager extends Component {
 
   @publicMethod
   setCount(v) {
+    v = +v || 0;
+
     this.pageInfo.count = v;
+
+    let pageCount = v / this.pageInfo.size;
+
+    if (pageCount !== parseInt(pageCount)) {
+      pageCount++;
+    }
+
+    this.pageInfo.pageCount = pageCount;
   }
 
-  @publicMethod
-  getCount() {
-    return this.pageInfo.count;
-  }
 
   @publicMethod
   stopFetch() {
@@ -198,16 +205,26 @@ export default class PaginationManager extends Component {
     }
 
     if (!isNvl(pageSize) && pageSize !== this.pageInfo.size) {
+      this.pageInfo.page = this.config.start;
       this.pageInfo.size = pageSize;
       changed = true;
     }
 
     if (changed) {
-      this.emitter.emit('$$data', {
-        name: `$$page:${this.name}`
+      this.emitter.emit('$$page', {
+        name: this.name,
+        value: this.pageInfo
+      });
+
+      this.emitter.emit(`$$page:${this.name}`, this.pageInfo);
+
+      this.emitter.emit('$$model', {
+        src: this,
+        type: '$$page',
+        name: this.name,
+        value: this.pageInfo
       });
     }
-
   }
 
   @publicMethod

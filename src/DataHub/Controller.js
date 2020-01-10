@@ -48,7 +48,8 @@ export default class Controller extends Container {
     this.containerDestroyOff = Component.prototype.bindContainer.bind(this)(dataHub);
 
     this.initPublicMethods();
-    this.initWatch();
+
+    this.watchModelOff = this.emitter.on('$$model', Timer.refreshView);
   }
 
   bindContainer(instance) {
@@ -75,6 +76,9 @@ export default class Controller extends Container {
 
     this.containerDestroyOff();
     this.containerDestroyOff = null;
+
+    this.watchModelOff();
+    this.watchModelOff = null;
 
     this.controllerPublicMethods = null;
   }
@@ -112,16 +116,6 @@ export default class Controller extends Container {
   @publicMethod
   isLocked(names) {
     return this.isStatus(names, 'isLocked');
-  }
-
-  initWatch() {
-    const off1 = this.emitter.on('$$data', Timer.refreshView);
-    const off2 = this.emitter.on('$$status', Timer.refreshView);
-
-    this.emitter.once(`$$destroy:${this.logName}`, () => {
-      off1();
-      off2();
-    });
   }
 
   initPublicMethods() {
