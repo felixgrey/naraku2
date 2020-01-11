@@ -82,11 +82,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           return union;
         }
 
-        if (contextView) {
-          const union = createUnion();
-          union.bindUnion(this);
-          this.viewContext = new ViewContext(dhConfig, union);
-        } else if (typeof context === 'object') {
+        if (typeof context === 'object') {
           this.parentKey = isNvl(context[parentKeyField]) ? null : context[parentKeyField];
           const viewContext = isNvl(context[viewContextField]) ? null : context[viewContextField];
 
@@ -98,10 +94,20 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
             this.union = viewContext.union.clone();
             this.union.devLog = this.union.devLog.createLog(this.logName);
             this.union.errLog = this.union.errLog.createLog(this.logName);
+
+            if (contextView) {
+              this.union.errLog(`contextView can't be in contextView`);
+            }
           }
-        } else {
+        }
+
+        if (!this.union) {
           const union = createUnion();
           union.bindUnion(this);
+
+          if (contextView) {
+            this.viewContext = new ViewContext(dhConfig, union);
+          }
         }
 
         this.union.clone({
@@ -183,4 +189,3 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
     return ProxyComponent;
   }
 }
-
