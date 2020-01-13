@@ -91,6 +91,22 @@ export default class DataHub extends Container {
       });
   }
 
+  turnTo(method, flag) {
+    for (let name in this.dataCenter) {
+      this.getDataStore(name)[method](flag);
+    }
+  }
+
+  @publicMethod
+  turnOnAll(flag) {
+    this.turnTo('turnOn', flag);
+  }
+
+  @publicMethod
+  turnOffAll() {
+    this.turnTo('turnOff', false);
+  }
+
   @publicMethod
   getDataStore(name) {
     this.devLog('getDataStore', name);

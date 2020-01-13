@@ -68,7 +68,7 @@ function sameFun (a) {
 	各种非空判断
 */
 function isNvl (value) {
-  return value === undefined || value === null || value === udFun
+  return value === undefined || value === null;
 }
 
 function isEmpty (value) {

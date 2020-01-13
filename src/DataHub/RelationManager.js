@@ -1,6 +1,7 @@
 import {
   udFun,
   snapshot,
+  isNvl,
 } from './../Utils';
 
 import Component from './Component';
@@ -134,9 +135,10 @@ export default class RelationManager extends Component {
       let {
         dependence = [],
           filter = [],
-          auto = true,
+          auto,
           force = false,
       } = cfg;
+
 
       let ableFlag = this.dataHub.getDataStore;
       ableFlag = ableFlag && this.dataHubController.fetchManager;
@@ -149,6 +151,11 @@ export default class RelationManager extends Component {
           !!this.dataHubController.listenerManager
         );
         return;
+      }
+
+      if (isNvl(auto)) {
+        const $auto = this.dataHub.cfg.$auto;
+        auto = isNvl($auto) ? false : $auto;
       }
 
       this.dataStore.eternal = true;
