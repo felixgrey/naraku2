@@ -56,7 +56,6 @@ export default class DataHub extends Container {
 
     this.dataHubController && this.dataHubController.destroy();
     this.dataHubController = null;
-
   }
 
   destroy() {
@@ -163,6 +162,7 @@ DataHub.create = (cfg = {}) => {
 DataHub.gDhName = 'gdhc';
 DataHub.cDhName = 'dh';
 DataHub.myDhName = 'mdh';
+DataHub.runName = 'run';
 
 export {
   DataHub

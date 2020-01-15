@@ -52,7 +52,7 @@ export default class ViewModel extends LifeCycle {
 
       if (!isNvl(this.name)) {
         for (let method in this.viewMethods) {
-          this.contextController.register(method, this.viewMethods[method]);
+          this.contextController.register(`${this.name}.${method}`, this.viewMethods[method]);
         }
       }
     }
@@ -75,16 +75,31 @@ export default class ViewModel extends LifeCycle {
   }
 
   @publicMethod
+  run(...args) {
+    return this.contextController.run(...args);
+  }
+
+  @publicMethod
   bindView(view) {
     view[DataHub.gDhName] = this.globalDataHubController;
     view[DataHub.cDhName] = this.contextController;
     view[DataHub.myDhName] = this.dataHubController;
+    view[DataHub.runName] = (...args) => this.run(...args);
+
+    this.viewInstance = view;
   }
 
   @publicMethod
   setViewStatus(value) {
     Object.assign(this.data, value);
     Timer.refreshViewModel();
+    if (this.shouldRefreshView()) {
+      Timer.refreshView();
+    }
+  }
+
+  shouldRefreshView() {
+    return true;
   }
 
   viewModelChanged() {
@@ -105,6 +120,14 @@ export default class ViewModel extends LifeCycle {
     this.contextController = null;
 
     this.data = null;
+
+    if (this.viewInstance) {
+      this.viewInstance[DataHub.gDhName] = udFun;
+      this.viewInstance[DataHub.cDhName] = udFun;
+      this.viewInstance[DataHub.myDhName] = udFun;
+      this.viewInstance[DataHub.runName] = udFun;
+      this.viewInstance = null;
+    }
   }
 
   @publicMethod

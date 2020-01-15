@@ -1,103 +1,103 @@
 import {
-	isNvl,
-	udFun
+  isNvl,
+  udFun
 } from './../Utils';
 
 import ErrorType from '../Common/ErrorType';
 import Component from './Component';
 
 const publicMethods = [
-	'hasRunner',
-	'unRegister',
-	'register',
-	'run'
+  'hasRunner',
+  'unRegister',
+  'register',
+  'run'
 ];
 
 const {
-	publicMethod
+  publicMethod
 } = Component;
 
 export default class RunnerManager extends Component {
 
-	initialization(...args) {
-		super.initialization(...args);
-		
-		this.registerRunner = {};
-	}
+  initialization(...args) {
+    super.initialization(...args);
 
-	destruction() {
-		super.destruction();
-		
-    Object.keys(this.registerRunner).forEach(name => {
-      this.dataHub.unRegister(name);
+    this.registerRunner = {};
+  }
+
+  destruction() {
+    Object.keys(this.registerRunner).forEach(method => {
+      this.dataHub.removeRunner(method);
     });
     this.registerRunner = null;
-	}
 
-	@publicMethod
-	hasRunner(name) {
-		if (isNvl(name)) {
-			return false;
-		}
+    super.destruction();
+  }
 
-		return this.dataHub.hasRunner(name);
-	}
+  @publicMethod
+  hasRunner(name) {
+    if (isNvl(name)) {
+      return false;
+    }
 
-	@publicMethod
-	unRegister(name) {
-		if (isNvl(name)) {
-			return false;
-		}
+    return this.dataHub.hasRunner(name);
+  }
+
+  @publicMethod
+  unRegister(name) {
+    if (isNvl(name)) {
+      return false;
+    }
 
     if (!this.registerRunner[name]) {
       return false;
     }
 
-		delete this.registerRunner[name];
+    delete this.registerRunner[name];
     this.dataHub.removeRunner(name);
-		return true;
-	}
+    return true;
+  }
 
-	@publicMethod
-	register(name, callback) {
-		if (isNvl(name)) {
-			return false;
-		}
+  @publicMethod
+  register(name, callback) {
+    if (isNvl(name)) {
+      return false;
+    }
 
-		if (this.hasRunner(name)) {
-			this.methodErrLog('register', [name], ErrorType.duplicateDeclare);
-			return false;
-		}
+    if (this.hasRunner(name)) {
+      this.methodErrLog('register', [name], ErrorType.duplicateDeclare);
+      return false;
+    }
 
     this.registerRunner[name] = true;
-		this.dataHub.addRunner(name, callback);
-		return true;
-	}
+    this.dataHub.addRunner(name, callback);
+    return true;
+  }
 
-	@publicMethod
-	run(name, ...args) {
-		if (isNvl(name)) {
-			return udFun;
-		}
+  @publicMethod
+  run(name, ...args) {
+    if (isNvl(name)) {
+      return udFun;
+    }
 
-		if (!this.registerRunner[name]) {
-			this.methodErrLog('run', [name, ...args], ErrorType.notExist);
-			return udFun;
-		}
+    if (!this.hasRunner(name)) {
+      this.methodErrLog('run', [name, ...args], ErrorType.notExist);
+      return udFun;
+    }
 
-		this.emitter.emit('$$run', {
-			controller: this.dataHubController.key,
-			name,
-			args
-		});
+    this.emitter.emit('$$run', {
+      controller: this.dataHubController.key,
+      name,
+      args
+    });
 
-		this.emitter.emit(`$$run:${name}`, {
-			controller: this.dataHubController.key,
-			args
-		});
+    this.emitter.emit(`$$run:${name}`, {
+      controller: this.dataHubController.key,
+      args
+    });
 
-		return this.dataHub.run(name, ...args);
-	}
+    return this.dataHub.run(name, ...args);
+  }
 }
 
 RunnerManager.publicMethods = publicMethods;

@@ -32,11 +32,11 @@ export function viewMethod(prototype2, name, descriptor) {
 
 export function destructProps(props = {}) {
   const newProps = {
+    ...props,
     children: [],
-    ...props
   };
 
-  newProps.children = [].concat(newProps.children).map(child => {
+  newProps.children = [].concat(props.children).filter(c => !isNvl(c)).map(child => {
     const newChildProps = {
       viewKey: child.key,
       children: [],
@@ -54,10 +54,13 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
   return function(Component) {
     class ProxyComponent extends Component {
       constructor(props = {}, context) {
-        super(props, context)
+        super(props, context);
 
         this.viewType = Component.name;
-        this.viewMethods = Component.prototype.viewMethods || [];
+        this.viewMethods = {};
+        (Component.prototype.viewMethods || []).forEach(method => {
+          this.viewMethods[method] = (...args) => this[method](...args);
+        });
 
         this.clazz = isBlank(Component.name) ? 'ReactView' : Component.name;
         this.devMode = dhConfig.$devMode || false;
@@ -73,7 +76,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
 
         const createUnion = () => {
           const union = new Union({
-            devMode: dhConfig.$allDevMode,
+            devMode: dhConfig.$vmDevMode,
             devLog: createLog(this.logName, 'log'),
             errLog: createLog(this.logName, 'error'),
           });

@@ -29,17 +29,20 @@ export default class Timer extends LifeCycle {
   }
 
   emitAll = () => {
-    clearTimeout(this.lagEmitTimeoutIndex);
     if (this.destroyed) {
       return;
     }
 
-    this.lastEmitTime = Date.now();
-    Array.from(this.emitSet).forEach(name => this.emit(name));
-    this.emitSet.clear();
+    const emitSet = this.emitSet;
+    const callBackSet = this.callBackSet;
 
-    Array.from(this.callBackSet).forEach(callback => callback());
-    this.callBackSet.clear();
+    this.emitSet = new Set();
+    this.callBackSet = new Set();
+
+    this.lastEmitTime = Date.now();
+
+    Array.from(emitSet).forEach(name => this.emit(name));
+    Array.from(callBackSet).forEach(callback => callback());
   }
 
   @publicMethod
@@ -60,10 +63,11 @@ export default class Timer extends LifeCycle {
     }
 
     this.emitSet.add(name);
-    this.callBackSet.add(udFun);
+    this.callBackSet.add(callback);
 
     if (this.lastEmitTime - now > 2 * getRefreshRate()) {
-      this.emitAll();
+      clearTimeout(this.lagEmitTimeoutIndex);
+
       return;
     }
 

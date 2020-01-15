@@ -5,7 +5,7 @@ import {
 
 udFun.emit = udFun;
 
-let refreshRate = 20;
+let refreshRate = 16;
 
 export function setRefreshRate(v) {
   refreshRate = v;
