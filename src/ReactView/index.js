@@ -76,7 +76,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
 
         const createUnion = () => {
           const union = new Union({
-            devMode: dhConfig.$vmDevMode,
+            devMode: dhConfig.$allDevMode,
             devLog: createLog(this.logName, 'log'),
             errLog: createLog(this.logName, 'error'),
           });
