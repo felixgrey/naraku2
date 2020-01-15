@@ -114,7 +114,7 @@ export default class ListenerManager extends Component {
     checkReady();
 
     const off = () => {
-      if (!this.offSet.has(off)) {
+      if (!this.offSet || !this.offSet.has(off)) {
         return;
       }
       this.offSet.delete(off);
@@ -178,7 +178,7 @@ export default class ListenerManager extends Component {
         return;
       }
 
-      if (!this.offSet.has(off)) {
+      if (!this.offSet || !this.offSet.has(off)) {
         return;
       }
       this.offSet.delete(off);

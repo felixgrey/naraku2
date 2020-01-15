@@ -125,13 +125,15 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
 
         this.viewModel = new ViewModelClass(viewProps, contextView ? null : dhConfig, this.viewContext, this.union);
 
+        this.viewModel.bindView(this);
+
         this.viewModelKey = this.viewModel.key;
         this.viewModel.onChange(() => {
           if (!this.rendered || this.destroyed) {
             return;
           }
           this.forceUpdate();
-        })
+        });
 
         const getChildContext = this.getChildContext || function() {};
         this.getChildContext = function(...args) {
@@ -155,10 +157,10 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           this.devLog(`${this.logName} componentDidUpdate.`);
         }
 
-        const componentWillUnMount = this.componentWillUnMount
-        this.componentWillUnMount = function(...args) {
+        const componentWillUnmount = this.componentWillUnmount;
+        this.componentWillUnmount = function(...args) {
           this.destroyed = true;
-          componentWillUnMount && componentWillUnMount.bind(this)(...args);
+          componentWillUnmount && componentWillUnmount.bind(this)(...args);
 
           this.viewModel.destroy();
           if (contextView) {
@@ -166,7 +168,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           }
           this.viewContext = null;
 
-          this.devLog(`${this.logName} componentWillUnMount.`);
+          this.devLog(`${this.logName} componentWillUnmount .`);
         }
 
         this.afterCreateView && this.afterCreateView(props, context);

@@ -51,6 +51,10 @@ export default class Tree extends LifeCycle {
 		const pChildren = (this.keyMap[node.parentKey] || {}).children || [];
 
 		for (let i = 0; i < pChildren.length; i++) {
+      if (pChildren[i] === null) {
+        continue;
+      }
+      
 			if (pChildren[i].key === key) {
 				pChildren[i] = null;
 				break;

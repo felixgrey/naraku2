@@ -20,6 +20,7 @@ export default class ViewModel extends LifeCycle {
     this.viewProps = viewProps;
     this.changeHandle = udFun;
     this.data = {};
+    this.contextController = null;
 
     // 初始化
     this.viewType = isNvl(viewProps.viewType) ? 'View' : viewProps.viewType;
@@ -63,12 +64,21 @@ export default class ViewModel extends LifeCycle {
       this.dataHub = new DataHub(dhConfig, this.union);
     }
 
+    this.dataHubController = this.dataHub.getController().createController();
+
     Timer.onRefreshViewModel(() => {
       if (this.destroyed) {
         return;
       }
       this.viewModelChanged();
     }, this);
+  }
+
+  @publicMethod
+  bindView(view) {
+    view[DataHub.gDhName] = this.globalDataHubController;
+    view[DataHub.cDhName] = this.contextController;
+    view[DataHub.myDhName] = this.dataHubController;
   }
 
   @publicMethod
@@ -88,7 +98,7 @@ export default class ViewModel extends LifeCycle {
     this.globalDataHubController && this.globalDataHubController.destroy();
     this.globalDataHubController = null;
 
-    this.viewContext && this.viewContext.removeNode(this.key);
+    this.viewContext && !this.viewContext.destroyed && this.viewContext.removeNode(this.key);
     this.viewContext = null;
 
     this.contextController && this.contextController.destroy();
@@ -142,16 +152,6 @@ export default class ViewModel extends LifeCycle {
     }
 
     return this.contextController.run(...args);
-  }
-
-  @publicMethod
-  destroyHandle() {
-    if (this.destroyed) {
-      return;
-    }
-
-    this.viewContext && this.viewContext.removeNode(this.key);
-    this.destroy();
   }
 
   onChange(callback = udFun) {

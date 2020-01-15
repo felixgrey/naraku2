@@ -160,6 +160,10 @@ DataHub.create = (cfg = {}) => {
   return new DataHub({}, union);
 }
 
+DataHub.gDhName = 'gdhc';
+DataHub.cDhName = 'dh';
+DataHub.myDhName = 'mdh';
+
 export {
   DataHub
 }
