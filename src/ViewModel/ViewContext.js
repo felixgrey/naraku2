@@ -14,6 +14,7 @@ export default class ViewContext extends Container {
     this.tree = new Tree(this.union);
     this.dataHub = new DataHub(dhConfig, this.union);
     this.dataHubController = this.dataHub.getController();
+    this.contextData = {};
 
     this.publicMethods(Tree.publicMethods, 'tree');
     this.publicMethods(Controller.publicMethods, 'dataHubController');
@@ -37,6 +38,6 @@ export default class ViewContext extends Container {
     this.dataHub = null;
     this.dataHubController = null;
 
-    this.extendData = null;
+    this.contextData = null;
   }
 }
