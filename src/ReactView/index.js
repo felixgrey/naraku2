@@ -166,6 +166,8 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           componentWillUnmount && componentWillUnmount.bind(this)(...args);
 
           this.viewModel.destroy();
+          this.viewModel = null;
+          
           if (contextView) {
             this.viewContext.destroy();
           }
