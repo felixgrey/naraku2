@@ -1,40 +1,40 @@
 /*
 	判断开发模式
 */
-const isDev = process && process.env && process.env.NODE_ENV === 'development'
+const isDev = process && process.env && process.env.NODE_ENV === 'development';
 
 /*
 	随机18位整数
 */
 function getRandom () {
-  return Math.random() * 10e18
+  return Math.random() * 10e18;
 }
 
 /*
 	uid前缀
 */
-const uidSeed = getRandom()
+const uidSeed = getRandom();
 
 /*
 	创建一个uid
 */
 function createUid (pre = '') {
-  return `${pre}${uidSeed}-${getRandom()}-${getRandom()}`
+  return `${pre}${uidSeed}-${getRandom()}-${getRandom()}`;
 }
 
-let uniIndex = 1
+let uniIndex = 1;
 /*
 	创建一个统一计序列号
 */
 function getUniIndex () {
-  return uniIndex++
+  return uniIndex++;
 }
 
 /**
 	通用兜底空函数
 */
 const udFun = function () {
-  return udFun
+  return udFun;
 }
 
 const nextPms = () => Promise.resolve();
@@ -50,18 +50,18 @@ const fake = {
   then: nextPms,
   catch: nextPms,
   finally: nextPms
-}
+};
 
 Object.values(fake).forEach((item) => {
-  item.$FAKE_RETURN = true
+  item.$FAKE_RETURN = true;
 })
-Object.assign(udFun, fake)
+Object.assign(udFun, fake);
 
 /*
 	返回输入值的通用空函数
 */
 function sameFun (a) {
-  return a
+  return a;
 }
 
 /*
@@ -72,11 +72,11 @@ function isNvl (value) {
 }
 
 function isEmpty (value) {
-  return isNvl(value) || value === ''
+  return isNvl(value) || value === '';
 }
 
 function isBlank (value) {
-  return isEmpty(value) || (`${value}`).trim() === ''
+  return isEmpty(value) || (`${value}`).trim() === '';
 }
 
 /*
@@ -86,53 +86,53 @@ let logPrinter = ((global || {}).console) || {
   warn: udFun,
   log: udFun,
   error: udFun
-}
+};
 
 function setLogger (v) {
-  logPrinter = v
+  logPrinter = v;
 }
 
-let showLog = true
-let preLog = 'naraku-'
-let createLog = udFun
-let logInfoArray = []
+let showLog = true;
+let preLog = 'naraku-';
+let createLog = udFun;
+let logInfoArray = [];
 
 function setPreLog (text = '') {
-  preLog = text
+  preLog = text;
 }
 
 function logSwitch (flag) {
-  showLog = flag
+  showLog = flag;
 }
 
 function getLogInfo () {
-  return [].concat(logInfoArray)
+  return [].concat(logInfoArray);
 }
-let logHandle = udFun
+let logHandle = udFun;
 
 function setLogHandle (v) {
-  logHandle = v
+  logHandle = v;
 }
 
 if (isDev) {
   createLog = function (name = '', type = 'log') {
     if (typeof logPrinter[type] !== 'function') {
       showLog && logPrinter.error(`【createLog-error】：logPrinter.${type} not existed.`)
-      return udFun
+      return udFun;
     }
 
     const logger = function logger (...args) {
-      logInfoArray = [`【${preLog}${name}-${type}】:`, ...args]
-      logInfoArray.logType = type
-      logHandle(logInfoArray)
-      showLog && logPrinter[type](...logInfoArray)
+      logInfoArray = [`【${preLog}${name}-${type}】:`, ...args];
+      logInfoArray.logType = type;
+      logHandle(logInfoArray);
+      showLog && logPrinter[type](...logInfoArray);
     }
 
     logger.createLog = function (name2 = '?') {
-      return createLog(`${name}.${name2}`, type)
+      return createLog(`${name}.${name2}`, type);
     }
 
-    return logger
+    return logger;
   }
 }
 
@@ -141,7 +141,7 @@ if (isDev) {
 */
 function getDeepValue (data, path = '', defValue) {
   if (isNvl(data)) {
-    return defValue
+    return defValue;
   }
 
   if (typeof path === 'string') {
@@ -151,17 +151,17 @@ function getDeepValue (data, path = '', defValue) {
   const field = path.shift().trim()
 
   if (isEmpty(field)) {
-    return defValue
+    return data;
   }
 
   const value = data[field]
 
   if (isNvl(value)) {
-    return defValue
+    return defValue;
   }
 
   if (!path.length) {
-    return value
+    return value;
   }
 
   if (typeof value !== 'object' && path.length) {
@@ -176,24 +176,24 @@ function getDeepValue (data, path = '', defValue) {
 */
 function snapshot (value) {
   if (isNvl(value)) {
-    return value
+    return value;
   }
 
   if (typeof value.$snapshot === 'function') {
-    return value.$snapshot()
+    return value.$snapshot();
   }
 
   if (typeof value !== 'object') {
-    return value
+    return value;
   }
 
   try {
-    value = JSON.parse(JSON.stringify(value))
+    value = JSON.parse(JSON.stringify(value));
   } catch (e) {
-    showLog && console.error('【snapshot-error】：', e)
+    showLog && console.error('【snapshot-error】：', e);
   }
 
-  return value
+  return value;
 }
 
 /*
@@ -201,23 +201,23 @@ function snapshot (value) {
 */
 function uniStringify (obj) {
   if (isNvl(obj)) {
-    return null
+    return null;
   }
 
   if (typeof obj.$uniStringify === 'function') {
-    return obj.$uniStringify()
+    return obj.$uniStringify();
   }
 
   if (typeof obj.toString === 'function') {
-    return obj.toString()
+    return obj.toString();
   }
 
-  let v = ''
+  let v = '';
   try {
     v = JSON.stringify(obj)
   } catch (e) {}
 
-  return v
+  return v;
 }
 
 /*
@@ -226,9 +226,9 @@ function uniStringify (obj) {
 function toCamel (text = '') {
   return (`${text}`).replace(/_(\w)/g, (word, charcter, index) => {
     if (index === 0) {
-      return word
+      return word;
     }
-    return charcter.toUpperCase()
+    return charcter.toUpperCase();
   })
 }
 
@@ -236,14 +236,14 @@ function toCamel (text = '') {
  下划线命名
  */
 function toUnderline (text) {
-  return (`${text}`).replace(/[A-Z]/g, (charcter, index) => `_${charcter.toLowerCase()}`)
+  return (`${text}`).replace(/[A-Z]/g, (charcter, index) => `_${charcter.toLowerCase()}`);
 }
 
 /*
 	命名空间格式
 */
 function toNameSpace (text) {
-  return toUnderline(text).replace(/_/g, '.')
+  return toUnderline(text).replace(/_/g, '.');
 }
 
 /*
@@ -258,24 +258,24 @@ const NumberFormat = {
       noSymbol = false,
       noZero = false,
       blank = '--'
-    } = extendParam
+    } = extendParam;
 
-    const percentSymbol = noSymbol ? '' : '%'
+    const percentSymbol = noSymbol ? '' : '%';
 
     if (isNvl(number) || isNaN(+number)) {
-      return blank
+      return blank;
     }
 
-    number = Number(number * (decimal ? 100 : 1)).toFixed(fixed)
+    number = Number(number * (decimal ? 100 : 1)).toFixed(fixed);
     if (!forceFixed) {
-      number = number.replace(/(\.\d*?)[0]*$/g, (a, b) => b.replace(/\.$/g, ''))
+      number = number.replace(/(\.\d*?)[0]*$/g, (a, b) => b.replace(/\.$/g, ''));
     }
 
     if (noZero) {
       number = number.replace(/^0\./g, '.')
     }
 
-    return number + percentSymbol
+    return number + percentSymbol;
   },
   thsepar (number, extendParam = {}) {
     const {
@@ -283,17 +283,17 @@ const NumberFormat = {
       forceFixed = false,
       noZero = false,
       blank = '--'
-    } = extendParam
+    } = extendParam;
 
     if (isNvl(number) || isNaN(+number)) {
-      return blank
+      return blank;
     }
 
-    let number2 = parseInt(number)
-    const decimal = number - number2
+    let number2 = parseInt(number);
+    const decimal = number - number2;
 
     if (isNaN(number2) || isNaN(decimal)) {
-      return blank
+      return blank;
     }
 
     number2 = Array.from(`${number2}`)
@@ -301,52 +301,28 @@ const NumberFormat = {
       .map((c, index) => (index % 3 === 0 ? `${c},` : c))
       .reverse()
       .join('')
-      .replace(/,$/g, '')
+      .replace(/,$/g, '');
 
     if (decimal) {
-      number2 += Number(decimal).toFixed(fixed).replace('0.', '.')
+      number2 += Number(decimal).toFixed(fixed).replace('0.', '.');
     }
 
     if (!forceFixed) {
-      number2 = number2.replace(/(\.\d*?)[0]*$/g, (a, b) => b.replace(/\.$/g, ''))
+      number2 = number2.replace(/(\.\d*?)[0]*$/g, (a, b) => b.replace(/\.$/g, ''));
     } else if (!decimal) {
-      number2 = Number(number).toFixed(fixed)
+      number2 = Number(number).toFixed(fixed);
     }
 
     if (noZero) {
-      number2 = number2.replace(/^0\./g, '.')
+      number2 = number2.replace(/^0\./g, '.');
     }
 
-    return number2
-  }
-}
-
-let onGlobal = udFun
-let definedName = null
-if (isDev) {
-  definedName = {}
-
-  onGlobal = function (name, callback = udFun) {
-    if (definedName[name] || !global) {
-      return
-    }
-    definedName[name] = 1
-    let _value
-    Object.defineProperty(global, name, {
-      set (value) {
-        _value = value
-        callback(value)
-      },
-      get () {
-        return _value
-      }
-    })
+    return number2;
   }
 }
 
 export {
   isDev,
-  onGlobal,
 
   uidSeed,
   createUid,

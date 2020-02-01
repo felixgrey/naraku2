@@ -76,9 +76,23 @@ export default class DataHub extends Container {
 
   initDsPublicMethods() {
 
+    this.getValue = (fullPath = '', defaultValue) => {
+      if (this.destroyed) {
+        this.destroyedErrorLog('getValue');
+        return udFun;
+      }
+      
+      const [storeName, path = ''] = fullPath.split('.');
+      return this.getDataStore(storeName).getValue(path, defaultValue);
+    };
+
     [].concat(RelationManager.publicMethods)
       .concat(DataStore.publicMethods)
       .forEach(methodName => {
+        if (methodName === 'getValue') {
+          return;
+        }
+
         this[methodName] = (name, ...args) => {
           if (this.destroyed) {
             this.destroyedErrorLog(methodName);

@@ -6,7 +6,6 @@ console.log('--------- test Utils start ---------');
 
 const {
 	isDev,
-	onGlobal,
 	
 	uidSeed,
 	createUid,
@@ -146,16 +145,6 @@ const {
 	percent,
 	thsepar,
 } = NumberFormat;
-
-let globalLog = createLog('onGlobal', 'log', true);
-
-onGlobal('testGlobal', (value) => {
-	globalLog(value);
-});
-
-onGlobal('testGlobal', (value) => {
-	throw new Error('不应该执行的方法');
-});
 
 global.testGlobal = 'testGlobalValue_' + Date.now();
 assert.strictEqual(getLogInfo()[1], global.testGlobal);
