@@ -146,12 +146,6 @@ const {
 	thsepar,
 } = NumberFormat;
 
-global.testGlobal = 'testGlobalValue_' + Date.now();
-assert.strictEqual(getLogInfo()[1], global.testGlobal);
-
-global.testGlobal = 'testGlobalValue_2_' + Date.now();
-assert.strictEqual(getLogInfo()[1], global.testGlobal);
-
 assert.strictEqual(percent(0.125), '12.5%');
 assert.strictEqual(thsepar(123456789.123456), '123,456,789.12');
 

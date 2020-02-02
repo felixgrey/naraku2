@@ -126,7 +126,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           viewProps: true,
         };
 
-        this.viewModel = new ViewModelClass(viewProps, contextView ? null : dhConfig, this.viewContext, this.union);
+        this.viewModel = new ProxyComponent.ViewModelClass(viewProps, contextView ? null : dhConfig, this.viewContext, this.union);
 
         this.viewModel.bindView(this);
 
@@ -192,6 +192,8 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
       [viewContextField]: PropTypes.any,
       [parentKeyField]: PropTypes.any
     };
+    
+    ProxyComponent.ViewModelClass = ViewModelClass;
 
     return ProxyComponent;
   }
