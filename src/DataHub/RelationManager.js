@@ -43,11 +43,6 @@ export default class RelationManager extends Component {
 
   @publicMethod
   checkReady() {
-    if (this.auto) {
-      this.errLog(`can't checkReady when auto check.`);
-      return;
-    }
-    this.checkReady();
   }
 
   @publicMethod
@@ -167,6 +162,10 @@ export default class RelationManager extends Component {
       const whenThem = [].concat(dependence).concat(filter);
 
       const checkReady = () => {
+        if (this.destroyed) {
+          return;
+        }
+        
         this.devLog(`dependence checkReady`);
 
         const submitData = {};
