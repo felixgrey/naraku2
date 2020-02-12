@@ -1,194 +1,200 @@
 import {
-	createUid,
-	udFun,
+  createUid,
+  udFun,
 } from './../Utils';
 
 import {
-	ABORT_REQUEST,
-	stopFetchData,
-	fetchData,
+  ABORT_REQUEST,
+  stopFetchData,
+  fetchData,
 } from './Fetcher';
 
 import {
-	getRefreshRate
+  getRefreshRate
 } from '../Common/Union';
 
 import Component from './Component';
 
 const publicMethods = [
-	'fetch'
+  'fetch',
+  'stopFetchByName'
 ];
 
 const {
-	publicMethod
+  publicMethod
 } = Component;
 
 export default class FetchManager extends Component {
 
-	initialization(...args) {
-		super.initialization(...args);
+  initialization(...args) {
+    super.initialization(...args);
 
-		this.fetchingDatastore = {};
-		this.stopKeys = {};
-	}
+    this.fetchingDatastore = {};
+    this.stopKeys = {};
+  }
 
-	destruction() {
-		super.destruction();
+  destruction() {
+    super.destruction();
 
-		Object.values(this.stopKeys).forEach(key => {
-			stopFetchData(key);
-		});
-		this.stopKeys = null;
+    Object.values(this.stopKeys).forEach(key => {
+      stopFetchData(key);
+    });
+    this.stopKeys = null;
 
-		Object.values(this.fetchingDatastore).forEach(index => {
-			clearTimeout(index);
-		});
-		this.fetchingDatastore = null;
-	}
+    Object.values(this.fetchingDatastore).forEach(index => {
+      clearTimeout(index);
+    });
+    this.fetchingDatastore = null;
+  }
 
-	@publicMethod
-	fetch(fetcher, data, dataInfo = {}, stop = null) {
-		const stopKey = createUid('stopKey-');
-		this.stopKeys[stopKey] = stopKey;
+  @publicMethod
+  fetch(fetcher, data, dataInfo = {}, stop = null) {
+    const stopKey = createUid('stopKey-');
+    this.stopKeys[stopKey] = stopKey;
 
-		let doStop = () => {
-			this.devLog(`stop fetch  `, fetcher, data, stopKey);
-			this.stopFetch(stopKey);
-		};
+    let doStop = () => {
+      this.devLog(`stop fetch  `, fetcher, data, stopKey);
+      this.stopFetch(stopKey);
+    };
 
-		this.emitter.once(`$$destroy:${this.clazz}=${this.key}`, doStop);
-		if (typeof stop === 'string') {
-			this.emitter.once(`$$data:${stop}`, doStop);
-		} else if (typeof stop === 'function') {
-			stop(doStop);
-		}
+    this.emitter.once(`$$destroy:${this.clazz}=${this.key}`, doStop);
+    if (typeof stop === 'string') {
+      this.emitter.once(`$$data:${stop}`, doStop);
+    } else if (typeof stop === 'function') {
+      stop(doStop);
+    }
 
-		return fetchData(fetcher, data, dataInfo, stopKey).catch(err => {
-			if (this.destroyed) {
-				return;
-			}
+    return fetchData(fetcher, data, dataInfo, stopKey).catch(err => {
+      if (this.destroyed) {
+        return;
+      }
 
-			if (err === ABORT_REQUEST) {
-				this.devLog('abort request: ', fetcher, data, stopKey)
-				return;
-			}
+      if (err === ABORT_REQUEST) {
+        this.devLog('abort request: ', fetcher, data, stopKey)
+        return;
+      }
 
-			return Promise.reject(err);
-		});
-	}
+      return Promise.reject(err);
+    });
+  }
 
-	@publicMethod
-	stopFetch(name) {
-		if (this.stopKeys[name]) {
-			stopFetchData(this.stopKeys[name]);
-			this.stopKeys[name] = null;
-		}
+  @publicMethod
+  stopFetchByName(stop) {
+    this.emitter.emit(`$$data:${stop}`);
+  }
 
-		if (this.fetchingDatastore[name]) {
-			clearTimeout(this.fetchingDatastore[name]);
-			this.fetchingDatastore[name] = null;
-		}
-	}
+  @publicMethod
+  stopFetch(name) {
+    if (this.stopKeys[name]) {
+      stopFetchData(this.stopKeys[name]);
+      this.stopKeys[name] = null;
+    }
 
-	@publicMethod
-	fetchStoreData(param = {}) {
-		const {
-			name = null,
-				data = {},
-				clear = false,
-				force = false,
-				before = udFun,
-				after = udFun,
-		} = param;
+    if (this.fetchingDatastore[name]) {
+      clearTimeout(this.fetchingDatastore[name]);
+      this.fetchingDatastore[name] = null;
+    }
+  }
 
-		clearTimeout(this.fetchingDatastore[name]);
-		this.fetchingDatastore[name] = setTimeout(() => {
-			if (this.destroyed) {
-				return;
-			}
+  @publicMethod
+  fetchStoreData(param = {}) {
+    const {
+      name = null,
+        data = {},
+        clear = false,
+        force = false,
+        before = udFun,
+        after = udFun,
+    } = param;
 
-			const ds = this.dataHub.getDataStore(name);
-			const pagination = ds.paginationManager;
+    clearTimeout(this.fetchingDatastore[name]);
+    this.fetchingDatastore[name] = setTimeout(() => {
+      if (this.destroyed) {
+        return;
+      }
 
-			const {
-				fetcher = null
-			} = ds.getStoreConfig();
+      const ds = this.dataHub.getDataStore(name);
+      const pagination = ds.paginationManager;
 
-			if (!fetcher) {
-				this.devLog(`fetchStoreData failed: store=${name} no fetcher.`);
-				return;
-			}
+      const {
+        fetcher = null
+      } = ds.getStoreConfig();
 
-			if (ds.isLocked()) {
-				this.errLog(`can't fetch ${name} when it is locked`);
-				return;
-			}
+      if (!fetcher) {
+        this.devLog(`fetchStoreData failed: store=${name} no fetcher.`);
+        return;
+      }
 
-			if (!force && ds.isLoading()) {
-				this.errLog(`can't fetch ${name} when it is loading`);
-				return;
-			}
+      if (ds.isLocked()) {
+        this.errLog(`can't fetch ${name} when it is locked`);
+        return;
+      }
 
-			pagination.stopFetch();
-			ds.clearLoading();
-			this.stopFetch(this.stopKeys[name]);
+      if (!force && ds.isLoading()) {
+        this.errLog(`can't fetch ${name} when it is loading`);
+        return;
+      }
 
-			const stopKey = this.stopKeys[name] = createUid('stopKey-');
-			if (clear) {
-				before();
-				ds.clear();
-				pagination.setCount(0);
-				after();
-				return;
-			}
+      pagination.stopFetch();
+      ds.clearLoading();
+      this.stopFetch(this.stopKeys[name]);
 
-			const pagePromise = pagination.fetch(data);
-			const pageInfo = pagination.getPageInfo();
+      const stopKey = this.stopKeys[name] = createUid('stopKey-');
+      if (clear) {
+        before();
+        ds.clear();
+        pagination.setCount(0);
+        after();
+        return;
+      }
 
-			const dataInfo = {
-				dataStore: true,
-				name,
-				...pageInfo
-			};
+      const pagePromise = pagination.fetch(data);
+      const pageInfo = pagination.getPageInfo();
 
-			before();
-			ds.loading();
+      const dataInfo = {
+        dataStore: true,
+        name,
+        ...pageInfo
+      };
 
-			let resultData = [];
-			let errorMsg = null;
+      before();
+      ds.loading();
 
-			if (pageInfo.merge) {
-				data[pageInfo.pageNumberField] = pagination.page;
-				data[pageInfo.pageSizeField] = pagination.size;
-			}
+      let resultData = [];
+      let errorMsg = null;
 
-			// fetcher, data = null, dataInfo = {}, stopKey = null
-			const dataPromise = fetchData(fetcher, data, dataInfo, stopKey)
-				.then(result => {
-					resultData = result;
-				})
-				.catch(err => {
-					errorMsg = err
-				});
+      if (pageInfo.merge) {
+        data[pageInfo.pageNumberField] = pagination.page;
+        data[pageInfo.pageSizeField] = pagination.size;
+      }
 
-			Promise
-				.all([dataPromise, pagePromise])
-				.finally(() => {
-					if (!this.destroyed) {
-						if (errorMsg !== null) {
-							ds.clearLoading();
-							if (errorMsg !== ABORT_REQUEST) {
-								ds.setErrorMsg(errorMsg);
-							}
-						} else {
-							ds.loaded(resultData);
-						}
-					}
-					after();
-				});
+      // fetcher, data = null, dataInfo = {}, stopKey = null
+      const dataPromise = fetchData(fetcher, data, dataInfo, stopKey)
+        .then(result => {
+          resultData = result;
+        })
+        .catch(err => {
+          errorMsg = err
+        });
 
-		}, getRefreshRate());
-	}
+      Promise
+        .all([dataPromise, pagePromise])
+        .finally(() => {
+          if (!this.destroyed) {
+            if (errorMsg !== null) {
+              ds.clearLoading();
+              if (errorMsg !== ABORT_REQUEST) {
+                ds.setErrorMsg(errorMsg);
+              }
+            } else {
+              ds.loaded(resultData);
+            }
+          }
+          after();
+        });
+
+    }, getRefreshRate());
+  }
 }
 
 FetchManager.publicMethods = publicMethods;
