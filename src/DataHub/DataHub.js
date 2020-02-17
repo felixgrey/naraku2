@@ -82,7 +82,8 @@ export default class DataHub extends Container {
         return udFun;
       }
       
-      const [storeName, path = ''] = fullPath.split('.');
+      const [storeName, ...pathArr] = fullPath.split('.');
+      const path = pathArr.join('.');
       return this.getDataStore(storeName).getValue(path, defaultValue);
     };
 

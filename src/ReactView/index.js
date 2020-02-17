@@ -66,6 +66,10 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
         this.devMode = dhConfig.$devMode || false;
         this.name = isNvl(props.myName) ? null : props.myName;
 
+        if (isNvl(this.name) && dhConfig.$myName) {
+          this.name = dhConfig.$myName;
+        }
+
         const name2 = isNvl(this.name) ? '' : '@' + this.name;
         this.logName = `${this.clazz}${name2}`;
 
@@ -89,6 +93,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           this.parentKey = isNvl(context[parentKeyField]) ? null : context[parentKeyField];
           const viewContext = isNvl(context[viewContextField]) ? null : context[viewContextField];
 
+            // console.log(contextView, this.devMode, viewContext, )
           if (viewContext) {
             viewContext.setParent(this.parentKey);
             this.viewContext = viewContext;
@@ -107,14 +112,13 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
         if (!this.union) {
           const union = createUnion();
           union.bindUnion(this);
-
           if (contextView) {
             this.viewContext = new ViewContext(dhConfig, union);
           }
         }
 
         this.union.clone({
-          devMode: this.devMode || dhConfig.$allDevMode,
+          devMode: dhConfig.$devMode || dhConfig.$allDevMode,
         }).bindUnion(this);
 
         const viewProps = {
@@ -167,7 +171,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
 
           this.viewModel.destroy();
           this.viewModel = null;
-          
+
           if (contextView) {
             this.viewContext.destroy();
           }
@@ -192,7 +196,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
       [viewContextField]: PropTypes.any,
       [parentKeyField]: PropTypes.any
     };
-    
+
     ProxyComponent.ViewModelClass = ViewModelClass;
 
     return ProxyComponent;

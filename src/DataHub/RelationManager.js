@@ -34,16 +34,18 @@ export default class RelationManager extends Component {
   destruction() {
     super.destruction();
 
-    this.offFetcher && this.offFetcher();
-    this.offFetcher = null;
+    this.offFetcher1 && this.offFetcher1();
+    this.offFetcher1 = null;
+
+    this.offFetcher2 && this.offFetcher2();
+    this.offFetcher2 = null;
 
     this.checkReady = null;
     this.defaultData = null;
   }
 
   @publicMethod
-  checkReady() {
-  }
+  checkReady() {}
 
   @publicMethod
   turnOn(flag = false) {
@@ -165,7 +167,7 @@ export default class RelationManager extends Component {
         if (this.destroyed) {
           return;
         }
-        
+
         this.devLog(`dependence checkReady`);
 
         const submitData = {};
@@ -221,8 +223,11 @@ export default class RelationManager extends Component {
         this.dataHubController.fetchManager.fetchStoreData(param);
       };
 
-      this.devLog(`whenThem :`, whenThem);
-      this.offFetcher = this.dataHubController.listenerManager.when(...whenThem, checkReady);
+      this.devLog(`whenThem,dependence,filter:`, whenThem, dependence, filter);
+
+      this.offFetcher1 = this.dataHubController.listenerManager.when(...dependence, checkReady);
+      this.offFetcher2 = this.dataHubController.listenerManager.when(...filter, checkReady);
+
       this.checkReady = checkReady;
       checkReady();
     }

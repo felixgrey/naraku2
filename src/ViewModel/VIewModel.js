@@ -58,7 +58,9 @@ export default class ViewModel extends LifeCycle {
     }
 
     // 根视图
-    if (this.viewContext && isNvl(dhConfig)) {
+    this.isContextViewModel = this.viewContext && isNvl(dhConfig);
+
+    if (this.isContextViewModel) {
       this.dataHub = this.viewContext.getDataHub();
     } else {
       this.dataHub = new DataHub(dhConfig, this.union);
@@ -107,8 +109,9 @@ export default class ViewModel extends LifeCycle {
   }
 
   destruction() {
-    this.dataHub && this.dataHub.destroy();
-    this.dataHub = null;
+
+    this.dataHubController && this.dataHubController.destroy();
+    this.dataHubController = null;
 
     this.globalDataHubController && this.globalDataHubController.destroy();
     this.globalDataHubController = null;
@@ -118,6 +121,11 @@ export default class ViewModel extends LifeCycle {
 
     this.contextController && this.contextController.destroy();
     this.contextController = null;
+
+    if (this.isContextViewModel) {
+      this.dataHub && this.dataHub.destroy();
+      this.dataHub = null;
+    }
 
     this.data = null;
 

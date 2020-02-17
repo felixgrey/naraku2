@@ -23,7 +23,7 @@ const allStatus = [
 
 const publicMethods = [
 	'set',
-	'merge0',
+	'merge',
 	'first',
 	'getValue',
 	'get',
@@ -45,12 +45,12 @@ export default class DataStore extends Container {
 
 	initialization(...args) {
 		super.initialization(...args);
-		
+
 		const [dataHub, name] = args;
 
 		this.dataHub = dataHub;
 		this.dataHubController = dataHub.dataHubController;
-		
+
 		this.store = this;
 		this.eternal = false;
 		this.value = [];
@@ -59,7 +59,7 @@ export default class DataStore extends Container {
 		this.status = 'undefined';
 		this.lockStack = 0;
 		this.errMsg = null;
-		
+
 		if (isNvl(name)) {
 			this.errLog('DataStore must has name.');
 			return;
@@ -69,14 +69,14 @@ export default class DataStore extends Container {
 		this.paginationManager = new PaginationManager(this, this.union);
 		this.relationManager = new RelationManager(this, this.union);
 		this.publicMethods(RelationManager.publicMethods, 'relationManager');
-		
+
 		this.containerDestroyOff = Component.prototype.bindContainer.bind(this)(dataHub);
 
 	}
-	
+
 	bindContainer(instance) {
 		super.bindContainer(instance);
-		
+
 		instance.dataHub = this.dataHub;
 		instance.dataHubController = this.dataHub.dataHubController;
 		instance.dataStore = this;
@@ -90,7 +90,7 @@ export default class DataStore extends Container {
 
 		this.relationManager && this.relationManager.destroy();
 		this.relationManager = null;
-		
+
 		this.containerDestroyOff();
 		this.containerDestroyOff = null;
 
@@ -175,7 +175,7 @@ export default class DataStore extends Container {
 		});
 
 		this.emitter.emit(`$$status:${this.name}=${this.status}`);
-    
+
     this.emitter.emit('$$model', {
       src: this,
       type: '$$status',
@@ -191,7 +191,7 @@ export default class DataStore extends Container {
 		});
 
 		this.emitter.emit(`$$data:${this.name}`, this.value);
-    
+
     this.emitter.emit('$$model', {
       src: this,
       type: '$$data',
@@ -221,20 +221,22 @@ export default class DataStore extends Container {
 	}
 
 	@publicMethod
-	merge0(data) {
+	merge(data, index = 0) {
 		if (this.status === 'locked' || this.status === 'loading') {
-			this.methodErrLog('merge0', [data], 'locked/loading',
-				`can't set merge0 when '${this.name}' is locked or loading.`);
+			this.methodErrLog('merge', [data], 'locked/loading',
+				`can't set merge when '${this.name}' is locked or loading.`);
 			return;
 		}
 
-		const value = Object.assign({}, this.first(), data);
+		const value = Object.assign({}, (this.value || [])[index], data);
 		if (this.isEmpty()) {
 			this.set(value);
 		} else {
-			this.value[0] = value;
+			this.value[index] = value;
 			this.set(this.value);;
 		}
+
+    return value;
 	}
 
 	@publicMethod

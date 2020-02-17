@@ -26,15 +26,20 @@ export function getDevMode(flag) {
 }
 
 export default class Union {
-  constructor(...args) {
-    const param = Object.assign({}, ...args);
+  constructor(origin, param) {
+    if (isNvl(param)) {
+      param = origin;
+      origin = {};
+    }
+
+    const paramData = Object.assign({}, origin, param);
 
     let {
       devMode,
       devLog = udFun,
       errLog = udFun,
       emitter = udFun,
-    } = param;
+    } = paramData;
 
     if (isNvl(devMode)) {
       devMode = defaultDevMode;
@@ -47,8 +52,8 @@ export default class Union {
     this.devMode = devMode;
   }
 
-  clone(...args) {
-    return new Union(this, ...args);
+  clone(param) {
+    return new Union(this, param);
   }
 
   bindUnion(instance, logName = null) {

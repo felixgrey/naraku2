@@ -67,7 +67,7 @@ export default class Timer extends LifeCycle {
 
     if (this.lastEmitTime - now > 2 * getRefreshRate()) {
       clearTimeout(this.lagEmitTimeoutIndex);
-
+      this.emitAll();
       return;
     }
 
@@ -79,7 +79,7 @@ export default class Timer extends LifeCycle {
     const off = this.emitter.on(name, callback);
 
     if (lifeCycle instanceof LifeCycle) {
-      lifeCycle.emitter.once('$$destroy', off);
+      lifeCycle.emitter.once(`$$destroy:${lifeCycle.logName}`, off);
     }
 
     return off;
