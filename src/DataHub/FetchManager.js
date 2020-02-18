@@ -1,12 +1,14 @@
 import {
   createUid,
   udFun,
+  isNvl,
 } from './../Utils';
 
 import {
   ABORT_REQUEST,
   stopFetchData,
   fetchData,
+  hasFetching
 } from './Fetcher';
 
 import {
@@ -17,7 +19,8 @@ import Component from './Component';
 
 const publicMethods = [
   'fetch',
-  'stopFetchByName'
+  'stopFetchByName',
+  'hasFetching'
 ];
 
 const {
@@ -48,6 +51,11 @@ export default class FetchManager extends Component {
   }
 
   @publicMethod
+  hasFetching() {
+    return hasFetching();
+  }
+
+  @publicMethod
   fetch(fetcher, data, dataInfo = {}, stop = null) {
     const stopKey = createUid('stopKey-');
     this.stopKeys[stopKey] = stopKey;
@@ -75,6 +83,8 @@ export default class FetchManager extends Component {
       }
 
       return Promise.reject(err);
+    }).finally(() => {
+      this.stopKeys[stopKey] = null;
     });
   }
 
@@ -112,7 +122,6 @@ export default class FetchManager extends Component {
       if (this.destroyed) {
         return;
       }
-
       const ds = this.dataHub.getDataStore(name);
       const pagination = ds.paginationManager;
 
@@ -181,6 +190,7 @@ export default class FetchManager extends Component {
         .all([dataPromise, pagePromise])
         .finally(() => {
           if (!this.destroyed) {
+            this.stopKeys[name] = null;
             if (errorMsg !== null) {
               ds.clearLoading();
               if (errorMsg !== ABORT_REQUEST) {

@@ -89,6 +89,8 @@ export default class Controller extends Container {
       return false;
     }
 
+    names = [].concat(names);
+
     for (let name of names) {
       if (this.dataHub.getDataStore(name)[type]()) {
         return true;

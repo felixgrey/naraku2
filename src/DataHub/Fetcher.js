@@ -7,7 +7,9 @@ import {
   isNvl
 } from '../Utils';
 
-import {getDevMode}  from '../Common/Union.js';
+import {
+  getDevMode
+} from '../Common/Union.js';
 
 const fetchMap = {}
 const stopKeyMap = {}
@@ -18,7 +20,7 @@ const devLog = createLog('Fetcher', 'log')
 
 let fetcher = null
 
-function clearStatus (name, stopKey, _callName) {
+function clearStatus(name, stopKey, _callName) {
   if (!isNvl(name) && fetchingMap[name] > 0) {
     fetchingMap[name]--
   }
@@ -30,7 +32,18 @@ function clearStatus (name, stopKey, _callName) {
   }
 }
 
-function addFetcher (name, url, method = 'get', extend = {}) {
+function hasFetching() {
+  let stopKeys = Object.values(stopKeyMap);
+  for (let key of stopKeys) {
+    if (!isNvl(key)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function addFetcher(name, url, method = 'get', extend = {}) {
   if (fetchMap[name]) {
     errLog(`${name} existed.`)
     return
@@ -45,7 +58,7 @@ function addFetcher (name, url, method = 'get', extend = {}) {
   }
 }
 
-function removeFetcher (name) {
+function removeFetcher(name) {
   if (fetchingMap[name]) {
     errLog(`${name} is fetching, can't be remove .`)
     return
@@ -56,11 +69,11 @@ function removeFetcher (name) {
   delete fetchMap[name]
 }
 
-function getFetcher (name) {
+function getFetcher(name) {
   return snapshot(fetchMap[name])
 }
 
-function initFetcher (callback, force = false) {
+function initFetcher(callback, force = false) {
   if (fetcher) {
     if (!force) {
       errLog('fetcher has initialized.')
@@ -75,11 +88,11 @@ function initFetcher (callback, force = false) {
   fetcher = callback || udFun
 }
 
-function hasInitFetcher () {
+function hasInitFetcher() {
   return !!fetcher
 }
 
-function stopFetchData (stopKey) {
+function stopFetchData(stopKey) {
   if (!stopKeyMap[stopKey]) {
     getDevMode() && devLog(`stopKey ${stopKey} not existed.`)
     return
@@ -93,6 +106,8 @@ function stopFetchData (stopKey) {
   getDevMode() && devLog('stopFetchData', name, stopKey)
 
   callback()
+
+  clearStatus(name, stopKey, 'stopFetchData');
 }
 
 const NOT_INIT_FETCHER = createUid('NOT_INIT_FETCHER_')
@@ -101,7 +116,7 @@ const FETCHING = createUid('FETCHING_')
 const NO_URL = createUid('NO_URL_')
 const ABORT_REQUEST = createUid('ABORT_REQUEST_')
 
-function fetchData (name, data = null, dataInfo = {}, stopKey = null) {
+function fetchData(name, data = null, dataInfo = {}, stopKey = null) {
   if (!fetcher) {
     errLog('must run \'initFetcher\' first.')
     return Promise.reject(NOT_INIT_FETCHER)
@@ -126,7 +141,7 @@ function fetchData (name, data = null, dataInfo = {}, stopKey = null) {
 
   const {
     method = 'get',
-    extend = {}
+      extend = {}
   } = fetch
 
   if (!url) {
@@ -228,7 +243,7 @@ const localBaseUrl = (() => {
 /*
   参数到query
 */
-function paramToQuery (url = '', param = {}) {
+function paramToQuery(url = '', param = {}) {
   url = url.split('#')
   let query = []
   for (const q in param) {
@@ -256,5 +271,6 @@ export {
   stopFetchData,
   fetchData,
   paramToQuery,
-  hasInitFetcher
+  hasInitFetcher,
+  hasFetching
 }
