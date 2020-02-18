@@ -90,7 +90,7 @@ export default class Controller extends Container {
     }
 
     for (let name of names) {
-      if (this.dataHub.getDataStore(name)[type]) {
+      if (this.dataHub.getDataStore(name)[type]()) {
         return true;
       }
     }

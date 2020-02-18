@@ -36,7 +36,7 @@ const publicMethods = [
 	'getErrorMsg',
 	'lock',
 	'unLock',
-	'loading',
+  'loading',
 	'clearLoading',
 	'loaded'
 ];
@@ -224,7 +224,7 @@ export default class DataStore extends Container {
 	merge(data, index = 0) {
 		if (this.status === 'locked' || this.status === 'loading') {
 			this.methodErrLog('merge', [data], 'locked/loading',
-				`can't set merge when '${this.name}' is locked or loading.`);
+				`can't set merge0 when '${this.name}' is locked or loading.`);
 			return;
 		}
 
