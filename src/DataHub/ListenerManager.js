@@ -35,9 +35,14 @@ export default class ListenerManager extends Component {
     let emitterOff = this.emitter[once ? 'once' : 'on'](name, callback);
 
     const off = () => {
+      if (this.destroyed) {
+        return;
+      }
+
       if (!this.offSet.has(off)) {
         return;
       }
+
       this.offSet.delete(off);
 
       emitterOff();

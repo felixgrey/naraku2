@@ -75,6 +75,11 @@ export default class Timer extends LifeCycle {
   }
 
   @publicMethod
+  clearEmit() {
+    clearTimeout(this.lagEmitTimeoutIndex);
+  }
+
+  @publicMethod
   onEmit(name, callback = udFun, lifeCycle) {
     const off = this.emitter.on(name, callback);
 
@@ -99,6 +104,7 @@ globalTimer.destroy = udFun;
 Timer.globalTimer = globalTimer;
 Timer.lagEmit = (...args) => globalTimer.lagEmit(...args);
 Timer.onEmit = (...args) => globalTimer.onEmit(...args);
+Timer.clearEmit = () => globalTimer.clearEmit();
 
 Timer.refreshView = () => {
   setTimeout(() => {

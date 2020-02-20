@@ -34,11 +34,7 @@ export default class RelationManager extends Component {
   destruction() {
     super.destruction();
 
-    this.offFetcher1 && this.offFetcher1();
-    this.offFetcher1 = null;
-
-    this.offFetcher2 && this.offFetcher2();
-    this.offFetcher2 = null;
+    this.offFetcher && this.offFetcher();
 
     this.checkReady = null;
     this.defaultData = null;
@@ -161,7 +157,7 @@ export default class RelationManager extends Component {
       dependence = [].concat(dependence);
       filter = [].concat(filter);
 
-      const whenThem = [].concat(dependence).concat(filter);
+      const onThem = [].concat(dependence).concat(filter);
 
       const checkReady = () => {
         if (this.destroyed) {
@@ -200,12 +196,18 @@ export default class RelationManager extends Component {
           clear: false,
           force,
           before: () => {
-            whenThem.forEach(storeName => {
+            if (this.destroyed) {
+              return;
+            }
+            onThem.forEach(storeName => {
               this.dataHub.getDataStore(storeName).lock();
             });
           },
           after: () => {
-            whenThem.forEach(storeName => {
+            if (this.destroyed) {
+              return;
+            }
+            onThem.forEach(storeName => {
               this.dataHub.getDataStore(storeName).unLock();
             });
           },
@@ -223,10 +225,15 @@ export default class RelationManager extends Component {
         this.dataHubController.fetchManager.fetchStoreData(param);
       };
 
-      this.devLog(`whenThem,dependence,filter:`, whenThem, dependence, filter);
+      this.devLog(`onThem:`, onThem);
 
-      this.offFetcher1 = this.dataHubController.listenerManager.when(...dependence, checkReady);
-      this.offFetcher2 = this.dataHubController.listenerManager.when(...filter, checkReady);
+      const offs = onThem.map(onStore => {
+        return this.dataHubController.listenerManager.on('$$data:' + onStore, checkReady);
+      });
+
+      this.offFetcher = () => {
+        offs.forEach(off => off());
+      }
 
       this.checkReady = checkReady;
       checkReady();
