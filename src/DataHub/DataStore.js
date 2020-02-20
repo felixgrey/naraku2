@@ -319,6 +319,11 @@ export default class DataStore extends Container {
 	isLoading() {
 		return this.status === 'loading';
 	}
+  
+  @publicMethod
+  hasError() {
+  	return this.status === 'error';
+  }
 
 	@publicMethod
 	setErrorMsg(msg) {

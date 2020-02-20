@@ -21,6 +21,7 @@ const publicMethods = [
   'createController',
   'isLoading',
   'isLocked',
+  'hasError',
   'getDataHub',
   'getController',
 ];
@@ -89,7 +90,7 @@ export default class Controller extends Container {
       if (isNvl(name)) {
         continue;
       }
-      
+
       if (this.dataHub.getDataStore(name)[type]()) {
         return true;
       }
@@ -116,6 +117,11 @@ export default class Controller extends Container {
   @publicMethod
   isLocked(...names) {
     return this.isStatus(names, 'isLocked');
+  }
+
+  @publicMethod
+  hasError(...names) {
+    return this.isStatus(names, 'hasError');
   }
 
   initPublicMethods() {
