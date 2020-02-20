@@ -85,13 +85,11 @@ export default class Controller extends Container {
 
 
   isStatus(names, type = 'isLoading') {
-    if (isNvl(names)) {
-      return false;
-    }
-
-    names = [].concat(names);
-
     for (let name of names) {
+      if (isNvl(name)) {
+        continue;
+      }
+      
       if (this.dataHub.getDataStore(name)[type]()) {
         return true;
       }
@@ -111,12 +109,12 @@ export default class Controller extends Container {
   }
 
   @publicMethod
-  isLoading(names) {
+  isLoading(...names) {
     return this.isStatus(names, 'isLoading');
   }
 
   @publicMethod
-  isLocked(names) {
+  isLocked(...names) {
     return this.isStatus(names, 'isLocked');
   }
 
