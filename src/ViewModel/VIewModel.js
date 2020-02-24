@@ -33,17 +33,15 @@ export default class ViewModel extends LifeCycle {
 
     this.globalDataHubController = DataHub.createController();
 
-    Timer.onRefreshView(() => {
-      this.changeHandle();
-    }, this);
-
     Controller.publicMethods.forEach(method => {
       this[method] = udFun;
     });
 
     if (!(viewContext instanceof ViewContext)) {
+      this.hasViewContext = false;
       this.errLog(`${this.logName} not has ViewContext.`);
     } else {
+      this.hasViewContext = true;
       viewContext.createNode(this.key, this.viewType, this);
       this.viewContext = viewContext;
 
@@ -68,10 +66,21 @@ export default class ViewModel extends LifeCycle {
 
     this.dataHubController = this.dataHub.getController().createController();
 
+    if (this.isContextViewModel || !this.hasViewContext) {
+      Timer.onRefreshView(() => {
+        if (this.destroyed) {
+          return;
+        }
+
+        this.changeHandle();
+      }, this);
+    }
+
     Timer.onRefreshViewModel(() => {
       if (this.destroyed) {
         return;
       }
+
       this.viewModelChanged();
     }, this);
   }

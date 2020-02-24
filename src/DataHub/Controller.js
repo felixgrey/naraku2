@@ -24,6 +24,7 @@ const publicMethods = [
   'hasError',
   'getDataHub',
   'getController',
+  'isWillUpdateView'
 ];
 
 const {
@@ -50,7 +51,18 @@ export default class Controller extends Container {
 
     this.initPublicMethods();
 
-    this.watchModelOff = this.emitter.on('$$model', Timer.refreshView);
+    this.watchModelOff = this.emitter.on('$$model', () => {
+      this.willUpdateView = true;
+      Timer.refreshView();
+    });
+
+    Timer.onRefreshView(() => {
+      if (this.destroyed) {
+        return;
+      }
+
+      this.willUpdateView = false;
+    }, this);
   }
 
   bindContainer(instance) {
@@ -97,6 +109,11 @@ export default class Controller extends Container {
     }
 
     return false;
+  }
+
+  @publicMethod
+  isWillUpdateView() {
+    return this.willUpdateView;
   }
 
   @publicMethod
