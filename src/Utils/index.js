@@ -6,7 +6,7 @@ const isDev = process && process.env && process.env.NODE_ENV === 'development';
 /*
 	随机18位整数
 */
-function getRandom () {
+function getRandom() {
   return Math.random() * 10e18;
 }
 
@@ -18,7 +18,7 @@ const uidSeed = getRandom();
 /*
 	创建一个uid
 */
-function createUid (pre = '') {
+function createUid(pre = '') {
   return `${pre}${uidSeed}-${getRandom()}-${getRandom()}`;
 }
 
@@ -26,14 +26,14 @@ let uniIndex = 1;
 /*
 	创建一个统一计序列号
 */
-function getUniIndex () {
+function getUniIndex() {
   return uniIndex++;
 }
 
 /**
 	通用兜底空函数
 */
-const udFun = function () {
+const udFun = function() {
   return udFun;
 }
 
@@ -60,23 +60,27 @@ Object.assign(udFun, fake);
 /*
 	返回输入值的通用空函数
 */
-function sameFun (a) {
+function sameFun(a) {
   return a;
 }
 
 /*
 	各种非空判断
 */
-function isNvl (value) {
+function isNvl(value) {
   return value === undefined || value === null;
 }
 
-function isEmpty (value) {
+function isEmpty(value) {
   return isNvl(value) || value === '';
 }
 
-function isBlank (value) {
+function isBlank(value) {
   return isEmpty(value) || (`${value}`).trim() === '';
+}
+
+function isNoNum(value) {
+  return isBlank(value) || isNaN(+value);
 }
 
 /*
@@ -88,7 +92,7 @@ let logPrinter = ((global || {}).console) || {
   error: udFun
 };
 
-function setLogger (v) {
+function setLogger(v) {
   logPrinter = v;
 }
 
@@ -97,38 +101,38 @@ let preLog = 'naraku-';
 let createLog = udFun;
 let logInfoArray = [];
 
-function setPreLog (text = '') {
+function setPreLog(text = '') {
   preLog = text;
 }
 
-function logSwitch (flag) {
+function logSwitch(flag) {
   showLog = flag;
 }
 
-function getLogInfo () {
+function getLogInfo() {
   return [].concat(logInfoArray);
 }
 let logHandle = udFun;
 
-function setLogHandle (v) {
+function setLogHandle(v) {
   logHandle = v;
 }
 
 if (isDev) {
-  createLog = function (name = '', type = 'log') {
+  createLog = function(name = '', type = 'log') {
     if (typeof logPrinter[type] !== 'function') {
       showLog && logPrinter.error(`【createLog-error】：logPrinter.${type} not existed.`)
       return udFun;
     }
 
-    const logger = function logger (...args) {
+    const logger = function logger(...args) {
       logInfoArray = [`【${preLog}${name}-${type}】:`, ...args];
       logInfoArray.logType = type;
       logHandle(logInfoArray);
       showLog && logPrinter[type](...logInfoArray);
     }
 
-    logger.createLog = function (name2 = '?') {
+    logger.createLog = function(name2 = '?') {
       return createLog(`${name}.${name2}`, type);
     }
 
@@ -139,7 +143,7 @@ if (isDev) {
 /*
 	根据路径获取对象值
 */
-function getDeepValue (data, path = '', defValue) {
+function getDeepValue(data, path = '', defValue) {
   if (isNvl(data)) {
     return defValue;
   }
@@ -174,7 +178,7 @@ function getDeepValue (data, path = '', defValue) {
 /*
 	数据快照
 */
-function snapshot (value) {
+function snapshot(value) {
   if (isNvl(value)) {
     return value;
   }
@@ -199,7 +203,7 @@ function snapshot (value) {
 /*
 	数据的字符串表示
 */
-function uniStringify (obj) {
+function uniStringify(obj) {
   if (isNvl(obj)) {
     return null;
   }
@@ -223,7 +227,7 @@ function uniStringify (obj) {
 /*
  驼峰命名
  */
-function toCamel (text = '') {
+function toCamel(text = '') {
   return (`${text}`).replace(/_(\w)/g, (word, charcter, index) => {
     if (index === 0) {
       return word;
@@ -235,14 +239,14 @@ function toCamel (text = '') {
 /*
  下划线命名
  */
-function toUnderline (text) {
+function toUnderline(text) {
   return (`${text}`).replace(/[A-Z]/g, (charcter, index) => `_${charcter.toLowerCase()}`);
 }
 
 /*
 	命名空间格式
 */
-function toNameSpace (text) {
+function toNameSpace(text) {
   return toUnderline(text).replace(/_/g, '.');
 }
 
@@ -250,14 +254,14 @@ function toNameSpace (text) {
   数字格式化
  */
 const NumberFormat = {
-  percent (number, extendParam = {}) {
+  percent(number, extendParam = {}) {
     const {
       fixed = 2,
-      forceFixed = false,
-      decimal = true,
-      noSymbol = false,
-      noZero = false,
-      blank = '--'
+        forceFixed = false,
+        decimal = true,
+        noSymbol = false,
+        noZero = false,
+        blank = '--'
     } = extendParam;
 
     const percentSymbol = noSymbol ? '' : '%';
@@ -277,12 +281,12 @@ const NumberFormat = {
 
     return number + percentSymbol;
   },
-  thsepar (number, extendParam = {}) {
+  thsepar(number, extendParam = {}) {
     const {
       fixed = 2,
-      forceFixed = false,
-      noZero = false,
-      blank = '--'
+        forceFixed = false,
+        noZero = false,
+        blank = '--'
     } = extendParam;
 
     if (isNvl(number) || isNaN(+number)) {
@@ -334,6 +338,7 @@ export {
   isNvl,
   isEmpty,
   isBlank,
+  isNoNum,
 
   getDeepValue,
   snapshot,
