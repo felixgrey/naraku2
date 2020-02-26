@@ -87,10 +87,10 @@ export default class ViewModel extends LifeCycle {
     const parents = this.viewContext.getParentChain(this.key);
     for (let parent of parents) {
       const {
-        $childWithMyDataHub = false
+        $childUseMyDataHub = false
       } = parent.payload.dataHub.cfg;
 
-      if ($childWithMyDataHub) {
+      if ($childUseMyDataHub) {
         this.defaultController = parent.payload.defaultController.createController();
         break;
       }
