@@ -134,7 +134,7 @@ export default class LifeCycle {
       if (this.devMode) {
         this.devLog(`#runErr:${name}`, args, ErrorType[errType])
       } else {
-        this.errLog(msg);
+        this.errLog(name, args, msg);
       }
     }
 

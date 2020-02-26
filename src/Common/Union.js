@@ -67,7 +67,12 @@ export default class Union {
       instance.devLog = udFun;
     }
 
-    instance.errLog = this.errLog.createLog(logName);
+    if (!isNvl(logName)) {
+      instance.errLog = this.errLog.createLog(logName);
+    } else {
+      instance.errLog = this.errLog;
+    }
+
     instance.emitter = this.emitter;
     instance.devMode = this.devMode;
     instance.union = this;

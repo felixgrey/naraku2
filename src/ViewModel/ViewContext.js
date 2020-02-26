@@ -1,7 +1,12 @@
+import LifeCycle from './../Common/LifeCycle';
 import Tree from './Tree.js';
 import DataHub from '../DataHub/DataHub';
 import Controller from '../DataHub/Controller';
 import Container from '../DataHub/Container';
+
+const {
+  publicMethod
+} = LifeCycle;
 
 export default class ViewContext extends Container {
 

@@ -4,6 +4,7 @@ import {
   isNvl,
 } from './../Utils';
 
+// import DataHub from './DataHub';
 import Component from './Component';
 
 const publicMethods = [
@@ -35,6 +36,10 @@ export default class RelationManager extends Component {
     super.destruction();
 
     this.offFetcher && this.offFetcher();
+    this.offFetcher = null;
+
+    this.offGlobal && this.offGlobal();
+    this.offGlobal = null;
 
     this.checkReady = null;
     this.defaultData = null;
@@ -74,6 +79,23 @@ export default class RelationManager extends Component {
 
       this.defaultData = value;
       this.dataStore.set(snapshot(value));
+    },
+    global: (value = null, cfg) => {
+      if (value === null) {
+        return;
+      }
+			
+			if (!this.dataHubController.dataHub) {
+				this.devLog(`config global err: no dataHub`);
+				return;
+			}
+			
+			this.dataHubController.dataHub
+			
+      // this.offGlobal = DataHub.when(value, (data) => {
+      //   this.dataStore.set(snapshot(data));
+      // });
+
     },
     clear: (value, cfg) => {
       if (!this.dataHubController.listenerManager) {
@@ -171,7 +193,7 @@ export default class RelationManager extends Component {
         for (let dep of dependence) {
           const depStore = this.dataHub.getDataStore(dep);
 
-          if (!depStore.hasSet()) {
+          if (!depStore.get().length) {
             if (this.dataStore.hasSet()) {
               const param = {
                 name: this.name,
@@ -252,7 +274,7 @@ export default class RelationManager extends Component {
     });
   }
 
-  configNames = ['default', 'clear', 'fetcher', 'reset', 'snapshot', 'stop'];
+  configNames = ['default', 'clear', 'fetcher', 'reset', 'snapshot', 'stop', 'global'];
 }
 
 RelationManager.publicMethods = publicMethods;

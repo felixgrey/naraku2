@@ -22,12 +22,23 @@ export default class ViewModel extends LifeCycle {
     this.data = {};
     this.contextController = null;
 
+    const {
+      viewType,
+      viewMethods,
+      myName,
+      parentKey,
+      withStore,
+      useContextDataHub,
+      useMyDataHub,
+      useParentDataHub,
+    } = viewProps;
+
     // 初始化
-    this.viewType = isNvl(viewProps.viewType) ? 'View' : viewProps.viewType;
-    this.viewMethods = isNvl(viewProps.viewMethods) ? {} : viewProps.viewMethods;
-    this.parentKey = isNvl(viewProps.parentKey) ? null : viewProps.parentKey;
-    this.name = isNvl(viewProps.myName) ? null : viewProps.myName;
-    this.withStore = isNvl(viewProps.withStore) ? null : viewProps.withStore;
+    this.viewType = isNvl(viewType) ? 'View' : viewType;
+    this.viewMethods = isNvl(viewMethods) ? {} : viewMethods;
+    this.parentKey = isNvl(parentKey) ? null : parentKey;
+    this.name = isNvl(myName) ? null : myName;
+    this.withStore = isNvl(withStore) ? null : withStore;
 
     this.updateLogger();
 
@@ -61,10 +72,53 @@ export default class ViewModel extends LifeCycle {
     if (this.isContextViewModel) {
       this.dataHub = this.viewContext.getDataHub();
     } else {
-      this.dataHub = new DataHub(dhConfig, this.union);
+      this.dataHub = new DataHub(dhConfig || {}, this.union);
     }
 
     this.dataHubController = this.dataHub.getController().createController();
+    this.defaultController = this.contextController;
+
+    const {
+      $useMyDataHub = false,
+        $useParentDataHub = false,
+        $useContextDataHub = false,
+    } = this.dataHub.cfg;
+
+    const parents = this.viewContext.getParentChain(this.key);
+    for (let parent of parents) {
+      const {
+        $childWithMyDataHub = false
+      } = parent.payload.dataHub.cfg;
+
+      if ($childWithMyDataHub) {
+        this.defaultController = parent.payload.defaultController.createController();
+        break;
+      }
+    }
+
+    if ($useContextDataHub) {
+      this.defaultController = this.contextController;
+    }
+
+    if ($useParentDataHub && parents.length) {
+      this.defaultController = parents[0].payload.defaultController.createController();
+    }
+
+    if ($useMyDataHub) {
+      this.defaultController = this.dataHubController;
+    }
+
+    if (useContextDataHub) {
+      this.defaultController = this.contextController;
+    }
+
+    if (useParentDataHub && parents.length) {
+      this.defaultController = parents[0].payload.defaultController.createController();
+    }
+
+    if (useMyDataHub) {
+      this.defaultController = this.dataHubController;
+    }
 
     if (this.isContextViewModel || !this.hasViewContext) {
       Timer.onRefreshView(() => {
@@ -94,9 +148,9 @@ export default class ViewModel extends LifeCycle {
   bindView(view) {
     view[DataHub.gDhName] = this.globalDataHubController;
     view[DataHub.cDhName] = this.contextController;
+    view[DataHub.dhName] = this.defaultController;
     view[DataHub.myDhName] = this.dataHubController;
     view[DataHub.runName] = (...args) => this.run(...args);
-
     this.viewInstance = view;
   }
 
@@ -131,16 +185,17 @@ export default class ViewModel extends LifeCycle {
     this.contextController && this.contextController.destroy();
     this.contextController = null;
 
-    if (this.isContextViewModel) {
-      this.dataHub && this.dataHub.destroy();
-      this.dataHub = null;
-    }
+    this.dataHub && this.dataHub.destroy();
+    this.dataHub = null;
 
     this.data = null;
+
+    this.defaultController = null;
 
     if (this.viewInstance) {
       this.viewInstance[DataHub.gDhName] = udFun;
       this.viewInstance[DataHub.cDhName] = udFun;
+      this.viewInstance[DataHub.dhName] = udFun;
       this.viewInstance[DataHub.myDhName] = udFun;
       this.viewInstance[DataHub.runName] = udFun;
       this.viewInstance = null;

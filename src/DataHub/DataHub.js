@@ -81,7 +81,7 @@ export default class DataHub extends Container {
         this.destroyedErrorLog('getValue');
         return udFun;
       }
-      
+
       const [storeName, ...pathArr] = fullPath.split('.');
       const path = pathArr.join('.');
       return this.getDataStore(storeName).getValue(path, defaultValue);
@@ -174,8 +174,9 @@ DataHub.create = (cfg = {}) => {
   return new DataHub({}, union);
 }
 
-DataHub.gDhName = 'gdhc';
-DataHub.cDhName = 'dh';
+DataHub.gDhName = 'gdh';
+DataHub.cDhName = 'cdh';
+DataHub.dhName = 'dh';
 DataHub.myDhName = 'mdh';
 DataHub.runName = 'run';
 

@@ -24,7 +24,8 @@ const publicMethods = [
   'hasError',
   'getDataHub',
   'getController',
-  'isWillUpdateView'
+  'isWillUpdateView',
+  'stopFetchStore'
 ];
 
 const {
@@ -152,8 +153,8 @@ export default class Controller extends Container {
   }
 
   @publicMethod
-  fetch(...args) {
-    return this.fetchManager.fetch(...args);
+  stopFetchStore(name) {
+    this.dataHub.dataHubController.fetchManager.stopFetch(name);
   }
 
   @publicMethod
@@ -164,6 +165,7 @@ export default class Controller extends Container {
   @publicMethod
   getPublicMethods() {
     return {
+      dhKey: this.dataHub.key,
       key: this.key,
       ...this.controllerPublicMethods
     };
