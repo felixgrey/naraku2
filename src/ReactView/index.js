@@ -63,7 +63,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
         });
 
         this.clazz = isBlank(Component.name) ? 'ReactView' : Component.name;
-        this.devMode = dhConfig.$devMode || false;
+        this.devMode = props.devMode || dhConfig.$devMode || false;
         this.name = isNvl(props.myName) ? null : props.myName;
 
         if (isNvl(this.name) && dhConfig.$myName) {
@@ -93,7 +93,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           this.parentKey = isNvl(context[parentKeyField]) ? null : context[parentKeyField];
           const viewContext = isNvl(context[viewContextField]) ? null : context[viewContextField];
 
-            // console.log(contextView, this.devMode, viewContext, )
+          // console.log(contextView, this.devMode, viewContext, )
           if (viewContext) {
             viewContext.setParent(this.parentKey);
             this.viewContext = viewContext;
@@ -118,7 +118,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
         }
 
         this.union.clone({
-          devMode: dhConfig.$devMode || dhConfig.$allDevMode,
+          devMode: props.devMode || dhConfig.$devMode || dhConfig.$allDevMode,
         }).bindUnion(this);
 
         const viewProps = {
@@ -130,7 +130,8 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           viewProps: true,
         };
 
-        this.viewModel = new ProxyComponent.ViewModelClass(viewProps, contextView ? null : dhConfig, this.viewContext, this.union);
+        this.viewModel = new ProxyComponent.ViewModelClass(viewProps, contextView ? null : dhConfig, this.viewContext,
+          this.union);
 
         this.viewModel.bindView(this);
 
@@ -201,4 +202,38 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
 
     return ProxyComponent;
   }
+}
+
+export function page(dhConfigOrComponent = {}) {
+  if (typeof dhConfigOrComponent === 'function') {
+    return createView({
+      $childUseMyDataHub: true
+    }, undefined, false)(dhConfigOrComponent);
+  }
+
+  if (!dhConfigOrComponent.hasOwnProperty('$childUseMyDataHub')) {
+    dhConfigOrComponent.$childUseMyDataHub = true;
+  }
+
+  return createView(dhConfigOrComponent, undefined, true);
+}
+
+export function component(dhConfigOrComponent, ViewModelClass) {
+  if (typeof dhConfigOrComponent === 'function') {
+    return createView(dhConfigOrComponent.dataHubConfig || {}, undefined, false)(dhConfigOrComponent);
+  }
+
+  let hasUseDh = dhConfigOrComponent.hasOwnProperty('$useMyDataHub');
+  hasUseDh = hasUseDh || dhConfigOrComponent.hasOwnProperty('$useParentDataHub');
+  hasUseDh = hasUseDh || dhConfigOrComponent.hasOwnProperty('$useContextDataHub');
+
+  if (!hasUseDh) {
+    dhConfigOrComponent.$useMyDataHub = true;
+  }
+
+  if (!dhConfigOrComponent.hasOwnProperty('$childUseMyDataHub')) {
+    dhConfigOrComponent.$childUseMyDataHub = true;
+  }
+
+  return createView(dhConfigOrComponent, ViewModelClass, false)
 }

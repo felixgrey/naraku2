@@ -4,7 +4,6 @@ import {
   isNvl,
 } from './../Utils';
 
-// import DataHub from './DataHub';
 import Component from './Component';
 
 const publicMethods = [
@@ -84,18 +83,17 @@ export default class RelationManager extends Component {
       if (value === null) {
         return;
       }
-			
-			if (!this.dataHubController.dataHub) {
-				this.devLog(`config global err: no dataHub`);
-				return;
-			}
-			
-			this.dataHubController.dataHub
-			
-      // this.offGlobal = DataHub.when(value, (data) => {
-      //   this.dataStore.set(snapshot(data));
-      // });
 
+      const dataHub = this.dataHubController.dataHub;
+
+      if (!this.dataHubController.dataHub) {
+        this.devLog(`global clear err: no dataHub`);
+        return;
+      }
+
+      this.offGlobal = dataHub.constructor.when(value, (data) => {
+        this.dataStore.set(snapshot(data));
+      });
     },
     clear: (value, cfg) => {
       if (!this.dataHubController.listenerManager) {
