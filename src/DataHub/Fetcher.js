@@ -58,6 +58,10 @@ function addFetcher(name, url, method = 'get', extend = {}) {
   }
 }
 
+function isFetching(name) {
+  return !!fetchingMap[name];
+}
+
 function removeFetcher(name) {
   if (fetchingMap[name]) {
     errLog(`${name} is fetching, can't be remove .`)
@@ -116,7 +120,7 @@ const FETCHING = createUid('FETCHING_')
 const NO_URL = createUid('NO_URL_')
 const ABORT_REQUEST = createUid('ABORT_REQUEST_')
 
-function fetchData(name, data = null, dataInfo = {}, stopKey = null) {
+function fetchData(name, data = null, dataInfo = {}, stopKey = null, extendOnce = {}) {
   if (!fetcher) {
     errLog('must run \'initFetcher\' first.')
     return Promise.reject(NOT_INIT_FETCHER)
@@ -153,7 +157,8 @@ function fetchData(name, data = null, dataInfo = {}, stopKey = null) {
     dataType: 'json',
     beforeSend: sameFun,
     afterResponse: sameFun,
-    ...extend
+    ...extend,
+    ...extendOnce
   }
 
   const beforeFetch = extend2.beforeFetch || sameFun
@@ -272,5 +277,6 @@ export {
   fetchData,
   paramToQuery,
   hasInitFetcher,
-  hasFetching
+  hasFetching,
+  isFetching
 }

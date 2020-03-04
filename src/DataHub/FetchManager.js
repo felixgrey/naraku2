@@ -59,7 +59,7 @@ export default class FetchManager extends Component {
   }
 
   @publicMethod
-  fetch(fetcher, data, dataInfo = {}, stop = null) {
+  fetch(fetcher, data, dataInfo = {}, stop = null, extendOnce) {
     const stopKey = createUid('stopKey-');
     this.stopKeys[stopKey] = stopKey;
 
@@ -75,7 +75,9 @@ export default class FetchManager extends Component {
       stop(doStop);
     }
 
-    return fetchData(fetcher, data, dataInfo, stopKey).catch(err => {
+    Timer.refreshView();
+
+    return fetchData(fetcher, data, dataInfo, stopKey, extendOnce).catch(err => {
       if (this.destroyed) {
         return;
       }
