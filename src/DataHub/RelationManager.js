@@ -2,6 +2,7 @@ import {
   udFun,
   snapshot,
   isNvl,
+  mergeObject,
 } from './../Utils';
 
 import Component from './Component';
@@ -186,7 +187,7 @@ export default class RelationManager extends Component {
 
         this.devLog(`dependence checkReady`);
 
-        const submitData = {};
+        let submitData = {};
 
         for (let dep of dependence) {
           const depStore = this.dataHub.getDataStore(dep);
@@ -203,11 +204,12 @@ export default class RelationManager extends Component {
             }
             return;
           }
-          Object.assign(submitData, depStore.first());
+
+          submitData = mergeObject(submitData, depStore.first());
         }
 
         for (let ft of filter) {
-          Object.assign(submitData, this.dataHub.getDataStore(ft).first());
+          submitData = mergeObject(submitData, this.dataHub.getDataStore(ft).first());
         }
 
         const param = {
@@ -219,16 +221,18 @@ export default class RelationManager extends Component {
             if (this.destroyed) {
               return;
             }
+
             onThem.forEach(storeName => {
-              this.dataHub.getDataStore(storeName).lock();
+              (!force) && this.dataHub.getDataStore(storeName).lock();
             });
           },
           after: () => {
             if (this.destroyed) {
               return;
             }
+
             onThem.forEach(storeName => {
-              this.dataHub.getDataStore(storeName).unLock();
+              (!force) && this.dataHub.getDataStore(storeName).unLock();
             });
           },
         };

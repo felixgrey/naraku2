@@ -365,7 +365,7 @@ export default class DataStore extends Container {
   }
 
   @publicMethod
-  loading() {
+  loading(loadingKey) {
     this.devLog(`loading: status=${this.status}`);
 
     if (this.status === 'locked' || this.status === 'loading') {
@@ -374,20 +374,26 @@ export default class DataStore extends Container {
       return;
     }
 
+    this.loadingKey = loadingKey;
     this.setStatus('loading');
   }
 
   @publicMethod
-  clearLoading() {
+  clearLoading(loadingKey) {
+    if (!isNvl(this.loadingKey) && !isNvl(loadingKey) && loadingKey !== this.loadingKey) {
+      this.devLog('loaded', `this.loadingKey=${this.loadingKey}, clearLoading.loadingKey=${loadingKey}`);
+      return;
+    }
+
     if (this.status === 'loading') {
       this.setStatus(this.oldStatus);
     }
   }
 
   @publicMethod
-  loaded(value) {
-    if (this.status !== 'loading') {
-      this.methodErrLog('loaded', [value], 'locked/loading', `'${this.name}' isn't loading.`);
+  loaded(value, loadingKey) {
+    if (loadingKey !== this.loadingKey) {
+      this.devLog('loaded', `this.loadingKey=${this.loadingKey},loaded.loadingKey=${loadingKey}`);
       return;
     }
 

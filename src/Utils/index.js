@@ -19,7 +19,7 @@ const uidSeed = getRandom();
 	创建一个uid
 */
 function createUid(pre = '') {
-  return `${pre}${uidSeed}-${getRandom()}-${getRandom()}`;
+  return `${pre}${uidSeed}-${getRandom()}-${getRandom()}-${Date.now()}`;
 }
 
 let uniIndex = 1;
@@ -325,6 +325,26 @@ const NumberFormat = {
   }
 }
 
+function mergeObject(...args) {
+  const result = {};
+
+  args.forEach(obj => {
+    if (isNvl(obj) || typeof obj !== 'object') {
+      return;
+    }
+
+    for (let key in obj) {
+      const value = obj[key];
+      if (isNvl(value)) {
+        continue;
+      }
+      result[key] = value;
+    }
+  });
+
+  return result;
+}
+
 export {
   isDev,
 
@@ -354,5 +374,6 @@ export {
   NumberFormat,
   toCamel,
   toUnderline,
-  toNameSpace
+  toNameSpace,
+  mergeObject,
 }

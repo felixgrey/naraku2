@@ -159,11 +159,10 @@ export default class FetchManager extends Component {
         return;
       }
 
-      pagination.stopFetch();
-      ds.clearLoading();
       this.stopFetch(name);
+      ds.clearLoading(this.stopKeys[name]);
+      pagination.stopFetch(this.stopKeys[name]);
 
-      const stopKey = this.stopKeys[name] = createUid('stopKey-');
       if (clear) {
         before();
         ds.clear();
@@ -172,7 +171,8 @@ export default class FetchManager extends Component {
         return;
       }
 
-      const pagePromise = pagination.fetch(data);
+      const stopKey = this.stopKeys[name] = createUid(`dataStore-${name}-stopKey`);
+      const pagePromise = pagination.fetch(data, stopKey);
       const pageInfo = pagination.getPageInfo();
 
       const dataInfo = {
@@ -182,7 +182,7 @@ export default class FetchManager extends Component {
       };
 
       before();
-      ds.loading();
+      ds.loading(stopKey);
 
       let resultData = [];
       let errorMsg = null;
@@ -207,12 +207,12 @@ export default class FetchManager extends Component {
           if (!this.destroyed) {
             this.stopKeys[name] = null;
             if (errorMsg !== null) {
-              ds.clearLoading();
               if (errorMsg !== ABORT_REQUEST) {
                 ds.setErrorMsg(errorMsg);
+                ds.clearLoading(stopKey);
               }
             } else {
-              ds.loaded(resultData);
+              ds.loaded(resultData, stopKey);
             }
           }
           after();

@@ -100,7 +100,11 @@ export default class PaginationManager extends Component {
 
 
   @publicMethod
-  stopFetch() {
+  stopFetch(loadingKey) {
+    if (!isNvl(loadingKey) && !isNvl(this.loadingKey) && loadingKey !== this.loadingKey) {
+      return;
+    }
+
     if (this.stopKey) {
       stopFetchData(this.stopKey);
       this.stopKey = null;
@@ -108,7 +112,7 @@ export default class PaginationManager extends Component {
   }
 
   @publicMethod
-  fetch(data = {}) {
+  fetch(data = {}, loadingKey) {
     const fakeResolve = Promise.resolve();
 
     if (isNvl(this.config.fetcher)) {
@@ -120,6 +124,7 @@ export default class PaginationManager extends Component {
     }
 
     this.stopFetch();
+    this.loadingKey = loadingKey;
 
     if (isNvl(data)) {
       data = {};
