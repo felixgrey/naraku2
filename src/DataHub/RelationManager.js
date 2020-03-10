@@ -252,7 +252,8 @@ export default class RelationManager extends Component {
       this.devLog(`onThem:`, onThem);
 
       const offs = onThem.map(onStore => {
-        return this.dataHubController.listenerManager.on('$$data:' + onStore, checkReady);
+        const storeName = this.dataHub.getDataStore(onStore).storeName;
+        return this.dataHubController.listenerManager.on('$$data:' + storeName, checkReady);
       });
 
       this.offFetcher = () => {

@@ -65,6 +65,7 @@ export default class DataStore extends Container {
       return;
     }
     this.name = name;
+    this.storeName = `${name}@${this.dataHub.key}`;
 
     this.paginationManager = new PaginationManager(this, this.union);
     this.relationManager = new RelationManager(this, this.union);
@@ -162,32 +163,32 @@ export default class DataStore extends Container {
     this.status = status;
 
     this.emitter.emit('$$status', {
-      name: this.name,
+      name: this.storeName,
       value: this.status
     });
 
-    this.emitter.emit(`$$status:${this.name}=${this.status}`);
+    this.emitter.emit(`$$status:${this.storeName}=${this.status}`);
 
     this.emitter.emit('$$model', {
       src: this,
       type: '$$status',
-      name: this.name,
+      name: this.storeName,
       value: this.value
     });
   }
 
   emitDataChange() {
     this.emitter.emit('$$data', {
-      name: this.name,
+      name: this.storeName,
       value: this.value
     });
 
-    this.emitter.emit(`$$data:${this.name}`, this.value);
+    this.emitter.emit(`$$data:${this.storeName}`, this.value);
 
     this.emitter.emit('$$model', {
       src: this,
       type: '$$data',
-      name: this.name,
+      name: this.storeName,
       value: this.value
     });
   }
@@ -196,7 +197,7 @@ export default class DataStore extends Container {
   set(value) {
     if (this.status === 'locked' || this.status === 'loading') {
       this.methodErrLog('set', value, 'locked/loading',
-        `can't set value when '${this.name}' is locked or loading.`);
+        `can't set value when '${this.storeName}' is locked or loading.`);
       return;
     }
 
@@ -216,7 +217,7 @@ export default class DataStore extends Container {
   merge(data, index = 0) {
     if (this.status === 'locked' || this.status === 'loading') {
       this.methodErrLog('merge', [data], 'locked/loading',
-        `can't set merge0 when '${this.name}' is locked or loading.`);
+        `can't set merge0 when '${this.storeName}' is locked or loading.`);
       return;
     }
 
@@ -259,7 +260,7 @@ export default class DataStore extends Container {
 
     if (this.status === 'locked' || this.status === 'loading') {
       this.methodErrLog('clear', [], 'locked/loading',
-        `can't clear when '${this.name}' is locked or loading.`);
+        `can't clear when '${this.storeName}' is locked or loading.`);
       return;
     }
 
@@ -285,13 +286,13 @@ export default class DataStore extends Container {
   remove() {
     if (this.eternal) {
       this.methodErrLog('remove', [], 'eternal',
-        `can't remove eternal dataStore '${this.name}'.`);
+        `can't remove eternal dataStore '${this.storeName}'.`);
       return;
     }
 
     if (this.status === 'locked' || this.status === 'loading') {
       this.methodErrLog('remove', [], 'locked/loading',
-        `can't remove when '${this.name}' is locked or loading.`);
+        `can't remove when '${this.storeName}' is locked or loading.`);
       return;
     }
 
@@ -321,7 +322,7 @@ export default class DataStore extends Container {
   setErrorMsg(msg) {
     if (isNvl(msg)) {
       this.methodErrLog('setErrorMsg', [msg], 'null',
-        `can't set null error message to '${this.name}'.`);
+        `can't set null error message to '${this.storeName}'.`);
       return;
     }
 
@@ -338,7 +339,7 @@ export default class DataStore extends Container {
   lock() {
     if (this.status === 'loading') {
       this.methodErrLog('lock', [], 'loading',
-        `can't lock  when '${this.name}' is loading.`);
+        `can't lock  when '${this.storeName}' is loading.`);
       return;
     }
 
@@ -370,7 +371,7 @@ export default class DataStore extends Container {
 
     if (this.status === 'locked' || this.status === 'loading') {
       this.methodErrLog('loading', [], 'locked/loading',
-        `can't set status=loading when '${this.name}' is locked or loading.`);
+        `can't set status=loading when '${this.storeName}' is locked or loading.`);
       return;
     }
 
@@ -399,7 +400,7 @@ export default class DataStore extends Container {
 
     if (this.status === 'locked') {
       this.methodErrLog('loaded', [value], 'locked/loading',
-        `can't set status=${this.oldStatus} when '${this.name}' is locked.`);
+        `can't set status=${this.oldStatus} when '${this.storeName}' is locked.`);
       return;
     }
 
