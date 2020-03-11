@@ -110,7 +110,8 @@ export default class ListenerManager extends Component {
     };
 
     names.forEach(name => {
-      let off = this.emitter.on('$$data:' + name, checkReady);
+      const storeName = this.dataHub.getDataStore(name).storeName;
+      let off = this.emitter.on('$$data:' + storeName, checkReady);
       offList.push(off);
     });
 
