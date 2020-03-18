@@ -24,6 +24,8 @@ const publicMethods = [
   'hasError',
   'getDataHub',
   'getController',
+  'getPageInfo',
+  'setPageInfo',
   'isWillUpdateView',
   'stopFetchStore'
 ];
@@ -150,6 +152,16 @@ export default class Controller extends Container {
     this.publicMethods(ListenerManager.publicMethods, 'listenerManager', this.controllerPublicMethods);
     this.publicMethods(publicMethods, 'that', this.controllerPublicMethods);
     this.controllerPublicMethods.destroy = () => this.destroy();
+  }
+
+  @publicMethod
+  getPageInfo(name) {
+    return this.dataHub.getDataStore(name).getPageInfo();
+  }
+
+  @publicMethod
+  setPageInfo(name, pageNumber, pageSize) {
+    return this.dataHub.getDataStore(name).setPageInfo(pageNumber, pageSize);
   }
 
   @publicMethod

@@ -133,6 +133,10 @@ export default class FetchManager extends Component {
         after = udFun,
     } = param;
 
+    if (isNvl(name)) {
+      return;
+    }
+
     clearTimeout(this.fetchingDatastore[name]);
     this.fetchingDatastore[name] = setTimeout(() => {
       if (this.destroyed) {
@@ -164,6 +168,15 @@ export default class FetchManager extends Component {
       ds.clearLoading(this.stopKeys[name]);
       pagination.stopFetch(this.stopKeys[name]);
 
+      const {
+        hasFetcher,
+        hasPagiNation,
+        pagiNationConfig: {
+          resultField = 'value',
+          countField = 'total',
+        } = {},
+      } = pagination.getPageInfo() || {};
+
       if (clear) {
         before();
         ds.clear();
@@ -173,7 +186,9 @@ export default class FetchManager extends Component {
       }
 
       const stopKey = this.stopKeys[name] = createUid(`dataStore-${name}-stopKey`);
-      const pagePromise = pagination.fetch(data, stopKey);
+      const pagePromise = pagination.fetch({
+        ...data
+      }, stopKey);
       const pageInfo = pagination.getPageInfo();
 
       const dataInfo = {
@@ -188,9 +203,9 @@ export default class FetchManager extends Component {
       let resultData = [];
       let errorMsg = null;
 
-      if (pageInfo.merge) {
-        data[pageInfo.pageNumberField] = pagination.page;
-        data[pageInfo.pageSizeField] = pagination.size;
+      if (pageInfo.pagiNationConfig.merge) {
+        data[pageInfo.pagiNationConfig.pageNumberField] = pageInfo.page;
+        data[pageInfo.pagiNationConfig.pageSizeField] = pageInfo.size;
       }
 
       // fetcher, data = null, dataInfo = {}, stopKey = null
@@ -213,7 +228,18 @@ export default class FetchManager extends Component {
                 ds.clearLoading(stopKey);
               }
             } else {
-              ds.loaded(resultData, stopKey);
+
+              if (hasPagiNation && !hasFetcher && !isNvl(resultData) && typeof resultData === 'object') {
+
+                const result = resultData[resultField];
+                const count = resultData[countField] || 0;
+
+                ds.loaded(result, stopKey);
+                pagination.setCount(count);
+
+              } else {
+                ds.loaded(resultData, stopKey);
+              }
             }
           }
           after();

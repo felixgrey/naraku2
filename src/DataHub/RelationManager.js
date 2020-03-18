@@ -25,6 +25,8 @@ export default class RelationManager extends Component {
     const [dataStore] = args;
 
     this.name = dataStore.name;
+    this.storeName = dataStore.storeName;
+
     this.checkReady = udFun;
     this.defaultData = null;
     this.auto = true;
@@ -87,8 +89,8 @@ export default class RelationManager extends Component {
 
       const dataHub = this.dataHubController.dataHub;
 
-      if (!this.dataHubController.dataHub) {
-        this.devLog(`global clear err: no dataHub`);
+      if (!dataHub) {
+        this.devLog(`config global err: no dataHub`);
         return;
       }
 
@@ -238,7 +240,6 @@ export default class RelationManager extends Component {
         };
 
         // console.log('checkReady', this.name, param , this.auto)
-
         if (!this.auto) {
           this.willFetch = true;
           return;
@@ -255,6 +256,8 @@ export default class RelationManager extends Component {
         const storeName = this.dataHub.getDataStore(onStore).storeName;
         return this.dataHubController.listenerManager.on('$$data:' + storeName, checkReady);
       });
+
+      offs.push(this.dataHubController.listenerManager.on('$$page:' + this.storeName, checkReady));
 
       this.offFetcher = () => {
         offs.forEach(off => off());

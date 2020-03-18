@@ -108,6 +108,16 @@ export default class DataStore extends Container {
   }
 
   @publicMethod
+  setPageInfo(pageNumber, pageSize) {
+    if (!this.paginationManager) {
+      return;
+    }
+
+    this.paginationManager.setPageInfo(pageNumber, pageSize);
+  }
+
+
+  @publicMethod
   setConfig(cfg) {
     if (this.storeConfig) {
       this.devLog(`run setConfig again`);

@@ -212,14 +212,14 @@ function uniStringify(obj) {
     return obj.$uniStringify();
   }
 
-  if (typeof obj.toString === 'function') {
-    return obj.toString();
-  }
-
   let v = '';
   try {
     v = JSON.stringify(obj)
-  } catch (e) {}
+  } catch (e) {
+    if (typeof obj.toString === 'function') {
+      return obj.toString();
+    }
+  }
 
   return v;
 }

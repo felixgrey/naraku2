@@ -14,13 +14,15 @@ import {
 
 import Component from './Component';
 
-let defaultPageInfo = {
+let defaultPageConfig = {
   fetcher: null,
   force: false,
   size: 10,
   start: 1,
   pageNumberField: 'page',
   pageSizeField: 'size',
+  resultField: 'data',
+  countField: 'total',
   merge: true,
 };
 
@@ -28,8 +30,8 @@ const {
   publicMethod
 } = Component;
 
-export function setDefaultPageInfo(v) {
-  Object.assign(defaultPageInfo, v);
+export function setDefaultPageConfig(v) {
+  Object.assign(defaultPageConfig, v);
 }
 
 export default class PaginationManager extends Component {
@@ -40,6 +42,8 @@ export default class PaginationManager extends Component {
     const [dataStore] = args;
 
     this.name = dataStore.name;
+    this.storeName = dataStore.storeName;
+
     this.stringData = '';
     this.config = {};
 
@@ -70,7 +74,7 @@ export default class PaginationManager extends Component {
       param = {};
     }
 
-    this.config = Object.assign({}, defaultPageInfo, param);
+    this.config = Object.assign({}, defaultPageConfig, param);
 
     this.inited = true;
 
@@ -123,7 +127,6 @@ export default class PaginationManager extends Component {
       return fakeResolve;
     }
 
-    this.stopFetch();
     this.loadingKey = loadingKey;
 
     if (isNvl(data)) {
@@ -153,7 +156,7 @@ export default class PaginationManager extends Component {
       this.stringData = stringData;
     }
 
-    this.setPageInfo(1);
+    this.pageInfo.page = this.config.start;
 
     const stopKey = this.stopKey = createUid('pageStopKey-');
 
@@ -202,6 +205,10 @@ export default class PaginationManager extends Component {
 
   @publicMethod
   setPageInfo(pageNumber, pageSize) {
+    if (this.noPage) {
+      return;
+    }
+
     let changed = false;
 
     if (!isNvl(pageNumber) && pageNumber !== this.pageInfo.page) {
@@ -210,7 +217,7 @@ export default class PaginationManager extends Component {
     }
 
     if (!isNvl(pageSize) && pageSize !== this.pageInfo.size) {
-      this.pageInfo.page = this.config.start;
+      // this.pageInfo.page = this.config.start;
       this.pageInfo.size = pageSize;
       changed = true;
     }
@@ -221,7 +228,7 @@ export default class PaginationManager extends Component {
         value: this.pageInfo
       });
 
-      this.emitter.emit(`$$page:${this.name}`, this.pageInfo);
+      this.emitter.emit(`$$page:${this.storeName}`, this.pageInfo);
 
       this.emitter.emit('$$model', {
         src: this,
@@ -234,16 +241,13 @@ export default class PaginationManager extends Component {
 
   @publicMethod
   getPageInfo() {
-    if (this.noPage) {
-      return {
-        hasPagiNation: false
-      };
-    }
-
     return {
-      hasPagiNation: true,
+      hasPagiNation: !this.noPage,
+      hasFetcher: !isNvl(this.config.fetcher),
+      pagiNationConfig: {
+        ...this.config
+      },
       ...this.pageInfo,
-      ...this.config,
     };
   }
 }
