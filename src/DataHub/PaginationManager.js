@@ -17,6 +17,7 @@ import Component from './Component';
 let defaultPageConfig = {
   fetcher: null,
   force: false,
+  restart: true,
   size: 10,
   start: 1,
   pageNumberField: 'page',
@@ -72,6 +73,10 @@ export default class PaginationManager extends Component {
 
     if (param === true) {
       param = {};
+    } else if (typeof param === 'string') {
+      param = {
+        fetcher: param
+      };
     }
 
     this.config = Object.assign({}, defaultPageConfig, param);
@@ -156,7 +161,9 @@ export default class PaginationManager extends Component {
       this.stringData = stringData;
     }
 
-    this.pageInfo.page = this.config.start;
+    if (this.config.restart) {
+      this.pageInfo.page = this.config.start;
+    }
 
     const stopKey = this.stopKey = createUid('pageStopKey-');
 

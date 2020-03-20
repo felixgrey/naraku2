@@ -171,7 +171,7 @@ export default class RelationManager extends Component {
 
       if (isNvl(auto)) {
         const $auto = this.dataHub.cfg.$auto;
-        auto = isNvl($auto) ? false : $auto;
+        auto = isNvl($auto) ? true : $auto;
       }
 
       this.dataStore.eternal = true;
