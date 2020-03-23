@@ -153,6 +153,7 @@ export default class RelationManager extends Component {
           filter = [],
           auto,
           force = false,
+          staticParam = {},
       } = cfg;
 
 
@@ -189,7 +190,9 @@ export default class RelationManager extends Component {
 
         this.devLog(`dependence checkReady`);
 
-        let submitData = {};
+        let submitData = {
+          ...staticParam
+        };
 
         for (let dep of dependence) {
           const depStore = this.dataHub.getDataStore(dep);
@@ -239,7 +242,7 @@ export default class RelationManager extends Component {
           },
         };
 
-        // console.log('checkReady', this.name, param , this.auto)
+        this.devLog(`checkReady@${this.logName}, auto=${this.auto}`, param);
         if (!this.auto) {
           this.willFetch = true;
           return;
