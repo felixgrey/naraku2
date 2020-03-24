@@ -166,7 +166,7 @@ export default class Controller extends Container {
 
   @publicMethod
   stopFetchStore(name) {
-    this.dataHub.dataHubController.fetchManager.stopFetch(name);
+    this.dataHub.dataHubController.fetchManager.stopFetch(name, true);
   }
 
   @publicMethod

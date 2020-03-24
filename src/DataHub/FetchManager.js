@@ -106,7 +106,7 @@ export default class FetchManager extends Component {
   }
 
   @publicMethod
-  stopFetch(name) {
+  stopFetch(name, isStore = false) {
     if (isNvl(name)) {
       return;
     }
@@ -114,6 +114,13 @@ export default class FetchManager extends Component {
     if (this.stopKeys[name]) {
       stopFetchData(this.stopKeys[name]);
       this.stopKeys[name] = null;
+    }
+
+    if (isStore) {
+      const ds = this.dataHub.getDataStore(name);
+      const pagination = ds.paginationManager;
+      ds.clearLoading(this.stopKeys[name]);
+      pagination.stopFetch(this.stopKeys[name]);
     }
 
     if (this.fetchingDatastore[name]) {
@@ -164,9 +171,7 @@ export default class FetchManager extends Component {
         return;
       }
 
-      this.stopFetch(name);
-      ds.clearLoading(this.stopKeys[name]);
-      pagination.stopFetch(this.stopKeys[name]);
+      this.stopFetch(name, true);
 
       const {
         hasFetcher,
