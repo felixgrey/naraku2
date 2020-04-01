@@ -138,8 +138,10 @@ export default class RelationManager extends Component {
 				return;
 			}
 
-			this.dataHubController.listenerManager.when(value, (data) => {
-				this.dataStore.set(snapshot(data));
+			[].concat(value).forEach(v => {
+				this.dataHubController.listenerManager.when(v, (data) => {
+					this.dataStore.set(snapshot(data));
+				});
 			});
 		},
 		stop: (value, cfg) => {
