@@ -24,6 +24,8 @@ let defaultPageConfig = {
   pageSizeField: 'size',
   resultField: 'data',
   countField: 'total',
+  sortFieldField: null,
+  sortTypeField: null,
   merge: true,
 };
 
@@ -49,7 +51,7 @@ export default class PaginationManager extends Component {
     this.config = {};
 
     this.stopKey = null;
-    this.noPage = false;
+    this.noPage = true;
 
     this.pageInfo = {};
 
@@ -82,12 +84,15 @@ export default class PaginationManager extends Component {
     this.config = Object.assign({}, defaultPageConfig, param);
 
     this.inited = true;
+    this.noPage = false;
 
     this.pageInfo = {
       pageCount: 0,
       count: 0,
       page: this.config.start,
       size: this.config.size,
+      sortField: null,
+      sortType: null,
     };
 
   }
@@ -100,8 +105,9 @@ export default class PaginationManager extends Component {
 
     let pageCount = v / this.pageInfo.size;
 
-    if (pageCount !== parseInt(pageCount)) {
-      pageCount++;
+    const intCount = parseInt(pageCount);
+    if (pageCount !== intCount) {
+      pageCount = intCount + 1;
     }
 
     this.pageInfo.pageCount = pageCount;
@@ -124,11 +130,21 @@ export default class PaginationManager extends Component {
   fetch(data = {}, loadingKey) {
     const fakeResolve = Promise.resolve();
 
+    const stringData = uniStringify(data);
+    const sameData = stringData === this.stringData;
+
+    this.stringData = stringData;
+
     if (isNvl(this.config.fetcher)) {
       this.emitter.emit('$$data', {
         name: `$$count:${this.name}`,
         value: this.pageInfo.count
       });
+
+      if ((!sameData) && this.config.restart) {
+        this.pageInfo.page = this.config.start;
+      }
+
       return fakeResolve;
     }
 
@@ -149,16 +165,13 @@ export default class PaginationManager extends Component {
 
     if (isNvl(willFetch)) {
       let stringData = uniStringify(data);
-
-      if (!isNvl(stringData) && stringData === this.stringData) {
+      if (sameData) {
         this.devLog(`same data`, stringData);
         if (!this.force) {
           return fakeResolve;
         }
         this.devLog(`same data but force fetch`);
       }
-
-      this.stringData = stringData;
     }
 
     if (this.config.restart) {
@@ -211,23 +224,34 @@ export default class PaginationManager extends Component {
   }
 
   @publicMethod
-  setPageInfo(pageNumber, pageSize) {
+  setPageInfo(pageNumber = false, pageSize = false, sortField = false, sortType = false) {
     if (this.noPage) {
       return;
     }
 
     let changed = false;
 
-    if (!isNvl(pageNumber) && pageNumber !== this.pageInfo.page) {
+    if (!isNvl(pageNumber) && pageNumber !== false && pageNumber !== this.pageInfo.page) {
       this.pageInfo.page = pageNumber;
       changed = true;
     }
 
-    if (!isNvl(pageSize) && pageSize !== this.pageInfo.size) {
-      // this.pageInfo.page = this.config.start;
+    if (!isNvl(pageSize) && pageSize !== false && pageSize !== this.pageInfo.size) {
       this.pageInfo.size = pageSize;
       changed = true;
     }
+
+    if (sortField !== false && uniStringify(sortField) !== uniStringify(this.pageInfo.sortField)) {
+      this.pageInfo.sortField = sortField;
+      changed = true;
+    }
+
+    if (sortField !== false && uniStringify(sortType) !== uniStringify(this.pageInfo.sortType)) {
+      this.pageInfo.sortType = sortType;
+      changed = true;
+    }
+
+    // console.log(this.pageInfo, pageNumber, pageSize, sortField, sortType)
 
     if (changed) {
       this.emitter.emit('$$page', {

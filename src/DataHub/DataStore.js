@@ -108,12 +108,12 @@ export default class DataStore extends Container {
   }
 
   @publicMethod
-  setPageInfo(pageNumber, pageSize) {
+  setPageInfo(...args) {
     if (!this.paginationManager) {
       return;
     }
 
-    this.paginationManager.setPageInfo(pageNumber, pageSize);
+    this.paginationManager.setPageInfo(...args);
   }
 
 
@@ -319,7 +319,11 @@ export default class DataStore extends Container {
   }
 
   @publicMethod
-  isLoading() {
+  isLoading(just = false) {
+    if (!just && this.relationManager && !this.relationManager.auto) {
+      return false;
+    }
+
     return this.status === 'loading';
   }
 

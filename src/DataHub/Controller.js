@@ -20,6 +20,7 @@ import {
 const publicMethods = [
   'createController',
   'isLoading',
+  'justLoading',
   'isLocked',
   'hasError',
   'getDataHub',
@@ -100,13 +101,13 @@ export default class Controller extends Container {
   }
 
 
-  isStatus(names, type = 'isLoading') {
+  isStatus(names, type = 'isLoading', just = false) {
     for (let name of names) {
       if (isNvl(name)) {
         continue;
       }
 
-      if (this.dataHub.getDataStore(name)[type]()) {
+      if (this.dataHub.getDataStore(name)[type](just)) {
         return true;
       }
     }
@@ -135,6 +136,11 @@ export default class Controller extends Container {
   }
 
   @publicMethod
+  justLoading(name) {
+    return this.isStatus([name], 'isLoading', true);
+  }
+
+  @publicMethod
   isLocked(...names) {
     return this.isStatus(names, 'isLocked');
   }
@@ -160,8 +166,8 @@ export default class Controller extends Container {
   }
 
   @publicMethod
-  setPageInfo(name, pageNumber, pageSize) {
-    return this.dataHub.getDataStore(name).setPageInfo(pageNumber, pageSize);
+  setPageInfo(name, ...args) {
+    return this.dataHub.getDataStore(name).setPageInfo(...args);
   }
 
   @publicMethod

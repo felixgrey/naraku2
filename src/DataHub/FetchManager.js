@@ -211,6 +211,14 @@ export default class FetchManager extends Component {
       if (pageInfo.pagiNationConfig.merge) {
         data[pageInfo.pagiNationConfig.pageNumberField] = pageInfo.page;
         data[pageInfo.pagiNationConfig.pageSizeField] = pageInfo.size;
+
+        if (pageInfo.pagiNationConfig.sortFieldField !== null) {
+          data[pageInfo.pagiNationConfig.sortFieldField] = pageInfo.sortField;
+        }
+
+        if (pageInfo.pagiNationConfig.sortTypeField !== null) {
+          data[pageInfo.pagiNationConfig.sortTypeField] = pageInfo.sortType;
+        }
       }
 
       // fetcher, data = null, dataInfo = {}, stopKey = null
