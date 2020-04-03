@@ -138,16 +138,18 @@ export default class Controller extends Container {
 
   @publicMethod
   isLoading(...names) {
-    let just = false;
+    let just = true;
+    let allReady = true;
+
     if (typeof names[names.length - 1] === 'boolean') {
       just = names[names.length - 1];
       names.pop();
-    }
 
-    let allReady = false;
-    if (typeof names[names.length - 1] === 'boolean') {
-      allReady = names[names.length - 1];
-      names.pop();
+      if (typeof names[names.length - 1] === 'boolean') {
+        allReady = just;
+        just = names[names.length - 1];
+        names.pop();
+      }
     }
 
     return this.isStatus(names, 'isLoading', just, allReady);

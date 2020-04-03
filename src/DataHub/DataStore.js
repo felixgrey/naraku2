@@ -321,7 +321,8 @@ export default class DataStore extends Container {
   }
 
   @publicMethod
-  isLoading(just = false, allReady = false) {
+  isLoading(just = true, allReady = true) {
+
     // 关闭状态都不算loading
     if (!just && this.relationManager && !this.relationManager.auto) {
       return false;
