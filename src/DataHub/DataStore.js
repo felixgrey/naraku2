@@ -106,6 +106,7 @@ export default class DataStore extends Container {
     if (!this.paginationManager) {
       return {};
     }
+
     return this.paginationManager.getPageInfo();
   }
 

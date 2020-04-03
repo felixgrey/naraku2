@@ -21,7 +21,7 @@ import {
 const publicMethods = [
   'createController',
   'isLoading',
-  'getLastFetchParam',
+  'getExportParam',
   'isLocked',
   'hasError',
   'getDataHub',
@@ -132,8 +132,23 @@ export default class Controller extends Container {
   }
 
   @publicMethod
-  getLastFetchParam(name) {
-    return snapshot(this.dataHub.getDataStore(name).lastFetchParam);
+  getExportParam(name, pageNumber = -1, pageSize = -1) {
+    const dataStore = this.dataHub.getDataStore(name);
+    const pageInfo = dataStore.getPageInfo(name);
+
+    const param = snapshot(dataStore.lastFetchParam);
+
+    if (pageInfo.hasPagiNation) {
+      const {
+        pageNumberField,
+        pageSizeField,
+      } = pageInfo.pagiNationConfig;
+
+      param[pageNumberField] = pageNumber;
+      param[pageSizeField] = pageSize;
+    }
+
+    return param;
   }
 
   @publicMethod
