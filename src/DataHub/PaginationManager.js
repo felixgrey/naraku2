@@ -27,6 +27,7 @@ let defaultPageConfig = {
   sortFieldField: null,
   sortTypeField: null,
   merge: true,
+  allReady: false,
 };
 
 const {
@@ -54,6 +55,7 @@ export default class PaginationManager extends Component {
     this.noPage = true;
 
     this.pageInfo = {};
+    this.loadingPage = false;
 
   }
 
@@ -62,6 +64,7 @@ export default class PaginationManager extends Component {
 
     this.pageInfo = null;
     this.config = null;
+    this.loadingPage = false;
   }
 
 
@@ -123,11 +126,14 @@ export default class PaginationManager extends Component {
     if (this.stopKey) {
       stopFetchData(this.stopKey);
       this.stopKey = null;
+      this.loadingPage = false;
     }
   }
 
   @publicMethod
   fetch(data = {}, loadingKey) {
+    this.loadingPage = true;
+
     const fakeResolve = Promise.resolve();
 
     const stringData = uniStringify(data);
@@ -136,10 +142,7 @@ export default class PaginationManager extends Component {
     this.stringData = stringData;
 
     if (isNvl(this.config.fetcher)) {
-      this.emitter.emit('$$data', {
-        name: `$$count:${this.name}`,
-        value: this.pageInfo.count
-      });
+      this.loadingPage = false;
 
       if ((!sameData) && this.config.restart) {
         this.pageInfo.page = this.config.start;
@@ -160,6 +163,7 @@ export default class PaginationManager extends Component {
     }
 
     if (willFetch === false) {
+      this.loadingPage = false;
       return fakeResolve;
     }
 
@@ -167,9 +171,12 @@ export default class PaginationManager extends Component {
       let stringData = uniStringify(data);
       if (sameData) {
         this.devLog(`same data`, stringData);
-        if (!this.force) {
+
+        if (!this.config.force) {
+          this.loadingPage = false;
           return fakeResolve;
         }
+
         this.devLog(`same data but force fetch`);
       }
     }
@@ -200,11 +207,9 @@ export default class PaginationManager extends Component {
 
       this.devLog(`'${this.name}' count is ${this.count}`);
 
-      this.emitter.emit('$$data', {
-        name: `$$count:${this.name}`,
-        value: result
-      });
     }).catch((err) => {
+      this.loadingPage = false;
+
       if (err === NOT_INITfetcher) {
         this.devLog && this.devLog('must init fetcher first');
         return;
@@ -220,6 +225,10 @@ export default class PaginationManager extends Component {
       }
 
       return Promise.reject(err);
+    }).finally(a => {
+      this.loadingPage = false;
+
+      this.emitPageInfo(true);
     });
   }
 
@@ -254,27 +263,36 @@ export default class PaginationManager extends Component {
     // console.log(this.pageInfo, pageNumber, pageSize, sortField, sortType)
 
     if (changed) {
+      this.emitPageInfo();
+    }
+  }
+
+  emitPageInfo(justModel = false) {
+    const pageInfo = this.getPageInfo();
+
+    if (!justModel) {
       this.emitter.emit('$$page', {
         name: this.name,
-        value: this.pageInfo
+        value: pageInfo
       });
-
-      this.emitter.emit(`$$page:${this.storeName}`, this.pageInfo);
-
-      this.emitter.emit('$$model', {
-        src: this,
-        type: '$$page',
-        name: this.name,
-        value: this.pageInfo
-      });
+      this.emitter.emit(`$$page:${this.storeName}`, pageInfo);
     }
+
+    this.emitter.emit('$$model', {
+      src: this,
+      type: '$$page',
+      name: this.storeName,
+      value: pageInfo
+    });
   }
 
   @publicMethod
   getPageInfo() {
+
     return {
       hasPagiNation: !this.noPage,
       hasFetcher: !isNvl(this.config.fetcher),
+      loading: this.loadingPage,
       pagiNationConfig: {
         ...this.config
       },

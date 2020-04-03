@@ -10,6 +10,7 @@ const publicMethods = [
   'once',
   'when',
   'whenAll',
+  'whenAny',
   'emit',
 ];
 
@@ -72,6 +73,42 @@ export default class ListenerManager extends Component {
     return this.emitter.lagEmit(name, ...args);
   }
 
+  createOff(offList) {
+
+    let myOffList = offList;
+
+    const off = () => {
+      if (this.destroyed || !myOffList || !this.offSet || !this.offSet.has(off)) {
+        return;
+      }
+
+      this.offSet.delete(off);
+
+      myOffList.forEach(fun => fun());
+      myOffList = null;
+    };
+
+    this.offSet.add(off);
+
+    return off;
+  }
+
+  @publicMethod
+  whenAny(...args) {
+    const callback = args.pop();
+    const names = args;
+
+    const offList = [];
+
+    names.forEach(name => {
+      offList.push(this.when(name, (data) => {
+        callback(data, name);
+      }));
+    });
+
+    return this.createOff(offList);
+  }
+
   @publicMethod
   when(...args) {
     let callback = args.pop();
@@ -119,19 +156,7 @@ export default class ListenerManager extends Component {
 
     checkReady();
 
-    const off = () => {
-      if (!this.offSet || !this.offSet.has(off)) {
-        return;
-      }
-      this.offSet.delete(off);
-
-      offList.forEach(fun => fun());
-      offList = null;
-    };
-
-    this.offSet.add(off);
-
-    return off;
+    return this.createOff(offList);
   }
 
   @publicMethod
@@ -179,23 +204,7 @@ export default class ListenerManager extends Component {
       callback(...names.map(name => this.dataHub.getDataStore(name).get()));
     }
 
-    const off = () => {
-      if (this.destroyed) {
-        return;
-      }
-
-      if (!this.offSet || !this.offSet.has(off)) {
-        return;
-      }
-      this.offSet.delete(off);
-
-      offList.forEach(off => off());
-      offList = null;
-    }
-
-    this.offSet.add(off);
-
-    return off;
+    return this.createOff(offList);
   }
 }
 

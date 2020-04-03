@@ -59,6 +59,7 @@ export default class DataStore extends Container {
     this.status = 'undefined';
     this.lockStack = 0;
     this.errMsg = null;
+    this.lastFetchParam = {};
 
     if (isNvl(name)) {
       this.errLog('DataStore must has name.');
@@ -97,6 +98,7 @@ export default class DataStore extends Container {
 
     this.value = null;
     this.storeConfig = null;
+    this.lastFetchParam = null;
   }
 
   @publicMethod
@@ -319,9 +321,15 @@ export default class DataStore extends Container {
   }
 
   @publicMethod
-  isLoading(just = false) {
+  isLoading(just = false, allReady = false) {
+    // 关闭状态都不算loading
     if (!just && this.relationManager && !this.relationManager.auto) {
       return false;
+    }
+
+    // store或page有一个就算
+    if (allReady && this.paginationManager) {
+      return this.status === 'loading' || this.paginationManager.loadingPage;
     }
 
     return this.status === 'loading';

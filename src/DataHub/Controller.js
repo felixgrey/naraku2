@@ -1,6 +1,7 @@
 import {
   udFun,
   isNvl,
+  snapshot,
 } from './../Utils';
 
 import DataStore from './DataStore.js';
@@ -20,7 +21,7 @@ import {
 const publicMethods = [
   'createController',
   'isLoading',
-  'justLoading',
+  'getLastFetchParam',
   'isLocked',
   'hasError',
   'getDataHub',
@@ -101,13 +102,13 @@ export default class Controller extends Container {
   }
 
 
-  isStatus(names, type = 'isLoading', just = false) {
+  isStatus(names, type = 'isLoading', ...args) {
     for (let name of names) {
       if (isNvl(name)) {
         continue;
       }
 
-      if (this.dataHub.getDataStore(name)[type](just)) {
+      if (this.dataHub.getDataStore(name)[type](...args)) {
         return true;
       }
     }
@@ -131,13 +132,25 @@ export default class Controller extends Container {
   }
 
   @publicMethod
-  isLoading(...names) {
-    return this.isStatus(names, 'isLoading');
+  getLastFetchParam(name) {
+    return snapshot(this.dataHub.getDataStore(name).lastFetchParam);
   }
 
   @publicMethod
-  justLoading(name) {
-    return this.isStatus([name], 'isLoading', true);
+  isLoading(...names) {
+    let just = false;
+    if (typeof names[names.length - 1] === 'boolean') {
+      just = names[names.length - 1];
+      names.pop();
+    }
+
+    let allReady = false;
+    if (typeof names[names.length - 1] === 'boolean') {
+      allReady = names[names.length - 1];
+      names.pop();
+    }
+
+    return this.isStatus(names, 'isLoading', just, allReady);
   }
 
   @publicMethod

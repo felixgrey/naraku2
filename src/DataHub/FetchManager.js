@@ -2,6 +2,7 @@ import {
   createUid,
   udFun,
   isNvl,
+  snapshot,
 } from './../Utils';
 
 import {
@@ -191,10 +192,14 @@ export default class FetchManager extends Component {
       }
 
       const stopKey = this.stopKeys[name] = createUid(`dataStore-${name}-stopKey`);
-      const pagePromise = pagination.fetch({
+      let pagePromise = pagination.fetch({
         ...data
       }, stopKey);
       const pageInfo = pagination.getPageInfo();
+
+      if (!pageInfo.pagiNationConfig.allReady) {
+        pagePromise = Promise.resolve();
+      }
 
       const dataInfo = {
         dataStore: true,
@@ -220,6 +225,8 @@ export default class FetchManager extends Component {
           data[pageInfo.pagiNationConfig.sortTypeField] = pageInfo.sortType;
         }
       }
+
+      ds.lastFetchParam = snapshot(data);
 
       // fetcher, data = null, dataInfo = {}, stopKey = null
       const dataPromise = fetchData(fetcher, data, dataInfo, stopKey)
