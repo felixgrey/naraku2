@@ -1,7 +1,6 @@
 import {
   udFun,
   isNvl,
-  snapshot,
 } from './../Utils';
 
 import DataStore from './DataStore.js';
@@ -26,8 +25,6 @@ const publicMethods = [
   'hasError',
   'getDataHub',
   'getController',
-  'getPageInfo',
-  'setPageInfo',
   'isWillUpdateView',
   'stopFetchStore'
 ];
@@ -101,7 +98,6 @@ export default class Controller extends Container {
     this.controllerPublicMethods = null;
   }
 
-
   isStatus(names, type = 'isLoading', ...args) {
     for (let name of names) {
       if (isNvl(name)) {
@@ -132,23 +128,8 @@ export default class Controller extends Container {
   }
 
   @publicMethod
-  getExportParam(name, pageNumber = -1, pageSize = -1) {
-    const dataStore = this.dataHub.getDataStore(name);
-    const pageInfo = dataStore.getPageInfo(name);
-
-    const param = snapshot(dataStore.lastFetchParam);
-
-    if (pageInfo.hasPagiNation) {
-      const {
-        pageNumberField,
-        pageSizeField,
-      } = pageInfo.pagiNationConfig;
-
-      param[pageNumberField] = pageNumber;
-      param[pageSizeField] = pageSize;
-    }
-
-    return param;
+  getExportParam(...args) {
+    return this.dataHub.getExportParam(...args);
   }
 
   @publicMethod
@@ -190,15 +171,6 @@ export default class Controller extends Container {
     this.controllerPublicMethods.destroy = () => this.destroy();
   }
 
-  @publicMethod
-  getPageInfo(name) {
-    return this.dataHub.getDataStore(name).getPageInfo();
-  }
-
-  @publicMethod
-  setPageInfo(name, ...args) {
-    return this.dataHub.getDataStore(name).setPageInfo(...args);
-  }
 
   @publicMethod
   stopFetchStore(name) {

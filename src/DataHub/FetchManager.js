@@ -146,12 +146,23 @@ export default class FetchManager extends Component {
     }
 
     clearTimeout(this.fetchingDatastore[name]);
-    this.fetchingDatastore[name] = setTimeout(() => {
+
+    const ds = this.dataHub.getDataStore(name);
+    const pagination = ds.paginationManager || {};
+
+    if (force && ds.isLoading()) {
+      this.stopFetch(name, true);
+      ds.clearLoading(ds.loadingKey);
+
+      if (pagination.loadingPage) {
+        pagination.stopFetch(pagination.loadingKey);
+      }
+    }
+
+    const doFetch = () => {
       if (this.destroyed) {
         return;
       }
-      const ds = this.dataHub.getDataStore(name);
-      const pagination = ds.paginationManager;
 
       const {
         fetcher = null
@@ -167,12 +178,10 @@ export default class FetchManager extends Component {
         return;
       }
 
-      if (!force && ds.isLoading()) {
+      if (!force && ds.isLoading(true, false)) {
         this.errLog(`can't fetch ${name} when it is loading`);
         return;
       }
-
-      this.stopFetch(name, true);
 
       const {
         hasFetcher,
@@ -265,7 +274,9 @@ export default class FetchManager extends Component {
           after();
         });
 
-    }, getRefreshRate());
+    }
+
+    this.fetchingDatastore[name] = setTimeout(doFetch, getRefreshRate());
   }
 }
 

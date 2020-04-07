@@ -2,6 +2,7 @@ import {
   udFun,
   createLog,
   isNvl,
+  snapshot,
 } from './../Utils';
 
 import Union from '../Common/Union.js';
@@ -15,6 +16,10 @@ import RelationManager from './RelationManager';
 const {
   publicMethod
 } = Container;
+
+const publicMethods = [
+  'getExportParam'
+];
 
 export default class DataHub extends Container {
 
@@ -111,6 +116,27 @@ export default class DataHub extends Container {
     }
   }
 
+
+  @publicMethod
+  getExportParam(name, pageNumber = -1, pageSize = -1) {
+    const dataStore = this.getDataStore(name);
+    const pageInfo = dataStore.getPageInfo(name);
+
+    const param = snapshot(dataStore.lastFetchParam);
+
+    if (pageInfo.hasPagiNation) {
+      const {
+        pageNumberField,
+        pageSizeField,
+      } = pageInfo.pagiNationConfig;
+
+      param[pageNumberField] = pageNumber;
+      param[pageSizeField] = pageSize;
+    }
+
+    return param;
+  }
+
   @publicMethod
   turnOnAll(flag) {
     this.turnTo('turnOn', flag);
@@ -181,6 +207,8 @@ DataHub.pDhName = 'pdh';
 DataHub.myDhName = 'mdh';
 DataHub.runName = 'run';
 DataHub.hasRunnerName = 'hasRunner';
+
+DataHub.publicMethods = publicMethods;
 
 export {
   DataHub

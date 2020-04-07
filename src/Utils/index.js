@@ -261,7 +261,8 @@ const NumberFormat = {
         decimal = true,
         noSymbol = false,
         noZero = false,
-        blank = '--'
+        noSign = true,
+        blank = '',
     } = extendParam;
 
     const percentSymbol = noSymbol ? '' : '%';
@@ -279,6 +280,10 @@ const NumberFormat = {
       number = number.replace(/^0\./g, '.')
     }
 
+    if (noSign && parseFloat(number) === 0) {
+      number = number.replace(/^\-|^\+/g, '');
+    }
+
     return number + percentSymbol;
   },
   thsepar(number, extendParam = {}) {
@@ -286,7 +291,8 @@ const NumberFormat = {
       fixed = 2,
         forceFixed = false,
         noZero = false,
-        blank = '--'
+        noSign = true,
+        blank = '',
     } = extendParam;
 
     if (isNvl(number) || isNaN(+number)) {
@@ -308,7 +314,7 @@ const NumberFormat = {
       .replace(/,$/g, '');
 
     if (decimal) {
-      number2 += Number(decimal).toFixed(fixed).replace('0.', '.');
+      number2 += Number(decimal).toFixed(fixed).replace(/^0\.|^\-0\./g, '.');
     }
 
     if (!forceFixed) {
@@ -319,6 +325,10 @@ const NumberFormat = {
 
     if (noZero) {
       number2 = number2.replace(/^0\./g, '.');
+    }
+
+    if (noSign && parseFloat(number2) === 0) {
+      number2 = number2.replace(/^\-|^\+/g, '');
     }
 
     return number2;

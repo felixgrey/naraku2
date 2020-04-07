@@ -48,7 +48,7 @@ export default class PaginationManager extends Component {
     this.name = dataStore.name;
     this.storeName = dataStore.storeName;
 
-    this.stringData = '';
+    this.stringData = null;
     this.config = {};
 
     this.stopKey = null;
@@ -125,6 +125,7 @@ export default class PaginationManager extends Component {
 
     if (this.stopKey) {
       stopFetchData(this.stopKey);
+      this.stringData = null;
       this.stopKey = null;
       this.loadingPage = false;
     }
@@ -132,13 +133,30 @@ export default class PaginationManager extends Component {
 
   @publicMethod
   fetch(data = {}, loadingKey) {
-    this.loadingPage = true;
-
-    const fakeResolve = Promise.resolve();
+    const hasLoading = this.loadingPage;
 
     const stringData = uniStringify(data);
-    const sameData = stringData === this.stringData;
+    const sameData = this.stringData !== null && stringData === this.stringData;
 
+    let willFetch = null;
+    if (typeof this.config.willFetch === 'function') {
+      willFetch = this.config.willFetch(data);
+    }
+
+    const fakeResolve = Promise.resolve();
+    if (hasLoading) {
+      if (sameData && willFetch !== false) {
+        return fakeResolve;
+      }
+
+      this.stopFetch(this.loadingKey);
+      setTimeout(() => {
+        this.fetch(data, loadingKey);
+      });
+      return fakeResolve;
+    }
+
+    this.loadingPage = true;
     this.stringData = stringData;
 
     if (isNvl(this.config.fetcher)) {
@@ -155,11 +173,6 @@ export default class PaginationManager extends Component {
 
     if (isNvl(data)) {
       data = {};
-    }
-
-    let willFetch = null;
-    if (typeof this.config.willFetch === 'function') {
-      willFetch = this.config.willFetch(data);
     }
 
     if (willFetch === false) {
@@ -208,8 +221,6 @@ export default class PaginationManager extends Component {
       this.devLog(`'${this.name}' count is ${this.count}`);
 
     }).catch((err) => {
-      this.loadingPage = false;
-
       if (err === NOT_INITfetcher) {
         this.devLog && this.devLog('must init fetcher first');
         return;
@@ -227,7 +238,7 @@ export default class PaginationManager extends Component {
       return Promise.reject(err);
     }).finally(a => {
       this.loadingPage = false;
-
+      this.stopKey = null;
       this.emitPageInfo(true);
     });
   }

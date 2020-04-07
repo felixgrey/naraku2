@@ -1,6 +1,7 @@
 import {
   isNvl,
   getDeepValue,
+  snapshot,
 } from './../Utils';
 
 import Container from './Container';
@@ -38,7 +39,10 @@ const publicMethods = [
   'unLock',
   'loading',
   'clearLoading',
-  'loaded'
+  'loaded',
+  'getStoreConfig',
+  'getPageInfo',
+  'setPageInfo',
 ];
 
 export default class DataStore extends Container {
@@ -160,8 +164,7 @@ export default class DataStore extends Container {
 
   @publicMethod
   getStoreConfig() {
-    return { ...(this.storeConfig || {})
-    };
+    return snapshot(this.storeConfig || {});
   }
 
   setStatus(status) {
