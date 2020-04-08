@@ -20,6 +20,7 @@ import {
 const publicMethods = [
   'createController',
   'isLoading',
+  'isReady',
   'getExportParam',
   'isLocked',
   'hasError',
@@ -154,6 +155,11 @@ export default class Controller extends Container {
   @publicMethod
   isLocked(...names) {
     return this.isStatus(names, 'isLocked');
+  }
+
+  @publicMethod
+  isReady(...names) {
+    return this.isStatus(names, 'isReady');
   }
 
   @publicMethod

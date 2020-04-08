@@ -80,7 +80,6 @@ export default class DataHub extends Container {
   }
 
   initDsPublicMethods() {
-
     this.getValue = (fullPath = '', defaultValue) => {
       if (this.destroyed) {
         this.destroyedErrorLog('getValue');
@@ -119,6 +118,10 @@ export default class DataHub extends Container {
 
   @publicMethod
   getExportParam(name, pageNumber = -1, pageSize = -1) {
+    if (isNvl(name)) {
+      return udFun;
+    }
+
     const dataStore = this.getDataStore(name);
     const pageInfo = dataStore.getPageInfo(name);
 
@@ -150,9 +153,15 @@ export default class DataHub extends Container {
   @publicMethod
   getDataStore(name) {
     this.devLog('getDataStore', name);
+
+    if (isNvl(name)) {
+      return udFun;
+    }
+
     if (!this.dataCenter[name]) {
       this.dataCenter[name] = new DataStore(this, name, this.union);
     }
+
     return this.dataCenter[name];
   }
 

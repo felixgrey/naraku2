@@ -235,6 +235,7 @@ export default class PaginationManager extends Component {
         return;
       }
 
+      this.stringData = null;
       return Promise.reject(err);
     }).finally(a => {
       this.loadingPage = false;

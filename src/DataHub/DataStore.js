@@ -325,6 +325,11 @@ export default class DataStore extends Container {
   }
 
   @publicMethod
+  isReady() {
+    return this.status === 'ready';
+  }
+
+  @publicMethod
   isLoading(just = true, allReady = true) {
 
     // 关闭状态都不算loading
