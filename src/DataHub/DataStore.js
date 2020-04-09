@@ -2,6 +2,7 @@ import {
   isNvl,
   getDeepValue,
   snapshot,
+  udFun,
 } from './../Utils';
 
 import Container from './Container';
@@ -217,7 +218,7 @@ export default class DataStore extends Container {
       return;
     }
 
-    if (value === undefined) {
+    if (isNvl(value)) {
       value = [];
     }
 
@@ -233,17 +234,21 @@ export default class DataStore extends Container {
   merge(data, index = 0) {
     if (this.status === 'locked' || this.status === 'loading') {
       this.methodErrLog('merge', [data], 'locked/loading',
-        `can't set merge0 when '${this.storeName}' is locked or loading.`);
-      return;
+        `can't merge when '${this.storeName}' is locked or loading.`);
+      return udFun;
     }
 
-    const value = Object.assign({}, (this.value || [])[index], data);
-    if (this.isEmpty()) {
-      this.set(value);
-    } else {
-      this.value[index] = value;
-      this.set(this.value);;
+    index = parseInt(index);
+
+    if (isNaN(index) || index < 0 || index > this.value.length - 1) {
+      this.devLog(`merge index=${index}, but count=${this.value.length}`);
+      return null;
     }
+
+    const value = Object.assign({}, this.value[index], data);
+
+    this.value[index] = value;
+    this.set(this.value);
 
     return value;
   }
