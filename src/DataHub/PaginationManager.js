@@ -70,13 +70,12 @@ export default class PaginationManager extends Component {
 
   @publicMethod
   init(param) {
-    if (isNvl(param) || param === false) {
-      this.inited = true;
-      this.noPage = true;
-      return;
-    }
+    this.noPage = false;
 
-    if (param === true) {
+    if (isNvl(param) || param === false) {
+      param = {};
+      this.noPage = true;
+    } else if (param === true) {
       param = {};
     } else if (typeof param === 'string') {
       param = {
@@ -85,9 +84,7 @@ export default class PaginationManager extends Component {
     }
 
     this.config = Object.assign({}, defaultPageConfig, param);
-
     this.inited = true;
-    this.noPage = false;
 
     this.pageInfo = {
       pageCount: 0,
@@ -144,8 +141,9 @@ export default class PaginationManager extends Component {
     }
 
     const fakeResolve = Promise.resolve();
+
     if (hasLoading) {
-      if (sameData && willFetch !== false) {
+      if (sameData && !this.config.force) {
         return fakeResolve;
       }
 
@@ -153,6 +151,7 @@ export default class PaginationManager extends Component {
       setTimeout(() => {
         this.fetch(data, loadingKey);
       });
+
       return fakeResolve;
     }
 
@@ -161,8 +160,7 @@ export default class PaginationManager extends Component {
 
     if (isNvl(this.config.fetcher)) {
       this.loadingPage = false;
-
-      if ((!sameData) && this.config.restart) {
+      if ((!sameData || this.noPage) && this.config.restart) {
         this.pageInfo.page = this.config.start;
       }
 
@@ -246,10 +244,6 @@ export default class PaginationManager extends Component {
 
   @publicMethod
   setPageInfo(pageNumber = false, pageSize = false, sortField = false, sortType = false) {
-    if (this.noPage) {
-      return;
-    }
-
     let changed = false;
 
     if (!isNvl(pageNumber) && pageNumber !== false && pageNumber !== this.pageInfo.page) {
@@ -275,7 +269,7 @@ export default class PaginationManager extends Component {
     // console.log(this.pageInfo, pageNumber, pageSize, sortField, sortType)
 
     if (changed) {
-      this.emitPageInfo();
+      this.emitPageInfo(this.noPage);
     }
   }
 
