@@ -70,6 +70,8 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           this.name = dhConfig.$myName;
         }
 
+        this.notWatchIt = !!dhConfig.$notWatchIt;
+
         const name2 = isNvl(this.name) ? '' : '@' + this.name;
         this.logName = `${this.clazz}${name2}`;
 
@@ -122,6 +124,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
         }).bindUnion(this);
 
         const viewProps = {
+          notWatchIt: this.notWatchIt,
           ...destructProps(props),
           viewType: this.viewType,
           viewMethods: this.viewMethods,
@@ -130,14 +133,16 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           viewProps: true,
         };
 
-        this.viewModel = new ProxyComponent.ViewModelClass(viewProps, contextView ? null : dhConfig, this.viewContext,
+        this.viewModel = new ProxyComponent.ViewModelClass(
+          viewProps, contextView ? null : dhConfig,
+          this.viewContext,
           this.union);
 
         this.viewModel.bindView(this);
 
         this.viewModelKey = this.viewModel.key;
-        this.viewModel.onChange(() => {
-          if (!this.rendered || this.destroyed) {
+        this.viewModel.onChange((parent) => {
+          if (!this.rendered || this.destroyed || parent) {
             return;
           }
           this.forceUpdate();
@@ -152,22 +157,37 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           };
         }
 
-        const componentDidMount = this.componentDidMount
+        const componentWillMount = this.componentWillMount;
+        this.componentWillMount = function() {
+          this.viewModel.viewCreated();
+          componentWillMount && componentWillMount.bind(this)(...args);
+        };
+
+        const componentDidMount = this.componentDidMount;
         this.componentDidMount = function(...args) {
           this.rendered = true;
+          this.viewModel.viewRendered();
           componentDidMount && componentDidMount.bind(this)(...args);
           this.devLog(`${this.logName} componentDidMount.`);
+        };
+
+        const componentWillUpdate = this.componentWillUpdate;
+        this.componentWillUpdate = function(...args) {
+          this.viewModel.viewWillChange();
+          componentWillUpdate && componentWillUpdate.bind(this)(...args);
         }
 
-        const componentDidUpdate = this.componentDidUpdate
+        const componentDidUpdate = this.componentDidUpdate;
         this.componentDidUpdate = function(...args) {
+          this.viewModel.viewUpdated();
           componentDidUpdate && componentDidUpdate.bind(this)(...args);
           this.devLog(`${this.logName} componentDidUpdate.`);
-        }
+        };
 
         const componentWillUnmount = this.componentWillUnmount;
         this.componentWillUnmount = function(...args) {
           this.destroyed = true;
+          this.viewModel.viewWillDestroyed();
           componentWillUnmount && componentWillUnmount.bind(this)(...args);
 
           this.viewModel.destroy();
@@ -179,7 +199,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
           this.viewContext = null;
 
           this.devLog(`${this.logName} componentWillUnmount .`);
-        }
+        };
 
         this.afterCreateView && this.afterCreateView(props, context);
         this.devLog(`${this.logName} created.`);

@@ -16,10 +16,15 @@ const {
 
 export default class ViewModel extends LifeCycle {
 
+  parentWillUpdateView() {
+    return false;
+  }
+
   initialization(viewProps = {}, dhConfig = null, viewContext = null) {
     this.viewProps = viewProps;
     this.changeHandle = udFun;
     this.data = {};
+    this.parents = [];
     this.contextController = null;
     this.parentController = null;
 
@@ -29,6 +34,8 @@ export default class ViewModel extends LifeCycle {
       myName,
       parentKey,
       withStore,
+      notWatchIt = false,
+      watchStores,
       useContextDataHub,
       useMyDataHub,
       useParentDataHub,
@@ -38,7 +45,9 @@ export default class ViewModel extends LifeCycle {
     this.viewType = isNvl(viewType) ? 'View' : viewType;
     this.viewMethods = isNvl(viewMethods) ? {} : viewMethods;
     this.parentKey = isNvl(parentKey) ? null : parentKey;
+    this.notWatchIt = notWatchIt;
     this.withStore = isNvl(withStore) ? null : withStore;
+    this.watchStores = isNvl(watchStores) ? [] : watchStores;
     this.name = (!isNvl(myName)) ? myName : (dhConfig && dhConfig.$myName) ? dhConfig.$myName : null;
 
     this.updateLogger();
@@ -85,7 +94,7 @@ export default class ViewModel extends LifeCycle {
         $useContextDataHub = false,
     } = this.dataHub.cfg;
 
-    const parents = this.viewContext.getParentChain(this.key);
+    const parents = this.parents = this.viewContext.getParentChain(this.key);
     for (let parent of parents) {
       const {
         $childUseMyDataHub = false
@@ -99,6 +108,9 @@ export default class ViewModel extends LifeCycle {
 
     if (parents.length) {
       this.parentController = parents[0].payload.defaultController.createController();
+      this.parentWillUpdateView = () => {
+        return parents[0].payload.willUpdateView;
+      }
     }
 
     if ($useContextDataHub) {
@@ -127,15 +139,46 @@ export default class ViewModel extends LifeCycle {
 
     this.devLog(`defaultDataHub=${this.defaultController.dhKey}`);
 
-    if (this.isContextViewModel || !this.hasViewContext) {
-      Timer.onRefreshView(() => {
-        if (this.destroyed) {
-          return;
-        }
+    Timer.onRefreshView(({
+      values
+    }) => {
+      if (this.destroyed) {
+        return;
+      }
 
-        this.changeHandle();
-      }, this);
-    }
+      if (this.parentWillUpdateView()) {
+        this.willUpdateView = true;
+        this.changeHandle(true);
+        return;
+      }
+
+      let flag = DataHub.watchAll ||
+        values.includes(-1) ||
+        values.includes(this.dataHubController.dhKey);
+
+      if (!flag && !this.notWatchIt && this.withStore) {
+        let dsKey = this.defaultController.getDsKey(this.withStore);
+        flag = values.includes(dsKey);
+      }
+
+      if (!flag) {
+        for (let name of this.watchStores) {
+          let dsKey1 = this.globalDataHubController.getDsKey(name);
+          let dsKey2 = this.contextController.getDsKey(name);
+          let dsKey3 = this.dataHubController.getDsKey(name);
+
+          if (values.includes(dsKey1) || values.includes(dsKey2) || values.includes(dsKey3)) {
+            flag = true;
+            break;
+          }
+        }
+      };
+
+      if (flag) {
+        this.willUpdateView = true;
+        this.changeHandle(false);
+      }
+    }, this);
 
     Timer.onRefreshViewModel(() => {
       if (this.destroyed) {
@@ -166,9 +209,9 @@ export default class ViewModel extends LifeCycle {
   @publicMethod
   setViewStatus(value) {
     Object.assign(this.data, value);
-    Timer.refreshViewModel();
+    Timer.refreshViewModel(this.dataHubController.dhKey);
     if (this.shouldRefreshView()) {
-      Timer.refreshView();
+      Timer.refreshView(this.dataHubController.dhKey);
     }
   }
 
@@ -201,6 +244,7 @@ export default class ViewModel extends LifeCycle {
     this.dataHub = null;
 
     this.data = null;
+    this.parents = null;
 
     this.defaultController = null;
 
@@ -264,6 +308,31 @@ export default class ViewModel extends LifeCycle {
     return {
       ...this.data
     };
+  }
+
+  @publicMethod
+  viewCreated() {
+
+  }
+
+  @publicMethod
+  viewRendered() {
+
+  }
+
+  @publicMethod
+  viewWillChange() {
+
+  }
+
+  @publicMethod
+  viewUpdated() {
+    this.willUpdateView = false;
+  }
+
+  @publicMethod
+  viewWillDestroyed() {
+
   }
 
   @publicMethod

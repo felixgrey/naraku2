@@ -35,6 +35,8 @@ export default class FetchManager extends Component {
 
   initialization(...args) {
     super.initialization(...args);
+    const [dataHubController] = args;
+    this.dataHubController = dataHubController;
 
     this.fetchingDatastore = {};
     this.stopKeys = {};
@@ -76,7 +78,7 @@ export default class FetchManager extends Component {
       stop(doStop);
     }
 
-    Timer.refreshView();
+    Timer.refreshView(this.dataHubController.dhKey);
 
     return fetchData(fetcher, data, { ...dataInfo
     }, stopKey, extendOnce).catch(err => {
@@ -95,7 +97,7 @@ export default class FetchManager extends Component {
         return;
       }
 
-      Timer.refreshView();
+      Timer.refreshView(this.dataHubController.dhKey);
 
       this.stopKeys[stopKey] = null;
     });

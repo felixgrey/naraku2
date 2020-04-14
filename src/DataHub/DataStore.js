@@ -7,6 +7,7 @@ import {
 
 import Container from './Container';
 import Component from './Component';
+import Timer from '../Common/Timer';
 
 import PaginationManager from './PaginationManager.js';
 import RelationManager from './RelationManager.js';
@@ -188,10 +189,17 @@ export default class DataStore extends Container {
 
     this.emitter.emit('$$model', {
       src: this,
+      dsKey: this.key,
       type: '$$status',
       name: this.storeName,
       value: this.value
     });
+
+    Timer.refreshView(this.key);
+
+    if (this.dataHub.isGlobalDataHub) {
+      Timer.refreshView(-1);
+    }
   }
 
   emitDataChange() {
@@ -204,10 +212,17 @@ export default class DataStore extends Container {
 
     this.emitter.emit('$$model', {
       src: this,
+      dsKey: this.key,
       type: '$$data',
       name: this.storeName,
       value: this.value
     });
+
+    Timer.refreshView(this.key);
+
+    if (this.dataHub.isGlobalDataHub) {
+      Timer.refreshView(-1);
+    }
   }
 
   @publicMethod

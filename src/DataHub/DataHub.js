@@ -151,6 +151,15 @@ export default class DataHub extends Container {
   }
 
   @publicMethod
+  getDsKey(name) {
+    if (isNvl(name) || !this.dataCenter[name]) {
+      return 0;
+    }
+
+    return this.dataCenter[name].key;
+  }
+
+  @publicMethod
   getDataStore(name) {
     this.devLog('getDataStore', name);
 
@@ -184,6 +193,7 @@ const union = new Union({
 
 const globalDataHub = new DataHub({}, union);
 const globalMethods = globalDataHub.getController();
+globalDataHub.isGlobalDataHub = true;
 
 globalDataHub.destroy = udFun;
 
@@ -216,6 +226,7 @@ DataHub.pDhName = 'pdh';
 DataHub.myDhName = 'mdh';
 DataHub.runName = 'run';
 DataHub.hasRunnerName = 'hasRunner';
+DataHub.watchAll = false;
 
 DataHub.publicMethods = publicMethods;
 

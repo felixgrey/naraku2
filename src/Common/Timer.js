@@ -20,12 +20,14 @@ export default class Timer extends LifeCycle {
   initialization() {
     this.emitSet = new Set();
     this.callBackSet = new Set();
+    this.valueSet = new Set();
   }
 
   destruction() {
     clearTimeout(this.lagEmitTimeoutIndex);
     this.emitSet = null;
     this.callBackSet = null;
+    this.valueSet = null;
   }
 
   emitAll = () => {
@@ -35,25 +37,28 @@ export default class Timer extends LifeCycle {
 
     const emitSet = this.emitSet;
     const callBackSet = this.callBackSet;
+    const values = [...this.valueSet];
 
     this.emitSet = new Set();
     this.callBackSet = new Set();
+    this.valueSet = new Set();
 
     this.lastEmitTime = Date.now();
 
-    Array.from(emitSet).forEach(name => this.emit(name));
-    Array.from(callBackSet).forEach(callback => callback());
+    Array.from(emitSet).forEach(name => this.emit(name, values));
+    Array.from(callBackSet).forEach(callback => callback(values));
   }
 
   @publicMethod
-  emit(name) {
+  emit(name, values) {
     this.emitter.emit(name, {
-      name: '$$lagEmit'
+      name: '$$lagEmit',
+      values
     });
   }
 
   @publicMethod
-  lagEmit(name, callback = udFun) {
+  lagEmit(name, value, callback = udFun) {
     clearTimeout(this.lagEmitTimeoutIndex);
 
     const now = Date.now();
@@ -64,6 +69,7 @@ export default class Timer extends LifeCycle {
 
     this.emitSet.add(name);
     this.callBackSet.add(callback);
+    this.valueSet.add(value);
 
     if (this.lastEmitTime - now > 2 * getRefreshRate()) {
       clearTimeout(this.lagEmitTimeoutIndex);
@@ -106,20 +112,20 @@ Timer.lagEmit = (...args) => globalTimer.lagEmit(...args);
 Timer.onEmit = (...args) => globalTimer.onEmit(...args);
 Timer.clearEmit = () => globalTimer.clearEmit();
 
-Timer.refreshView = () => {
+Timer.refreshView = (dsKey) => {
   setTimeout(() => {
     if (globalTimer.destroyed) {
       return;
     }
-    globalTimer.lagEmit('$$refreshView');
+    globalTimer.lagEmit('$$refreshView', dsKey);
   });
 }
 Timer.onRefreshView = (callback = udFun, lifeCycle) => {
   return globalTimer.onEmit('$$refreshView', callback, lifeCycle);
 }
 
-Timer.refreshViewModel = () => {
-  globalTimer.lagEmit('$$refreshViewModel');
+Timer.refreshViewModel = (dsKey) => {
+  globalTimer.lagEmit('$$refreshViewModel', dsKey);
 }
 Timer.onRefreshViewModel = (callback = udFun, lifeCycle) => {
   return globalTimer.onEmit('$$refreshViewModel', callback, lifeCycle);

@@ -25,8 +25,8 @@ const publicMethods = [
   'isLocked',
   'hasError',
   'getDataHub',
+  'getDsKey',
   'getController',
-  'isWillUpdateView',
   'stopFetchStore'
 ];
 
@@ -43,6 +43,7 @@ export default class Controller extends Container {
 
     this.dataHubController = this;
     this.dataHub = dataHub;
+    this.dhKey = this.dataHub.key;
 
     this.fetchManager = new FetchManager(this, this.union);
     this.runnerManager = new RunnerManager(this, this.union);
@@ -53,19 +54,6 @@ export default class Controller extends Container {
     this.containerDestroyOff = Component.prototype.bindContainer.bind(this)(dataHub);
 
     this.initPublicMethods();
-
-    this.watchModelOff = this.emitter.on('$$model', () => {
-      this.willUpdateView = true;
-      Timer.refreshView();
-    });
-
-    Timer.onRefreshView(() => {
-      if (this.destroyed) {
-        return;
-      }
-
-      this.willUpdateView = false;
-    }, this);
   }
 
   bindContainer(instance) {
@@ -93,9 +81,6 @@ export default class Controller extends Container {
     this.containerDestroyOff();
     this.containerDestroyOff = null;
 
-    this.watchModelOff();
-    this.watchModelOff = null;
-
     this.controllerPublicMethods = null;
   }
 
@@ -114,13 +99,13 @@ export default class Controller extends Container {
   }
 
   @publicMethod
-  isWillUpdateView() {
-    return this.willUpdateView;
+  getDataHub() {
+    return this.dataHub;
   }
 
   @publicMethod
-  getDataHub() {
-    return this.dataHub;
+  getDsKey(name) {
+    return this.dataHub.getDsKey(name);
   }
 
   @publicMethod
@@ -191,7 +176,7 @@ export default class Controller extends Container {
   @publicMethod
   getPublicMethods() {
     return {
-      dhKey: this.dataHub.key,
+      dhKey: this.dhKey,
       key: this.key,
       ...this.controllerPublicMethods
     };

@@ -13,6 +13,7 @@ import {
 } from './Fetcher';
 
 import Component from './Component';
+import Timer from '../Common/Timer';
 
 let defaultPageConfig = {
   fetcher: null,
@@ -47,6 +48,7 @@ export default class PaginationManager extends Component {
 
     this.name = dataStore.name;
     this.storeName = dataStore.storeName;
+    this.dataStore = dataStore;
 
     this.stringData = null;
     this.config = {};
@@ -62,11 +64,13 @@ export default class PaginationManager extends Component {
   destruction() {
     super.destruction();
 
+    this.stopKey && stopFetchData(this.stopKey)
+    this.stopKey = null;
+
     this.pageInfo = null;
     this.config = null;
     this.loadingPage = false;
   }
-
 
   @publicMethod
   init(param) {
@@ -219,6 +223,10 @@ export default class PaginationManager extends Component {
       this.devLog(`'${this.name}' count is ${this.count}`);
 
     }).catch((err) => {
+      if (this.destroyed) {
+        return;
+      }
+
       if (err === NOT_INITfetcher) {
         this.devLog && this.devLog('must init fetcher first');
         return;
@@ -236,6 +244,10 @@ export default class PaginationManager extends Component {
       this.stringData = null;
       return Promise.reject(err);
     }).finally(a => {
+      if (this.destroyed) {
+        return;
+      }
+
       this.loadingPage = false;
       this.stopKey = null;
       this.emitPageInfo(true);
@@ -286,10 +298,12 @@ export default class PaginationManager extends Component {
 
     this.emitter.emit('$$model', {
       src: this,
+      dsKey: this.dataStore.key,
       type: '$$page',
       name: this.storeName,
       value: pageInfo
     });
+    Timer.refreshView(this.dataStore.key);
   }
 
   @publicMethod
