@@ -158,7 +158,7 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
         }
 
         const componentWillMount = this.componentWillMount;
-        this.componentWillMount = function() {
+        this.componentWillMount = function(...args) {
           this.viewModel.viewCreated();
           componentWillMount && componentWillMount.bind(this)(...args);
         };
