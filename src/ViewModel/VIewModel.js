@@ -36,6 +36,7 @@ export default class ViewModel extends LifeCycle {
       withStore,
       notWatchIt = false,
       watchStores,
+      watchAll = false,
       useContextDataHub,
       useMyDataHub,
       useParentDataHub,
@@ -47,8 +48,9 @@ export default class ViewModel extends LifeCycle {
     this.parentKey = isNvl(parentKey) ? null : parentKey;
     this.notWatchIt = notWatchIt;
     this.withStore = isNvl(withStore) ? null : withStore;
-    this.watchStores = isNvl(watchStores) ? [] : watchStores;
+    this.watchStores = isNvl(watchStores) ? [] : [].concat(watchStores);
     this.name = (!isNvl(myName)) ? myName : (dhConfig && dhConfig.$myName) ? dhConfig.$myName : null;
+    this.watchAll = watchAll;
 
     this.updateLogger();
 
@@ -153,6 +155,7 @@ export default class ViewModel extends LifeCycle {
       }
 
       let flag = DataHub.watchAll ||
+        this.watchAll ||
         values.includes(-1) ||
         values.includes(this.dataHubController.dhKey);
 
