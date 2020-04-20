@@ -187,11 +187,11 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
         const componentWillUnmount = this.componentWillUnmount;
         this.componentWillUnmount = function(...args) {
           this.destroyed = true;
-          this.dh.emit('$$destroyView', {
+          this.mdh.emit('$$destroyView', {
             key: this.key,
             value: this
           });
-          this.dh.emit(`$$destroyView:${this.key}`, this);
+          this.mdh.emit(`$$destroyView:${this.key}`, this);
           this.viewModel.viewWillDestroyed();
           componentWillUnmount && componentWillUnmount.bind(this)(...args);
 
