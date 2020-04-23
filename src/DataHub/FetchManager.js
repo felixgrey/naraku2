@@ -224,7 +224,7 @@ export default class FetchManager extends Component {
       let resultData = [];
       let errorMsg = null;
 
-      if (pageInfo.pagiNationConfig.merge) {
+      if (pageInfo.hasPagiNation && pageInfo.pagiNationConfig.merge) {
         data[pageInfo.pagiNationConfig.pageNumberField] = pageInfo.page;
         data[pageInfo.pagiNationConfig.pageSizeField] = pageInfo.size;
 
