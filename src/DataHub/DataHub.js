@@ -205,6 +205,11 @@ Object.keys(globalMethods).forEach(method => {
   DataHub[method] = (...args) => globalMethods[method](...args);
 });
 
+DataHub.gdh = {
+  ...globalMethods,
+  destroy: udFun,
+};
+
 DataHub.getGlobalUnion = () => union.clone();
 
 DataHub.create = (cfg = {}) => {

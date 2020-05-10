@@ -43,6 +43,7 @@ const publicMethods = [
   'clearLoading',
   'loaded',
   'getStoreConfig',
+  'getStoreInfo',
   'getPageInfo',
   'setPageInfo',
 ];
@@ -167,6 +168,16 @@ export default class DataStore extends Container {
   @publicMethod
   getStoreConfig() {
     return snapshot(this.storeConfig || {});
+  }
+
+  @publicMethod
+  getStoreInfo() {
+    return {
+      key: this.key,
+      name: this.name,
+      storeName: this.storeName,
+      config: this.getStoreConfig()
+    }
   }
 
   setStatus(status) {

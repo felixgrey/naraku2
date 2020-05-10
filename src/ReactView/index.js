@@ -6,22 +6,29 @@ import {
   createLog,
   isNvl,
   isBlank,
-  udFun
+  udFun,
+  doNothing,
 } from '../Utils';
+
+import {
+  viewContextField,
+  parentKeyField,
+  View,
+  createComponent,
+  createPage,
+  getMyNameAlias
+} from '../View';
 
 import Union from '../Common/Union';
 import Emitter from '../Common/Emitter';
 
 let PropTypes = {};
 
-const viewContextField = 'viewContext-' + uidSeed;
-const parentKeyField = 'parentKey-' + uidSeed;
-
-export function setPropTypes(v) {
+function setPropTypes(v) {
   PropTypes = v;
 }
 
-export function viewMethod(prototype2, name, descriptor) {
+function viewMethod(prototype2, name, descriptor) {
   if (!prototype2.viewMethods) {
     prototype2.viewMethods = [];
   }
@@ -30,7 +37,7 @@ export function viewMethod(prototype2, name, descriptor) {
   return descriptor;
 }
 
-export function destructProps(props = {}) {
+function destructProps(props = {}) {
   const newProps = {
     ...props,
     children: [],
@@ -49,165 +56,74 @@ export function destructProps(props = {}) {
   return newProps;
 }
 
-export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextView = false) {
+function createView(dhConfig = {}, ViewModelClass = ViewModel, contextView = false) {
+
+  const theName = getMyNameAlias();
 
   return function(Component) {
     class ProxyComponent extends Component {
-      constructor(props = {}, context) {
+      constructor(props = {}, context = {}) {
         super(props, context);
 
-        this.viewType = Component.name;
-        this.viewMethods = {};
-        (Component.prototype.viewMethods || []).forEach(method => {
-          this.viewMethods[method] = (...args) => this[method](...args);
+        this.$$View = new View({
+          getChildContextName: 'getChildContext',
+          viewName: 'ReactView',
+          viewInstance: this,
+          ClazzName: Component.name,
+          forceUpdate: () => {
+            this.forceUpdate();
+          },
+          getViewMethods: () => {
+            const viewMethods = {};
+
+            (Component.prototype.viewMethods || []).forEach(method => {
+              viewMethods[method] = (...args) => this[method](...args);
+            });
+
+            return viewMethods;
+          },
+          getProps: () => {
+            return destructProps(this.props);
+          },
+          getContext: () => {
+            return context;
+          }
         });
 
-        this.clazz = isBlank(Component.name) ? 'ReactView' : Component.name;
-        this.devMode = props.devMode || dhConfig.$devMode || false;
-        this.name = isNvl(props.myName) ? null : props.myName;
+        this.$$View.init(dhConfig, ViewModelClass, contextView);
 
-        if (isNvl(this.name) && dhConfig.$myName) {
-          this.name = dhConfig.$myName;
-        }
+        const {
+          componentWillMount = doNothing,
+            componentDidMount = doNothing,
+            componentWillUpdate = doNothing,
+            componentDidUpdate = doNothing,
+            componentWillUnmount = doNothing,
+        } = this;
 
-        this.notWatchIt = !!dhConfig.$notWatchIt;
-
-        const name2 = isNvl(this.name) ? '' : '@' + this.name;
-        this.logName = `${this.clazz}${name2}`;
-
-        this.parentKey = null;
-        this.viewContext = null;
-        this.rendered = false;
-        this.destroyed = false;
-
-        const createUnion = () => {
-          const union = new Union({
-            devMode: dhConfig.$allDevMode,
-            devLog: createLog(this.logName, 'log'),
-            errLog: createLog(this.logName, 'error'),
-          });
-
-          new Emitter(union);
-          return union;
-        }
-
-        if (typeof context === 'object') {
-          this.parentKey = isNvl(context[parentKeyField]) ? null : context[parentKeyField];
-          const viewContext = isNvl(context[viewContextField]) ? null : context[viewContextField];
-
-          // console.log(contextView, this.devMode, viewContext, )
-          if (viewContext) {
-            viewContext.setParent(this.parentKey);
-            this.viewContext = viewContext;
-            this.devMode = viewContext.devMode;
-
-            this.union = viewContext.union.clone();
-            this.union.devLog = this.union.devLog.createLog(this.logName);
-            this.union.errLog = this.union.errLog.createLog(this.logName);
-
-            if (contextView) {
-              this.union.errLog(`contextView can't be in contextView`);
-            }
-          }
-        }
-
-        if (!this.union) {
-          const union = createUnion();
-          union.bindUnion(this);
-          if (contextView) {
-            this.viewContext = new ViewContext(dhConfig, union);
-          }
-        }
-
-        this.union.clone({
-          devMode: props.devMode || dhConfig.$devMode || dhConfig.$allDevMode,
-        }).bindUnion(this);
-
-        const viewProps = {
-          notWatchIt: this.notWatchIt,
-          ...destructProps(props),
-          viewType: this.viewType,
-          viewMethods: this.viewMethods,
-          parentKey: this.parentKey,
-          myName: this.name,
-          viewProps: true,
-        };
-
-        this.viewModel = new ProxyComponent.ViewModelClass(
-          viewProps, contextView ? null : dhConfig,
-          this.viewContext,
-          this.union);
-
-        this.viewModel.bindView(this);
-
-        this.viewModelKey = this.viewModel.key;
-        this.viewModel.onChange((parent) => {
-          if (!this.rendered || this.destroyed || parent) {
-            return;
-          }
-          this.forceUpdate();
-        });
-
-        const getChildContext = this.getChildContext || function() {};
-        this.getChildContext = function(...args) {
-          return {
-            ...getChildContext.bind(this)(...args),
-            [viewContextField]: this.viewContext,
-            [parentKeyField]: this.viewModelKey
-          };
-        }
-
-        const componentWillMount = this.componentWillMount;
         this.componentWillMount = function(...args) {
-          this.viewModel.viewCreated();
-          componentWillMount && componentWillMount.bind(this)(...args);
-        };
-
-        const componentDidMount = this.componentDidMount;
-        this.componentDidMount = function(...args) {
-          this.rendered = true;
-          this.viewModel.viewRendered();
-          componentDidMount && componentDidMount.bind(this)(...args);
-          this.devLog(`${this.logName} componentDidMount.`);
-        };
-
-        const componentWillUpdate = this.componentWillUpdate;
-        this.componentWillUpdate = function(...args) {
-          this.viewModel.viewWillChange();
-          componentWillUpdate && componentWillUpdate.bind(this)(...args);
+          this.$$View.viewCreated();
+          return componentWillMount.bind(this)(...args);
         }
 
-        const componentDidUpdate = this.componentDidUpdate;
+        this.componentDidMount = function(...args) {
+          this.$$View.viewMounted();
+          return componentDidMount.bind(this)(...args);
+        }
+
+        this.componentWillUpdate = function(...args) {
+          this.$$View.viewWillUpdate();
+          return componentWillUpdate.bind(this)(...args);
+        }
+
         this.componentDidUpdate = function(...args) {
-          this.viewModel.viewUpdated();
-          componentDidUpdate && componentDidUpdate.bind(this)(...args);
-          this.devLog(`${this.logName} componentDidUpdate.`);
-        };
+          this.$$View.viewUpdated();
+          return componentDidUpdate.bind(this)(...args);
+        }
 
-        const componentWillUnmount = this.componentWillUnmount;
         this.componentWillUnmount = function(...args) {
-          this.destroyed = true;
-          this.mdh.emit('$$destroyView', {
-            key: this.key,
-            value: this
-          });
-          this.mdh.emit(`$$destroyView:${this.key}`, this);
-          this.viewModel.viewWillDestroyed();
-          componentWillUnmount && componentWillUnmount.bind(this)(...args);
-
-          this.viewModel.destroy();
-          this.viewModel = null;
-
-          if (contextView) {
-            this.viewContext.destroy();
-          }
-          this.viewContext = null;
-
-          this.devLog(`${this.logName} componentWillUnmount .`);
-        };
-
-        this.afterCreateView && this.afterCreateView(props, context);
-        this.devLog(`${this.logName} created.`);
+          this.$$View.viewWillDestroyed();
+          return componentWillUnmount.bind(this)(...args);
+        }
       }
     }
 
@@ -229,36 +145,14 @@ export function createView(dhConfig = {}, ViewModelClass = ViewModel, contextVie
   }
 }
 
-export function page(dhConfigOrComponent = {}) {
-  if (typeof dhConfigOrComponent === 'function') {
-    return createView({
-      $childUseMyDataHub: true
-    }, undefined, false)(dhConfigOrComponent);
-  }
+const page = createPage(createView);
+const component = createComponent(createView);
 
-  if (!dhConfigOrComponent.hasOwnProperty('$childUseMyDataHub')) {
-    dhConfigOrComponent.$childUseMyDataHub = true;
-  }
-
-  return createView(dhConfigOrComponent, undefined, true);
-}
-
-export function component(dhConfigOrComponent, ViewModelClass) {
-  if (typeof dhConfigOrComponent === 'function') {
-    return createView(dhConfigOrComponent.dataHubConfig || {}, undefined, false)(dhConfigOrComponent);
-  }
-
-  let hasUseDh = dhConfigOrComponent.hasOwnProperty('$useMyDataHub');
-  hasUseDh = hasUseDh || dhConfigOrComponent.hasOwnProperty('$useParentDataHub');
-  hasUseDh = hasUseDh || dhConfigOrComponent.hasOwnProperty('$useContextDataHub');
-
-  if (!hasUseDh) {
-    dhConfigOrComponent.$useMyDataHub = true;
-  }
-
-  if (!dhConfigOrComponent.hasOwnProperty('$childUseMyDataHub')) {
-    dhConfigOrComponent.$childUseMyDataHub = true;
-  }
-
-  return createView(dhConfigOrComponent, ViewModelClass, false)
+export {
+  viewMethod,
+  setPropTypes,
+  destructProps,
+  createView,
+  page,
+  component
 }

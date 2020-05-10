@@ -29,6 +29,10 @@ let uniIndex = 1;
 function getUniIndex() {
   return uniIndex++;
 }
+/**
+  空白函数
+*/
+function doNothing() {}
 
 /**
 	通用兜底空函数
@@ -62,6 +66,13 @@ Object.assign(udFun, fake);
 */
 function sameFun(a) {
   return a;
+}
+
+/*
+    返回空对象
+*/
+function objFun() {
+  return {};
 }
 
 /*
@@ -364,6 +375,8 @@ export {
 
   udFun,
   sameFun,
+  objFun,
+  doNothing,
 
   isNvl,
   isEmpty,

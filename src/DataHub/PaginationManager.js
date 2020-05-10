@@ -5,7 +5,7 @@ import {
 } from './../Utils';
 
 import {
-  NOT_INITfetcher,
+  NOT_INIT_FETCHER,
   NOT_ADD_FETCH,
   ABORT_REQUEST,
   stopFetchData,
@@ -227,7 +227,7 @@ export default class PaginationManager extends Component {
         return;
       }
 
-      if (err === NOT_INITfetcher) {
+      if (err === NOT_INIT_FETCHER) {
         this.devLog && this.devLog('must init fetcher first');
         return;
       }

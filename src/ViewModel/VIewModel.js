@@ -103,7 +103,11 @@ export default class ViewModel extends LifeCycle {
         $useContextDataHub = false,
     } = this.dataHub.cfg;
 
-    const parents = this.parents = this.viewContext.getParentChain(this.key);
+    let parents = this.parents = [];
+    if (this.viewContext) {
+      parents = this.parents = this.viewContext.getParentChain(this.key);
+    }
+
     for (let parent of parents) {
       const {
         $childUseMyDataHub = false

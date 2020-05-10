@@ -26,6 +26,7 @@ const publicMethods = [
   'hasError',
   'getDataHub',
   'getDsKey',
+  'getStoreInfo',
   'getController',
   'stopFetchStore'
 ];
@@ -159,6 +160,8 @@ export default class Controller extends Container {
     this.publicMethods(RunnerManager.publicMethods, 'runnerManager', this.controllerPublicMethods);
     this.publicMethods(ListenerManager.publicMethods, 'listenerManager', this.controllerPublicMethods);
     this.publicMethods(publicMethods, 'that', this.controllerPublicMethods);
+
+    this.controllerPublicMethods.getStoreInfo = () => this.getStoreInfo();
     this.controllerPublicMethods.destroy = () => this.destroy();
   }
 
@@ -171,6 +174,18 @@ export default class Controller extends Container {
   @publicMethod
   createController() {
     return new Controller(this.dataHub, this.union.clone()).getPublicMethods();
+  }
+
+  @publicMethod
+  getStoreInfo() {
+    const info = {};
+    const dataCenter = this.dataHub.dataCenter;
+
+    for (let name in dataCenter) {
+      info[name] = dataCenter[name].getStoreInfo();
+    }
+
+    return info;
   }
 
   @publicMethod
