@@ -29,6 +29,8 @@ let defaultPageConfig = {
   sortTypeField: null,
   merge: true,
   allReady: false,
+  staticParam: {},
+  extendUrl: null,
 };
 
 const {
@@ -73,7 +75,7 @@ export default class PaginationManager extends Component {
   }
 
   @publicMethod
-  init(param) {
+  init(param, storeFetcher = null) {
     this.noPage = false;
 
     if (isNvl(param) || param === false) {
@@ -85,6 +87,14 @@ export default class PaginationManager extends Component {
       param = {
         fetcher: param
       };
+    } else if (param === true) {
+      param = {
+        fetcher: true
+      };
+    }
+
+    if (!this.noPage && param.fetcher !== false && isNvl(param.fetcher) && typeof storeFetcher === 'string') {
+      param.fetcher = storeFetcher;
     }
 
     this.config = Object.assign({}, defaultPageConfig, param);
@@ -133,8 +143,10 @@ export default class PaginationManager extends Component {
   }
 
   @publicMethod
-  fetch(data = {}, loadingKey) {
+  fetch(data = {}, refresh = false, loadingKey) {
     const hasLoading = this.loadingPage;
+
+    Object.assign(data, this.config.staticParam);
 
     const stringData = uniStringify(data);
     const sameData = this.stringData !== null && stringData === this.stringData;
@@ -153,7 +165,7 @@ export default class PaginationManager extends Component {
 
       this.stopFetch(this.loadingKey);
       setTimeout(() => {
-        this.fetch(data, loadingKey);
+        this.fetch(data, refresh, loadingKey);
       });
 
       return fakeResolve;
@@ -182,7 +194,7 @@ export default class PaginationManager extends Component {
       return fakeResolve;
     }
 
-    if (isNvl(willFetch)) {
+    if (isNvl(willFetch) && !refresh) {
       let stringData = uniStringify(data);
       if (sameData) {
         this.devLog(`same data`, stringData);
@@ -202,8 +214,14 @@ export default class PaginationManager extends Component {
 
     const stopKey = this.stopKey = createUid('pageStopKey-');
 
+    let extendUrl = this.config.extendUrl;
+    if (this.dataHubController.fetchManager) {
+      extendUrl = this.dataHubController.fetchManager.parseExtendUrl(this.config.extendUrl);
+    }
+
     // name, data = null, dataInfo = {}, stopKey = null
     return fetchData(this.config.fetcher, data, {
+      extendUrl,
       name: this.name,
       pagination: true,
     }, stopKey).then(result => {
@@ -212,6 +230,10 @@ export default class PaginationManager extends Component {
       }
 
       this.devLog('result is ', result);
+
+      if (typeof result === 'object' && this.config.countField !== null) {
+        result = result[this.config.countField];
+      }
 
       if (isNaN(+result)) {
         this.errLog('data count must be Number, but it is: ', result);

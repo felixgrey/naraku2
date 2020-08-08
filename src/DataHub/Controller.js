@@ -28,7 +28,8 @@ const publicMethods = [
   'getDsKey',
   'getStoreInfo',
   'getController',
-  'stopFetchStore'
+  'stopFetchStore',
+  'refresh'
 ];
 
 const {
@@ -165,6 +166,17 @@ export default class Controller extends Container {
     this.controllerPublicMethods.destroy = () => this.destroy();
   }
 
+  @publicMethod
+  refresh(name) {
+    if (isNvl(name)) {
+      return;
+    }
+
+    const relationManager = this.dataHub.getDataStore(name).relationManager;
+    if (relationManager) {
+      relationManager.refreshStore();
+    }
+  }
 
   @publicMethod
   stopFetchStore(name) {

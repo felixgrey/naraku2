@@ -153,7 +153,7 @@ export default class DataStore extends Container {
     });
 
     this.relationManager && this.relationManager.init(cfg);
-    this.paginationManager && this.paginationManager.init(cfg.pagination);
+    this.paginationManager && this.paginationManager.init(cfg.pagination, cfg.fetcher);
 
     this.storeConfig = cfg;
   }

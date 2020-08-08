@@ -175,6 +175,7 @@ export default class RelationManager extends Component {
       let {
         dependence = [],
           filter = [],
+          extendUrl = null,
           auto,
           force = false,
           staticParam = {},
@@ -207,7 +208,7 @@ export default class RelationManager extends Component {
 
       const onThem = [].concat(dependence).concat(filter);
 
-      const checkReady = () => {
+      const checkReady = (_, refresh = false) => {
         if (this.destroyed) {
           return;
         }
@@ -221,6 +222,7 @@ export default class RelationManager extends Component {
         for (let dep of dependence) {
           const depStore = this.dataHub.getDataStore(dep);
 
+          // 不满足依赖时清空数据
           if (!depStore.get().length) {
             if (this.dataStore.hasSet()) {
               const param = {
@@ -229,7 +231,7 @@ export default class RelationManager extends Component {
                 force,
               };
 
-              this.dataHubController.fetchManager.fetchStoreData(param);
+              this.dataHubController.fetchManager.fetchStoreData(param, refresh);
             }
             return;
           }
@@ -242,6 +244,7 @@ export default class RelationManager extends Component {
         }
 
         const param = {
+          extendUrl,
           name: this.name,
           data: submitData,
           clear: false,
@@ -274,7 +277,7 @@ export default class RelationManager extends Component {
         this.willFetch = false;
 
         this.devLog(`fetch Data`, param);
-        this.dataHubController.fetchManager.fetchStoreData(param);
+        this.dataHubController.fetchManager.fetchStoreData(param, refresh);
       };
 
       this.devLog(`onThem:`, onThem);
@@ -293,6 +296,11 @@ export default class RelationManager extends Component {
       this.checkReady = checkReady;
       checkReady();
     }
+  }
+
+  @publicMethod
+  refreshStore() {
+    this.checkReady(null, true);
   }
 
   @publicMethod

@@ -231,6 +231,7 @@ DataHub.pDhName = 'pdh';
 DataHub.myDhName = 'mdh';
 DataHub.runName = 'run';
 DataHub.hasRunnerName = 'hasRunner';
+DataHub.refresh = 'refresh';
 DataHub.watchAll = false;
 
 DataHub.publicMethods = publicMethods;

@@ -222,6 +222,7 @@ export default class ViewModel extends LifeCycle {
     view[DataHub.myDhName] = this.dataHubController;
     view[DataHub.runName] = (...args) => this.run(...args);
     view[DataHub.hasRunnerName] = (...args) => this.hasRunner(...args);
+    view[DataHub.refresh] = (name) => this.dataHubController.refresh(name);
     this.viewInstance = view;
   }
 
@@ -274,7 +275,8 @@ export default class ViewModel extends LifeCycle {
         pDhName,
         myDhName,
         runName,
-        hasRunnerName
+        hasRunnerName,
+        refresh
       } = DataHub;
 
       [
@@ -283,7 +285,8 @@ export default class ViewModel extends LifeCycle {
         pDhName,
         myDhName,
         runName,
-        hasRunnerName
+        hasRunnerName,
+        refresh
       ].forEach(name => {
         this.viewInstance[name] = udFun;
       });

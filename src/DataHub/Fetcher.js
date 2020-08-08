@@ -155,17 +155,18 @@ function fetchData(name, data = null, dataInfo = {}, stopKey = null, extendOnce 
 
   const extend2 = {
     dataType: 'json',
-    beforeSend: sameFun,
+    beforeRequest: sameFun,
     afterResponse: sameFun,
+    extendUrl: '',
     ...extend,
     ...extendOnce
   }
 
   const beforeFetch = extend2.beforeFetch || sameFun
-  const afterFetch = extend2.afterFetch || sameFun
+  const beforeResult = extend2.beforeResult || sameFun
 
-  delete extend2.beforeFetch
-  delete extend2.afterFetch
+  delete extend2.beforeFetch;
+  delete extend2.beforeResult;
 
   let setResult
   let setError
@@ -177,7 +178,7 @@ function fetchData(name, data = null, dataInfo = {}, stopKey = null, extendOnce 
   const fetchPromise = new Promise((resolve, reject) => {
     setResult = (data) => {
       getDevMode() && devLog('fetch success and run setResult', data)
-      resolve(afterFetch(data))
+      resolve(beforeResult(data))
     }
 
     if (!isNvl(stopKey)) {
@@ -212,10 +213,42 @@ function fetchData(name, data = null, dataInfo = {}, stopKey = null, extendOnce 
       getDevMode() && devLog('setError and reject.', err)
       reject(err)
     }
-  })
+  });
 
-  data = beforeFetch(data)
-  dataInfo = snapshot(dataInfo)
+
+  let {
+    extendUrl = null
+  } = dataInfo;
+
+  if (extendUrl !== null) {
+    dataInfo.originUrl = url;
+    if (typeof extendUrl === 'function') {
+      url = url + extendUrl(data, url);
+    } else if (typeof extendUrl === 'object') {
+      const {
+        type = 'query',
+          param = {},
+          format = null,
+      } = extendUrl;
+
+      if (extendUrl.hasOwnProperty('query') && !isNvl(typeof extendUrl.query) && typeof extendUrl.query === 'object') {
+        url = url + paramToQuery(url, extendUrl.query);
+      } else if (type === 'query') {
+        url = url + paramToQuery(url, param);
+      } else if (type === 'rust') {
+        if (isNvl(format)) {
+          errLog('extendUrl: format of rust could not be null or undefined');
+        } else {
+          url = url + paramToRust(url, param, format);
+        }
+      }
+    } else {
+      errLog('unknown extendUrl', extendUrl)
+    }
+  }
+
+  data = beforeFetch(data);
+  dataInfo = snapshot(dataInfo);
 
   fetcher({
     url,
@@ -244,6 +277,28 @@ const localBaseUrl = (() => {
   } = global.location || {}
   return `${protocol}//${hostname}${port ? (`:${port}`) : ''}`
 })()
+
+/*
+  参数到rust
+*/
+function paramToRust(url = '', param = {}, format = '') {
+  url = url.split('#')
+  let query = [];
+  let rust = format.split('/');
+  for (const q of rust) {
+    const v = param[q];
+    if (!isNvl(v)) {
+      query.push(v)
+    } else {
+      errLog(`rust param ${q} could not be null or undefined`);
+      return '';
+    }
+  }
+
+  query = query.join('/') + (url.length > 1 ? '#' : '')
+  url.splice(1, 0, query)
+  return url.join('')
+}
 
 /*
   参数到query
@@ -276,6 +331,7 @@ export {
   stopFetchData,
   fetchData,
   paramToQuery,
+  paramToRust,
   hasInitFetcher,
   hasFetching,
   isFetching

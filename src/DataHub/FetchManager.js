@@ -1,5 +1,6 @@
 import {
   createUid,
+  mergeObject,
   udFun,
   isNvl,
   snapshot,
@@ -133,7 +134,46 @@ export default class FetchManager extends Component {
   }
 
   @publicMethod
-  fetchStoreData(param = {}) {
+  parseExtendUrl(extendUrl) {
+
+    if (isNvl(extendUrl)) {
+      return extendUrl;
+    }
+
+    let storeNames = null;
+    let type = 'query';
+    let format = null;
+
+    if (typeof extendUrl === 'string' || Array.isArray(extendUrl)) {
+      storeNames = [].concat(extendUrl);
+    } else if (extendUrl.hasOwnProperty('query')) {
+      let query = extendUrl.query;
+      if (typeof query === 'string' || Array.isArray(query)) {
+        storeNames = [].concat(query);
+      }
+    } else if (extendUrl.hasOwnProperty('store')) {
+      type = extendUrl.type || 'query';
+      format = extendUrl.format;
+      storeNames = [].concat(extendUrl.store);
+    }
+
+    if (storeNames) {
+      const param = storeNames.reduce((paramData, name) => {
+        return mergeObject(paramData, this.dataHub.getDataStore(name).first())
+      }, {});
+
+      extendUrl = {
+        type,
+        param,
+        format,
+      }
+    }
+
+    return extendUrl;
+  }
+
+  @publicMethod
+  fetchStoreData(param = {}, refresh = false, ) {
     const {
       name = null,
         data = {},
@@ -141,6 +181,10 @@ export default class FetchManager extends Component {
         force = false,
         before = udFun,
         after = udFun,
+    } = param;
+
+    let {
+      extendUrl = null,
     } = param;
 
     if (isNvl(name)) {
@@ -205,7 +249,7 @@ export default class FetchManager extends Component {
       const stopKey = this.stopKeys[name] = createUid(`dataStore-${name}-stopKey`);
       let pagePromise = pagination.fetch({
         ...data
-      }, stopKey);
+      }, refresh, stopKey);
       const pageInfo = pagination.getPageInfo();
 
       if (!pageInfo.pagiNationConfig.allReady) {
@@ -239,6 +283,8 @@ export default class FetchManager extends Component {
 
       ds.lastFetchParam = snapshot(data);
 
+      dataInfo.extendUrl = this.parseExtendUrl(extendUrl);
+
       // fetcher, data = null, dataInfo = {}, stopKey = null
       const dataPromise = fetchData(fetcher, data, dataInfo, stopKey)
         .then(result => {
@@ -260,17 +306,20 @@ export default class FetchManager extends Component {
               }
             } else {
 
-              if (hasPagiNation && !hasFetcher && !isNvl(resultData) && typeof resultData === 'object') {
+              let result = resultData;
 
-                const result = resultData[resultField];
-                const count = resultData[countField] || 0;
+              if (hasPagiNation && !isNvl(resultData) && typeof resultData === 'object') {
 
-                ds.loaded(result, stopKey);
-                pagination.setCount(count);
+                if (!hasFetcher && countField !== null) {
+                  pagination.setCount(resultData[countField] || 0);
+                }
 
-              } else {
-                ds.loaded(resultData, stopKey);
+                if (resultField !== null) {
+                  resultData = resultData[resultField]
+                }
               }
+
+              ds.loaded(resultData, stopKey);
             }
           }
           after();
