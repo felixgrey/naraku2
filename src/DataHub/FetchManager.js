@@ -233,8 +233,8 @@ export default class FetchManager extends Component {
         hasFetcher,
         hasPagiNation,
         pagiNationConfig: {
-          resultField = 'value',
-          countField = 'total',
+          resultField = null,
+          countField = null,
         } = {},
       } = pagination.getPageInfo() || {};
 
@@ -310,11 +310,11 @@ export default class FetchManager extends Component {
 
               if (hasPagiNation && !isNvl(resultData) && typeof resultData === 'object') {
 
-                if (!hasFetcher && countField !== null) {
+                if (!hasFetcher && !isNvl(countField) && countField !== false) {
                   pagination.setCount(resultData[countField] || 0);
                 }
 
-                if (resultField !== null) {
+                if (!isNvl(resultField) && resultField !== false) {
                   resultData = resultData[resultField]
                 }
               }
